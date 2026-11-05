@@ -1,0 +1,1350 @@
+---
+// Llars / Hogares. Un solo objetivo: que un particular entienda su factura de luz y gas, sienta
+// que alguien se ocupa y empiece el pre-estudi (o llame). Tono cálido y sin tecnicismos.
+// Orden: hero · cifras · factura interactiva · la potència de casa · què et preocupa? (chat) ·
+// per aprofundir (blog, si hay) · FAQ · pre-estudi.
+// Solo datos confirmados (docs/contexto.md). Sin fotos de personas ni cifras en las ilustraciones:
+// barras y líneas en SVG de marca, siempre decorativas (aria-hidden).
+// Reutiliza: stats-strip, faq-accordion, post-card y pre-study (perfil "llar" ya resuelto,
+// pagina_origen = "llars").
+// Medición: cta_click (llars_hero, llars_factura, llars_preocupacio, llars_cierre),
+// factura_hotspot_click { bloc }, preocupacio_select { opcio }, click_call (location = llars),
+// blog_card_click (location = llars) y los del pre-estudi (calc_start, calc_step, generate_lead).
+import FaqAccordion from '../home/faq-accordion.astro';
+import PreStudy from '../home/pre-study.astro';
+import { preStudyTexts } from '../home/pre-study-texts';
+import StatsStrip from '../stats-strip.astro';
+import PostCard from '../blog/post-card.astro';
+import { PRE_STUDY_ID } from '../../config/home';
+import { pages, type Locale } from '../../config/pages';
+import { phone } from '../../config/site';
+import { getPublishedPosts } from '../../lib/blog';
+import type { HomesContent } from './types';
+import '../../styles/motion.css';
+
+interface Props {
+  lang: Locale;
+  content: HomesContent;
+}
+
+const { lang, content: c } = Astro.props;
+const words = c.hero.title.split(' ');
+const noArrow = (s: string) => s.replace(/\s*→$/, '');
+const studyHref = `#${PRE_STUDY_ID[lang]}`;
+
+// "Per aprofundir": hasta 3 artículos publicados del idioma; primero "Factura i potència",
+// después los temas que también interesan a una llar (gestions y autoconsum).
+const published = await getPublishedPosts(lang);
+const related = [
+  ...published.filter((p) => p.data.category === 'factura'),
+  ...published.filter((p) => p.data.category === 'gestions'),
+  ...published.filter((p) => p.data.category === 'autoconsum'),
+].slice(0, 3);
+
+const phoneIcon =
+  '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/>';
+// Ventanas de la casa del hero: [x, y]. Se encienden por turnos.
+const windows: [number, number][] = [
+  [74, 132],
+  [156, 132],
+  [74, 180],
+  [156, 180],
+];
+---
+
+<!-- 1. Hero -->
+<section class="lr-hero tech-bg" aria-labelledby="lr-title" data-section="llars">
+  <div class="lr-hero__mesh" aria-hidden="true" data-anim>
+    <span class="lr-hero__blob lr-hero__blob--a"></span>
+    <span class="lr-hero__blob lr-hero__blob--b"></span>
+  </div>
+  <div class="container lr-hero__grid">
+    <div>
+      <p class="lr-hero__tag"><span class="lr-hero__pulse" aria-hidden="true"></span>{c.hero.tag}</p>
+      <h1 id="lr-title">
+        {
+          words.map((word, i) => (
+            <>
+              <span class="lr-hero__word" style={`--w:${i}`}>
+                {word}
+              </span>
+              {i < words.length - 1 && ' '}
+            </>
+          ))
+        }
+      </h1>
+      <p class="lr-hero__lead">{c.hero.lead}</p>
+      <a class="btn btn-primary btn-lg lr-hero__btn" href={studyHref} data-cta="llars_hero">
+        {noArrow(c.hero.cta)} <span class="arrow" aria-hidden="true">→</span>
+      </a>
+      <p class="lr-hero__note">{c.hero.note}</p>
+      <a class="lr-call" href={phone.tel}>
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={phoneIcon} />
+        <span>{c.hero.call} {phone.display}</span>
+      </a>
+    </div>
+
+    <!-- Casa con ventanas que se encienden por turnos y una factura que flota al lado (sus líneas
+         se "ordenan" al cargar). Decorativa: sin texto ni cifras. Tamaño fijo por CSS (sin CLS). -->
+    <div class="lr-house" aria-hidden="true" data-anim>
+      <svg viewBox="0 0 320 250" width="320" height="250" focusable="false">
+        <ellipse class="lr-house__ground" cx="138" cy="234" rx="118" ry="7"></ellipse>
+        <rect class="lr-house__chimney" x="168" y="60" width="18" height="40" rx="2"></rect>
+        <rect class="lr-house__body" x="54" y="110" width="152" height="122" rx="6"></rect>
+        <path class="lr-house__roof" d="M38 122 130 50l92 72"></path>
+        {
+          windows.map(([x, y], i) => (
+            <g style={`--n:${i}`}>
+              <rect class="lr-house__win" x={x} y={y} width="32" height="28" rx="4" />
+              <rect class="lr-house__light" x={x} y={y} width="32" height="28" rx="4" />
+              <path class="lr-house__frame" d={`M${x + 16} ${y}v28M${x} ${y + 14}h32`} />
+            </g>
+          ))
+        }
+        <rect class="lr-house__door" x="116" y="178" width="30" height="54" rx="4"></rect>
+        <g class="lr-house__float">
+          <g transform="rotate(6 258 126)">
+            <rect class="lr-house__paper" x="214" y="70" width="88" height="114" rx="9"></rect>
+            <rect class="lr-house__head" x="226" y="84" width="40" height="8" rx="4"></rect>
+            <rect class="lr-house__line" style="--l:0" x="226" y="104" width="64" height="6" rx="3"></rect>
+            <rect class="lr-house__line" style="--l:1" x="226" y="118" width="50" height="6" rx="3"></rect>
+            <rect class="lr-house__line" style="--l:2" x="226" y="132" width="58" height="6" rx="3"></rect>
+            <rect class="lr-house__line" style="--l:3" x="226" y="146" width="40" height="6" rx="3"></rect>
+            <rect class="lr-house__line lr-house__line--accent" style="--l:4" x="226" y="164" width="30" height="8" rx="4"></rect>
+          </g>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<StatsStrip items={c.stats} section="llars" />
+
+<!-- 2. Factura interactiva: los tres textos están en el HTML. Sin JS o en móvil, lista de tres
+     tarjetas; en escritorio con JS, una tarjeta junto a la factura según el punto activo. -->
+<section class="section surface-white surface-grid" aria-labelledby="lr-bill-title" data-section="llars">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.bill.eyebrow}</p>
+      <h2 id="lr-bill-title">{c.bill.title}</h2>
+      <p class="section-head__intro">{c.bill.intro}</p>
+    </div>
+
+    <div class="lr-ib" data-ib data-active={c.bill.items[0].key}>
+      <div class="lr-ib__figure" data-reveal>
+        <svg class="lr-ib__svg" viewBox="0 0 300 380" width="300" height="380" aria-hidden="true" focusable="false">
+          <rect class="lr-ib__paper" x="4" y="4" width="292" height="372" rx="16"></rect>
+          <rect class="lr-ib__ink" x="26" y="28" width="92" height="12" rx="6"></rect>
+          <rect class="lr-ib__soft" x="26" y="50" width="150" height="7" rx="3.5"></rect>
+          <rect class="lr-ib__soft" x="200" y="28" width="74" height="7" rx="3.5"></rect>
+          <rect class="lr-ib__soft" x="220" y="42" width="54" height="7" rx="3.5"></rect>
+
+          <!-- Potència -->
+          <g>
+            <rect class="lr-ib__blk" x="18" y="80" width="264" height="82" rx="12"></rect>
+            <rect class="lr-ib__hl lr-ib__hl--potencia" x="18" y="80" width="264" height="82" rx="12"></rect>
+            <rect class="lr-ib__ink" x="34" y="96" width="74" height="10" rx="5"></rect>
+            <rect class="lr-ib__soft" x="34" y="116" width="150" height="7" rx="3.5"></rect>
+            <rect class="lr-ib__soft" x="34" y="132" width="118" height="7" rx="3.5"></rect>
+            <rect class="lr-ib__acc" x="196" y="114" width="40" height="10" rx="5"></rect>
+          </g>
+          <!-- Energia: mini gráfico de barras, sin cifras -->
+          <g>
+            <rect class="lr-ib__blk" x="18" y="176" width="264" height="96" rx="12"></rect>
+            <rect class="lr-ib__hl lr-ib__hl--energia" x="18" y="176" width="264" height="96" rx="12"></rect>
+            <rect class="lr-ib__ink" x="34" y="192" width="64" height="10" rx="5"></rect>
+            <rect class="lr-ib__bar" x="34" y="236" width="14" height="22" rx="3"></rect>
+            <rect class="lr-ib__bar" x="54" y="224" width="14" height="34" rx="3"></rect>
+            <rect class="lr-ib__bar" x="74" y="230" width="14" height="28" rx="3"></rect>
+            <rect class="lr-ib__bar" x="94" y="216" width="14" height="42" rx="3"></rect>
+            <rect class="lr-ib__bar" x="114" y="226" width="14" height="32" rx="3"></rect>
+            <rect class="lr-ib__soft" x="146" y="220" width="70" height="7" rx="3.5"></rect>
+            <rect class="lr-ib__acc" x="146" y="236" width="48" height="10" rx="5"></rect>
+          </g>
+          <!-- Impostos i altres conceptes -->
+          <g>
+            <rect class="lr-ib__blk" x="18" y="286" width="264" height="72" rx="12"></rect>
+            <rect class="lr-ib__hl lr-ib__hl--impostos" x="18" y="286" width="264" height="72" rx="12"></rect>
+            <rect class="lr-ib__ink" x="34" y="300" width="96" height="10" rx="5"></rect>
+            <rect class="lr-ib__soft" x="34" y="320" width="132" height="7" rx="3.5"></rect>
+            <rect class="lr-ib__soft" x="34" y="336" width="96" height="7" rx="3.5"></rect>
+            <rect class="lr-ib__acc" x="196" y="318" width="34" height="10" rx="5"></rect>
+          </g>
+        </svg>
+        <div class="lr-ib__spots" role="group" aria-label={c.bill.label}>
+          {
+            c.bill.items.map((item, i) => (
+              <button
+                class:list={['lr-ib__spot', `lr-ib__spot--${item.key}`]}
+                type="button"
+                aria-expanded={i === 0 ? 'true' : 'false'}
+                aria-controls={`lr-ib-${item.key}`}
+                data-ib-spot={item.key}
+              >
+                <span class="lr-ib__dot" aria-hidden="true" />
+                <span class="sr-only">{item.title}</span>
+              </button>
+            ))
+          }
+        </div>
+      </div>
+
+      <ol class="lr-ib__list">
+        {
+          c.bill.items.map((item, i) => (
+            <li class="lr-ib__item card" id={`lr-ib-${item.key}`} data-ib-item={item.key}>
+              <span class="lr-ib__num" aria-hidden="true">
+                {i + 1}
+              </span>
+              <div>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+
+    <div class="lr-ib__close" data-reveal>
+      <p>{c.bill.close}</p>
+      <a class="btn btn-primary" href={studyHref} data-cta="llars_factura">
+        {noArrow(c.bill.cta)} <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- 3. La potència de casa: medidor decorativo (aguja que oscila; con reduced-motion, en "Ajustada"). -->
+<section class="section lr-power-section" aria-labelledby="lr-power-title" data-section="llars">
+  <div class="container lr-power">
+    <div class="lr-dial" aria-hidden="true" data-anim data-reveal>
+      <svg viewBox="0 0 300 170" width="300" height="170" focusable="false">
+        <path class="lr-dial__zone" d="M34 150a116 116 0 0 1 58-100.46"></path>
+        <path class="lr-dial__zone lr-dial__zone--ok" d="M95.6 47.6a116 116 0 0 1 108.8 0"></path>
+        <path class="lr-dial__zone" d="M208 49.54A116 116 0 0 1 266 150"></path>
+        <g class="lr-dial__needle">
+          <path d="M150 150V58"></path>
+        </g>
+        <circle class="lr-dial__hub" cx="150" cy="150" r="10"></circle>
+      </svg>
+      <div class="lr-dial__labels">
+        <span>{c.power.zones[0]}</span>
+        <span class="lr-dial__label--ok">{c.power.zones[1]}</span>
+        <span>{c.power.zones[2]}</span>
+      </div>
+    </div>
+    <div class="lr-power__text" data-reveal>
+      <p class="eyebrow">{c.power.eyebrow}</p>
+      <h2 id="lr-power-title">{c.power.title}</h2>
+      <p class="lr-power__p">{c.power.text}</p>
+      <a class="lr-arrow-link" href={pages.gestio[lang]}>
+        {noArrow(c.power.link)} <span aria-hidden="true">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- 4. Què et preocupa? Selector en formato de chat. Sin JS: todas las respuestas en lista, cada una
+     con su frase. Con JS: una respuesta visible (las demás con hidden), en la misma celda de rejilla
+     que la más larga (sin CLS). -->
+<section class="section band-alt" aria-labelledby="lr-chat-title" data-section="llars">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.chat.eyebrow}</p>
+      <h2 id="lr-chat-title">{c.chat.title}</h2>
+      <p class="section-head__intro">{c.chat.intro}</p>
+    </div>
+
+    <div class="lr-chat" data-chat data-reveal>
+      <div class="lr-chat__picker" role="radiogroup" aria-label={c.chat.label}>
+        {
+          c.chat.items.map((item, i) => (
+            <button
+              class="lr-chat__q-btn"
+              type="button"
+              role="radio"
+              aria-checked={i === 0 ? 'true' : 'false'}
+              tabindex={i === 0 ? '0' : '-1'}
+              aria-controls={`lr-chat-a${i + 1}`}
+              data-chat-opt={i + 1}
+            >
+              {item.q}
+            </button>
+          ))
+        }
+      </div>
+
+      <div class="lr-chat__reply">
+        <span class="lr-chat__avatar" aria-hidden="true">
+          <svg viewBox="160 134 80 132" width="22" height="36" focusable="false"><path d="M214 140 168 212h30l-12 48 46-72h-30Z"></path></svg>
+        </span>
+        <div class="lr-chat__answers" aria-live="polite" aria-label={c.chat.answerLabel} data-chat-answers>
+          <span class="lr-chat__typing" aria-hidden="true"><i></i><i></i><i></i></span>
+          {
+            c.chat.items.map((item, i) => (
+              <div class="lr-chat__answer" id={`lr-chat-a${i + 1}`} data-chat-answer={i + 1}>
+                <p class="lr-chat__q">{item.q}</p>
+                <p class="lr-chat__a">{item.a}</p>
+                {item.action.kind === 'study' ? (
+                  <a class="btn btn-primary lr-chat__btn" href={studyHref} data-cta="llars_preocupacio">
+                    {noArrow(item.action.label)} <span class="arrow" aria-hidden="true">→</span>
+                  </a>
+                ) : (
+                  <a class="lr-arrow-link" href={pages[item.action.page][lang]} data-cta="llars_preocupacio">
+                    {noArrow(item.action.label)} <span aria-hidden="true">→</span>
+                  </a>
+                )}
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Per aprofundir: solo si hay artículos publicados (si no, ni el título ni el hueco) -->
+{
+  related.length > 0 && (
+    <section class="section surface-white" aria-labelledby="lr-blog-title" data-section="llars" data-lr-blog>
+      <div class="container">
+        <h2 id="lr-blog-title" class="lr-h2" data-reveal>
+          {c.blogTitle}
+        </h2>
+        <div class="lr-posts">
+          {related.map((post, i) => (
+            <PostCard post={post} lang={lang} position={i + 1} heading="h3" />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<!-- 6. Preguntes freqüents (6, acordeón exclusivo; el JSON-LD FAQPage sale de los mismos textos) -->
+<FaqAccordion lang={lang} content={c.faq} idPrefix="lr-faq" section="llars" />
+
+<!-- 7. Pre-estudi de la llar: perfil "llar" ya resuelto -->
+<PreStudy
+  lang={lang}
+  content={{ ...preStudyTexts[lang], title: c.study.title, lead: c.study.lead }}
+  presetProfile="llar"
+  origin="llars"
+/>
+<div class="lr-after" data-section="llars">
+  <div class="container lr-after__inner">
+    <p class="lr-after__call">
+      {c.study.callLead}{' '}
+      <a href={phone.tel} data-cta="llars_cierre">{phone.display}</a>
+    </p>
+    <p class="lr-after__other">
+      <span>{c.study.other}</span>
+      <a class="lr-arrow-link" href={pages.empreses[lang]}>{pages.empreses.name[lang]} <span aria-hidden="true">→</span></a>
+      <a class="lr-arrow-link" href={pages.comunitats[lang]}>{pages.comunitats.name[lang]} <span aria-hidden="true">→</span></a>
+    </p>
+  </div>
+</div>
+
+<script>
+  import { track } from '../../scripts/analytics';
+  import { initDecor, initReveal } from '../../scripts/motion';
+
+  initReveal();
+  initDecor();
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const desktop = window.matchMedia('(min-width: 48rem)');
+
+  // --- Factura interactiva: un punto activo a la vez; flechas para moverse entre puntos.
+  document.querySelectorAll<HTMLElement>('[data-ib]').forEach((root) => {
+    const spots = [...root.querySelectorAll<HTMLButtonElement>('[data-ib-spot]')];
+    const activate = (spot: HTMLButtonElement, fromUser: boolean) => {
+      const key = spot.dataset.ibSpot!;
+      root.dataset.active = key;
+      spots.forEach((s) => s.setAttribute('aria-expanded', String(s === spot)));
+      root.querySelectorAll<HTMLElement>('[data-ib-item]').forEach((item) => item.classList.toggle('is-active', item.dataset.ibItem === key));
+      if (!fromUser) return;
+      track('factura_hotspot_click', { bloc: key, location: 'llars' });
+      // En móvil la explicación está debajo de la factura: se acerca a la vista si hace falta.
+      if (!desktop.matches) {
+        root.querySelector(`[data-ib-item="${key}"]`)?.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+      }
+    };
+    spots.forEach((spot, i) => {
+      spot.addEventListener('click', () => activate(spot, true));
+      spot.addEventListener('keydown', (event) => {
+        const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
+        if (!step) return;
+        event.preventDefault();
+        const next = spots[(i + step + spots.length) % spots.length];
+        next.focus();
+        activate(next, true);
+      });
+    });
+    activate(spots[0], false);
+  });
+
+  // --- Què et preocupa?: radiogroup con tabindex móvil; respuesta con "escribiendo…" breve.
+  document.querySelectorAll<HTMLElement>('[data-chat]').forEach((chat) => {
+    const options = [...chat.querySelectorAll<HTMLButtonElement>('[data-chat-opt]')];
+    const box = chat.querySelector<HTMLElement>('[data-chat-answers]')!;
+    const answers = [...box.querySelectorAll<HTMLElement>('[data-chat-answer]')];
+    let timer = 0;
+    const select = (option: HTMLButtonElement, fromUser: boolean) => {
+      const n = option.dataset.chatOpt!;
+      if (fromUser && option.getAttribute('aria-checked') === 'true') return;
+      options.forEach((o) => {
+        const on = o === option;
+        o.setAttribute('aria-checked', String(on));
+        o.tabIndex = on ? 0 : -1;
+      });
+      answers.forEach((a) => (a.hidden = a.dataset.chatAnswer !== n));
+      window.clearTimeout(timer);
+      if (fromUser) {
+        track('preocupacio_select', { opcio: Number(n), location: 'llars' });
+        if (!reduce) {
+          box.classList.add('is-typing');
+          timer = window.setTimeout(() => box.classList.remove('is-typing'), 650);
+        }
+      }
+    };
+    options.forEach((option, i) => {
+      option.addEventListener('click', () => select(option, true));
+      option.addEventListener('keydown', (event) => {
+        const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
+        if (!step) return;
+        event.preventDefault();
+        const next = options[(i + step + options.length) % options.length];
+        next.focus();
+        select(next, true);
+      });
+    });
+    select(options[0], false);
+  });
+
+  // --- Per aprofundir: blog_card_click con location = llars.
+  document.querySelector('[data-lr-blog]')?.addEventListener('click', (event) => {
+    const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[data-card-link]');
+    if (!link) return;
+    const { slug, position, lang } = link.dataset;
+    track('blog_card_click', { slug, position: Number(position), lang, location: 'llars' });
+  });
+</script>
+
+<style>
+  /* ---------------- 1. Hero ---------------- */
+  .lr-hero {
+    padding-block: 1.5rem 3rem;
+    color: var(--white);
+  }
+
+  .lr-hero__mesh {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .lr-hero__blob {
+    position: absolute;
+    width: 34rem;
+    height: 34rem;
+    border-radius: 50%;
+    opacity: 0.55;
+    animation: lr-drift 28s ease-in-out infinite alternate;
+  }
+
+  .lr-hero__blob--a {
+    top: -14rem;
+    right: -12rem;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-500) 45%, transparent), transparent);
+  }
+
+  .lr-hero__blob--b {
+    bottom: -18rem;
+    left: -14rem;
+    background: radial-gradient(closest-side, var(--teal-700), transparent);
+    animation-duration: 34s;
+    animation-direction: alternate-reverse;
+  }
+
+  @keyframes lr-drift {
+    to {
+      transform: translate3d(-6rem, 4rem, 0) scale(1.15);
+    }
+  }
+
+  .lr-hero__grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .lr-hero__tag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: fit-content;
+    margin-bottom: 0.875rem;
+    padding: 0.25rem 0.875rem 0.25rem 0.625rem;
+    border: 1px solid color-mix(in srgb, var(--white) 25%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--white) 8%, transparent);
+    font-weight: 700;
+  }
+
+  .lr-hero__pulse {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    background: var(--orange-500);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--orange-500) 30%, transparent);
+  }
+
+  .lr-hero h1 {
+    max-width: 20ch;
+    margin-bottom: 1rem;
+    color: var(--white);
+  }
+
+  .lr-hero__word {
+    display: inline-block;
+  }
+
+  /* Aparición palabra a palabra desde opacidad 0,15 (nunca 0: no retrasa el LCP). */
+  @media (prefers-reduced-motion: no-preference) {
+    .lr-hero__word {
+      animation: lr-word 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      animation-delay: calc(0.1s + var(--w) * 60ms);
+    }
+  }
+
+  @keyframes lr-word {
+    from {
+      opacity: 0.15;
+      transform: translateY(0.35em);
+    }
+  }
+
+  .lr-hero__lead {
+    max-width: 38rem;
+    margin-bottom: 1.25rem;
+    color: var(--teal-100);
+    font-size: 1.125rem;
+  }
+
+  .lr-hero__btn {
+    width: 100%;
+  }
+
+  .lr-hero__note {
+    margin: 0.5rem 0 0;
+    color: var(--teal-100);
+  }
+
+  .lr-call {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    margin-top: 0.25rem;
+    color: var(--white);
+    font-weight: 700;
+  }
+
+  .lr-call svg {
+    flex: none;
+    color: var(--orange-500);
+  }
+
+  @media (min-width: 30rem) {
+    .lr-hero__btn {
+      width: auto;
+    }
+  }
+
+  /* Casa y factura flotante. */
+  .lr-house {
+    justify-self: center;
+    width: min(100%, 17rem);
+  }
+
+  .lr-house svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .lr-house__ground {
+    fill: var(--teal-700);
+    opacity: 0.7;
+  }
+
+  .lr-house__body,
+  .lr-house__chimney {
+    fill: var(--teal-700);
+    stroke: color-mix(in srgb, var(--white) 22%, transparent);
+    stroke-width: 1.5;
+  }
+
+  .lr-house__roof {
+    fill: none;
+    stroke: var(--orange-500);
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .lr-house__win {
+    fill: var(--teal-900);
+  }
+
+  .lr-house__light {
+    fill: var(--orange-100);
+    opacity: 0.95;
+  }
+
+  .lr-house__frame {
+    fill: none;
+    stroke: var(--teal-700);
+    stroke-width: 2;
+  }
+
+  .lr-house__door {
+    fill: var(--teal-900);
+  }
+
+  .lr-house__paper {
+    fill: var(--white);
+  }
+
+  .lr-house__head {
+    fill: var(--teal-900);
+  }
+
+  .lr-house__line {
+    fill: var(--teal-100);
+  }
+
+  .lr-house__line--accent {
+    fill: var(--orange-500);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* Ventanas: se encienden por turnos (desfase negativo: sin JS ya se ven unas encendidas y otras no). */
+    .lr-house__light {
+      animation: lr-light 8s ease-in-out infinite;
+      animation-delay: calc(var(--n) * -2s);
+    }
+
+    .lr-house__float {
+      animation: lr-float 6s ease-in-out infinite;
+    }
+
+    /* Líneas de la factura que se "ordenan" al cargar (solo con JS: sin JS se ven ya ordenadas). */
+    :global(.js) .lr-house__line {
+      transform-box: fill-box;
+      transform-origin: left center;
+      animation: lr-sort 0.9s cubic-bezier(0.3, 1.3, 0.5, 1) both;
+      animation-delay: calc(0.35s + var(--l) * 0.12s);
+    }
+
+    :global(.js) .lr-house[data-anim] .lr-house__line {
+      animation-play-state: running;
+    }
+  }
+
+  @keyframes lr-light {
+    0%,
+    30% {
+      opacity: 0.95;
+    }
+    45%,
+    85% {
+      opacity: 0.08;
+    }
+    100% {
+      opacity: 0.95;
+    }
+  }
+
+  @keyframes lr-float {
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  @keyframes lr-sort {
+    from {
+      opacity: 0.3;
+      transform: translateX(14px) scaleX(0.4);
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .lr-hero {
+      padding-block: 3.5rem 4.5rem;
+    }
+
+    .lr-hero__grid {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      align-items: center;
+      gap: 2.5rem;
+    }
+
+    .lr-house {
+      width: 20rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .lr-hero__lead {
+      font-size: 1.25rem;
+    }
+  }
+
+  /* ---------------- Comunes ---------------- */
+  .lr-h2 {
+    max-width: 44rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .lr-arrow-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 44px;
+    color: var(--orange-700);
+    font-weight: 700;
+  }
+
+  /* ---------------- 2. Factura interactiva ---------------- */
+  .lr-ib {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .lr-ib__figure {
+    position: relative;
+    justify-self: center;
+    width: min(100%, 17rem);
+    aspect-ratio: 300 / 380;
+  }
+
+  .lr-ib__svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 1.25rem 1.5rem color-mix(in srgb, var(--teal-900) 18%, transparent));
+  }
+
+  .lr-ib__paper {
+    fill: var(--white);
+    stroke: var(--teal-100);
+    stroke-width: 2;
+  }
+
+  .lr-ib__ink {
+    fill: var(--teal-900);
+  }
+
+  .lr-ib__soft {
+    fill: var(--teal-100);
+  }
+
+  .lr-ib__acc {
+    fill: var(--orange-500);
+  }
+
+  .lr-ib__bar {
+    fill: var(--teal-700);
+  }
+
+  .lr-ib__blk {
+    fill: var(--cream);
+  }
+
+  /* Resaltado del bloque activo: solo opacidad. */
+  .lr-ib__hl {
+    fill: var(--orange-100);
+    stroke: var(--orange-500);
+    stroke-width: 3;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .lr-ib__hl {
+    mix-blend-mode: multiply;
+  }
+
+  .lr-ib[data-active='potencia'] .lr-ib__hl--potencia,
+  .lr-ib[data-active='energia'] .lr-ib__hl--energia,
+  .lr-ib[data-active='impostos'] .lr-ib__hl--impostos {
+    opacity: 1;
+  }
+
+  /* Puntos: botones de 44 px sobre la factura (posiciones relativas al viewBox 300 × 380). */
+  .lr-ib__spot {
+    position: absolute;
+    left: 86%;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+  }
+
+  .lr-ib__spot--potencia {
+    top: 31.8%;
+  }
+
+  .lr-ib__spot--energia {
+    top: 58.9%;
+  }
+
+  .lr-ib__spot--impostos {
+    top: 84.7%;
+  }
+
+  .lr-ib__dot {
+    position: relative;
+    width: 1.375rem;
+    height: 1.375rem;
+    border: 3px solid var(--white);
+    border-radius: 50%;
+    background: var(--orange-700);
+    box-shadow: 0 0 0 1px var(--orange-700);
+  }
+
+  .lr-ib__dot::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border: 2px solid var(--orange-500);
+    border-radius: 50%;
+    opacity: 0;
+  }
+
+  .lr-ib__spot[aria-expanded='true'] .lr-ib__dot {
+    background: var(--teal-900);
+    box-shadow:
+      0 0 0 1px var(--teal-900),
+      0 0 0 6px color-mix(in srgb, var(--orange-500) 35%, transparent);
+  }
+
+  .lr-ib__spot:focus-visible {
+    outline: 3px solid var(--focus-ring, var(--teal-900));
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .lr-ib__dot::before {
+      animation: lr-pulse 2.2s ease-out infinite;
+    }
+
+    .lr-ib__spot:nth-child(2) .lr-ib__dot::before {
+      animation-delay: 0.7s;
+    }
+
+    .lr-ib__spot:nth-child(3) .lr-ib__dot::before {
+      animation-delay: 1.4s;
+    }
+  }
+
+  @keyframes lr-pulse {
+    0% {
+      opacity: 0.9;
+      transform: scale(0.6);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.5);
+    }
+  }
+
+  /* Tarjetas de explicación: en móvil (y sin JS), lista de tres. */
+  .lr-ib__list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .lr-ib__item {
+    display: flex;
+    gap: 0.875rem;
+    align-items: flex-start;
+    padding: 1.125rem 1.25rem;
+    border: 2px solid transparent;
+    transition:
+      border-color 0.2s,
+      opacity 0.25s ease,
+      transform 0.25s ease;
+  }
+
+  .lr-ib__item.is-active {
+    border-color: var(--orange-500);
+  }
+
+  .lr-ib__item h3 {
+    margin-bottom: 0.25rem;
+    font-size: 1.1875rem;
+  }
+
+  .lr-ib__item p {
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  .lr-ib__num {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--teal-900);
+    color: var(--white);
+    font-family: var(--font-heading);
+    font-weight: 700;
+  }
+
+  .lr-ib__close {
+    display: grid;
+    gap: 1rem;
+    justify-items: start;
+    margin-top: 1.75rem;
+  }
+
+  .lr-ib__close p {
+    max-width: 38rem;
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
+
+  /* Escritorio con JS: factura a la izquierda y una sola tarjeta a la derecha, todas en la misma
+     celda (la altura es la de la más alta: sin saltos al cambiar). */
+  @media (min-width: 48rem) {
+    .lr-ib {
+      grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+      gap: 3rem;
+      align-items: center;
+    }
+
+    .lr-ib__figure {
+      width: 100%;
+    }
+
+    :global(.js) .lr-ib__list {
+      grid-template-areas: 'one';
+    }
+
+    :global(.js) .lr-ib__item {
+      grid-area: one;
+      padding: 1.75rem;
+      opacity: 0;
+      transform: translateY(8px);
+      visibility: hidden;
+    }
+
+    :global(.js) .lr-ib__item.is-active {
+      opacity: 1;
+      transform: none;
+      visibility: visible;
+    }
+
+    .lr-ib__item h3 {
+      font-size: 1.5rem;
+    }
+
+    .lr-ib__item p {
+      font-size: 1.125rem;
+    }
+
+    .lr-ib__close {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      padding: 1.5rem 1.75rem;
+      border-radius: 1.25rem;
+      background: var(--orange-100);
+    }
+  }
+
+  /* ---------------- 3. La potència de casa ---------------- */
+  .lr-power {
+    display: grid;
+    gap: 2rem;
+  }
+
+  .lr-dial {
+    justify-self: center;
+    width: min(100%, 22rem);
+    padding: 1.5rem 1.25rem 1.25rem;
+    border-radius: 1.5rem;
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .lr-dial svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .lr-dial__zone {
+    fill: none;
+    stroke: var(--teal-700);
+    stroke-width: 22;
+  }
+
+  .lr-dial__zone--ok {
+    stroke: var(--orange-500);
+  }
+
+  .lr-dial__needle {
+    transform-box: view-box;
+    transform-origin: 150px 150px;
+  }
+
+  .lr-dial__needle path {
+    fill: none;
+    stroke: var(--white);
+    stroke-width: 6;
+    stroke-linecap: round;
+  }
+
+  .lr-dial__hub {
+    fill: var(--white);
+    stroke: var(--orange-500);
+    stroke-width: 4;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .lr-dial__needle {
+      animation: lr-needle 9s ease-in-out infinite;
+    }
+  }
+
+  /* Recorre las tres zonas y se queda un rato en "Ajustada". */
+  @keyframes lr-needle {
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+    18% {
+      transform: rotate(-58deg);
+    }
+    34%,
+    58% {
+      transform: rotate(0deg);
+    }
+    76% {
+      transform: rotate(58deg);
+    }
+    90% {
+      transform: rotate(0deg);
+    }
+  }
+
+  .lr-dial__labels {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-align: center;
+  }
+
+  .lr-dial__labels span:first-child {
+    text-align: left;
+  }
+
+  .lr-dial__labels span:last-child {
+    text-align: right;
+  }
+
+  .lr-dial__label--ok {
+    color: var(--orange-500);
+  }
+
+  .lr-power__p {
+    max-width: 38rem;
+    font-size: 1.125rem;
+  }
+
+  @media (min-width: 48rem) {
+    .lr-power {
+      grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+      gap: 3.5rem;
+      align-items: center;
+    }
+  }
+
+  /* ---------------- 4. Què et preocupa? ---------------- */
+  .lr-chat {
+    display: grid;
+    gap: 1.25rem;
+    padding: 1.25rem 1rem;
+    border: 1px solid var(--teal-100);
+    border-radius: 1.5rem;
+    background: var(--white);
+  }
+
+  /* Sin JS los botones no hacen nada: se ocultan y se ven todas las respuestas con su frase. */
+  :global(html:not(.js)) .lr-chat__picker {
+    display: none;
+  }
+
+  .lr-chat__picker {
+    display: grid;
+    gap: 0.625rem;
+    justify-items: end;
+  }
+
+  .lr-chat__q-btn {
+    max-width: 92%;
+    min-height: 48px;
+    padding: 0.75rem 1.125rem;
+    border: 1.5px solid var(--teal-100);
+    border-radius: 1.25rem 1.25rem 0.375rem 1.25rem;
+    background: var(--cream);
+    color: var(--teal-900);
+    font: inherit;
+    font-weight: 600;
+    text-align: right;
+    cursor: pointer;
+    transition:
+      background-color 0.15s,
+      border-color 0.15s,
+      transform 0.2s;
+  }
+
+  .lr-chat__q-btn[aria-checked='true'] {
+    border-color: var(--teal-900);
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .lr-chat__q-btn:active {
+    transform: scale(0.98);
+  }
+
+  .lr-chat__reply {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: start;
+  }
+
+  .lr-chat__avatar {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    background: var(--teal-900);
+  }
+
+  .lr-chat__avatar svg {
+    width: 1rem;
+    height: auto;
+    fill: var(--orange-500);
+  }
+
+  .lr-chat__answers {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .lr-chat__answer {
+    padding: 1rem 1.125rem;
+    border-radius: 0.375rem 1.25rem 1.25rem 1.25rem;
+    background: var(--orange-100);
+    color: var(--teal-900);
+  }
+
+  .lr-chat__q {
+    margin: 0 0 0.375rem;
+    font-weight: 700;
+  }
+
+  .lr-chat__a {
+    margin: 0 0 0.75rem;
+  }
+
+  .lr-chat__typing {
+    display: none;
+  }
+
+  /* Con JS: una respuesta visible; todas comparten la celda (altura de la más larga, sin CLS). */
+  :global(.js) .lr-chat__answers {
+    grid-template-areas: 'one';
+    gap: 0;
+  }
+
+  :global(.js) .lr-chat__answer,
+  :global(.js) .lr-chat__typing {
+    grid-area: one;
+  }
+
+  :global(.js) .lr-chat__answer[hidden] {
+    display: block;
+    visibility: hidden;
+  }
+
+  :global(.js) .lr-chat__q {
+    display: none;
+  }
+
+  .lr-chat__typing {
+    align-self: start;
+    justify-self: start;
+    gap: 0.375rem;
+    padding: 1rem 1.125rem;
+    border-radius: 0.375rem 1.25rem 1.25rem 1.25rem;
+    background: var(--orange-100);
+    visibility: hidden;
+  }
+
+  :global(.js) .lr-chat__typing {
+    display: flex;
+  }
+
+  .lr-chat__typing i {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--teal-900);
+    animation: lr-dots 0.9s ease-in-out infinite;
+  }
+
+  .lr-chat__typing i:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .lr-chat__typing i:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  @keyframes lr-dots {
+    50% {
+      opacity: 0.25;
+      transform: translateY(-3px);
+    }
+  }
+
+  .lr-chat__answers.is-typing .lr-chat__typing {
+    visibility: visible;
+  }
+
+  .lr-chat__answers.is-typing .lr-chat__answer {
+    visibility: hidden;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .lr-chat__answers:not(.is-typing) .lr-chat__answer:not([hidden]) {
+      animation: lr-in 0.3s ease both;
+    }
+  }
+
+  @keyframes lr-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .lr-chat {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-areas: 'reply picker';
+      gap: 2.5rem;
+      align-items: start;
+      padding: 2rem;
+    }
+
+    .lr-chat__picker {
+      grid-area: picker;
+    }
+
+    .lr-chat__reply {
+      grid-area: reply;
+    }
+
+    .lr-chat__answer {
+      padding: 1.25rem 1.5rem;
+      font-size: 1.125rem;
+    }
+  }
+
+  /* ---------------- 5. Blog ---------------- */
+  .lr-posts {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  @media (min-width: 48rem) {
+    .lr-posts {
+      grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    }
+  }
+
+  /* ---------------- 7. Bajo el pre-estudi ---------------- */
+  .lr-after {
+    padding-block: 0 3rem;
+    background: var(--cream);
+  }
+
+  .lr-after__inner {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .lr-after__call,
+  .lr-after__other {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1rem;
+    align-items: center;
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .lr-after__call a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--orange-700);
+  }
+
+  .lr-after__other span:first-child {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lr-hero__blob,
+    .lr-house__light,
+    .lr-house__float,
+    .lr-house__line,
+    .lr-dial__needle,
+    .lr-ib__dot::before,
+    .lr-ib__item,
+    .lr-ib__hl,
+    .lr-chat__q-btn,
+    .lr-chat__typing i {
+      animation: none;
+      transition: none;
+    }
+  }
+</style>

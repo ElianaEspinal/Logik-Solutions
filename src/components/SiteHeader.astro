@@ -1,0 +1,388 @@
+---
+// Cabecera fija con menú grande (escritorio >= 1024 px) y panel a pantalla completa (móvil y tablet).
+// Textos y destinos del menú: src/config/nav.ts. Teléfono: src/config/site.ts.
+import logo from '../assets/images/logo-web.webp';
+import { navGroups, navLinks, navText, type NavIcon } from '../config/nav';
+import { pages, type Locale, type PageKey } from '../config/pages';
+import { phone } from '../config/site';
+import { useTranslations } from '../i18n/ui';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+
+interface Props {
+  lang: Locale;
+  switcherLinks: Record<Locale, string>;
+  current?: PageKey;
+  /** Destino del botón principal; por defecto, el formulario de la home. */
+  ctaHref?: string;
+}
+
+const { lang, switcherLinks, current, ctaHref } = Astro.props;
+const t = useTranslations(lang);
+const studyHref = ctaHref ?? `${pages.home[lang]}#formulari`;
+const groupActive = (items: { page: PageKey }[]) => items.some((i) => i.page === current);
+
+// Iconos de línea (24 px): trazo teal y un detalle naranja (.ico-accent).
+const icons: Record<NavIcon, string> = {
+  empresa:
+    '<path d="M3 21h18M5 21V6l7-3v18M12 9h7v12"/><path class="ico-accent" d="M8 9h1M8 13h1M8 17h1M15 13h1M15 17h1"/>',
+  comunitat:
+    '<path d="M3 21h18M4 21V8l5-3 5 3v13M14 21V11h6v10"/><path class="ico-accent" d="M7 11h1M7 15h1M10 11h1M10 15h1M17 15h0"/>',
+  llar: '<path d="m3 11 9-8 9 8M5 9.5V21h14V9.5"/><path class="ico-accent" d="M12 11.5 10 15h4l-2 3.5"/>',
+  solar:
+    '<path d="M3 21l3-9h12l3 9Z"/><path d="M9 12l-1 9M15 12l1 9M4.5 16.5h15"/><path class="ico-accent" d="M12 2v2M5.6 4.6l1.4 1.4M18.4 4.6 17 6M9 9a3 3 0 0 1 6 0"/>',
+  tramits:
+    '<path d="M8 3h8l4 4v14H4V3h4"/><path d="M16 3v4h4"/><path class="ico-accent" d="m8 14 2.5 2.5L16 11"/>',
+};
+---
+
+<header class="site-header" data-site-header data-section="header">
+  <div class="site-header__bg" aria-hidden="true"></div>
+  <div class="site-header__bar">
+    <a class="site-logo" href={pages.home[lang]}>
+      <!-- Copia ligera de logo.png (mismo dibujo, colores y margen); el margen se recorta solo con CSS. -->
+      <img src={logo.src} width={logo.width} height={logo.height} alt={t('logo.home')} fetchpriority="high" />
+    </a>
+
+    <!-- Escritorio: menú con panel desplegable -->
+    <nav class="mega" aria-label={navText.label[lang]} data-mega>
+      <ul class="mega__menu">
+        {
+          navGroups.map((group) => (
+            <li>
+              <button
+                class:list={['mega__trigger', { 'is-current': groupActive(group.items) }]}
+                type="button"
+                aria-expanded="false"
+                aria-controls="mega-panel"
+                data-mega-trigger={group.id}
+              >
+                {group.label[lang]}
+                <svg class="mega__chevron" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+            </li>
+          ))
+        }
+        {
+          navLinks.map((link) => (
+            <li>
+              <a class="mega__link" href={pages[link.page][lang]} aria-current={link.page === current ? 'page' : undefined}>
+                {link.label[lang]}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <div class="mega__panel" id="mega-panel" data-mega-panel hidden>
+        <div class="mega__inner">
+          {
+            navGroups.map((group) => (
+              <div class="mega__col" data-mega-col={group.id}>
+                <p class="mega__heading">{group.label[lang]}</p>
+                <ul>
+                  {group.items.map((item) => (
+                    <li>
+                      <a
+                        class="mega__item"
+                        href={pages[item.page][lang]}
+                        aria-current={item.page === current ? 'page' : undefined}
+                        data-cta="header_menu"
+                      >
+                        <span class="mega__icon" aria-hidden="true">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={icons[item.icon]} />
+                        </span>
+                        <span class="mega__text">
+                          <strong>{item.title[lang]}</strong>
+                          <span>{item.text[lang]}</span>
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          }
+          <div class="mega__featured tech-bg">
+            <p class="mega__featured-title">{navText.featuredTitle[lang]}</p>
+            {/* En Autoconsum fotovoltaic, sin la frase del coste: la instalación tiene coste. */}
+            <p>{current === 'autoconsum' ? navText.featuredTextSolar[lang] : navText.featuredText[lang]}</p>
+            <a class="btn btn-primary" href={studyHref} data-cta="header_menu">{navText.cta[lang]}</a>
+            <p class="mega__featured-call">
+              {navText.featuredCall[lang]} <a href={phone.tel}>{phone.display}</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="site-header__tools">
+      <a class="site-header__phone" href={phone.tel}>
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"></path></svg>
+        <span class="sr-only">{navText.call[lang]} </span><span class="site-header__number">{phone.display}</span>
+      </a>
+      <div class="site-header__lang">
+        <LanguageSwitcher lang={lang} links={switcherLinks} />
+      </div>
+      <a class="btn btn-primary site-header__cta" href={studyHref} data-cta="header">{navText.cta[lang]}</a>
+      <button class="site-header__toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" data-drawer-toggle>
+        <span class="site-header__burger" aria-hidden="true"><span></span></span>
+        <span class="sr-only" data-label-open>{navText.open[lang]}</span>
+        <span class="sr-only" data-label-close hidden>{navText.close[lang]}</span>
+      </button>
+    </div>
+  </div>
+
+</header>
+
+{/*
+  Móvil y tablet: menú a pantalla completa. Va FUERA del <header>: así ningún ancestro con
+  transform, filter o backdrop-filter (ni la cabecera sticky) condiciona su position: fixed.
+  Diálogo modal con barra propia (logo, CA | ES, cerrar) siempre visible y pie fijo con las acciones.
+*/}
+<div class="drawer" id="mobile-menu" role="dialog" aria-modal="true" aria-label={navText.label[lang]} data-drawer hidden>
+  <div class="drawer__top">
+    <a class="site-logo drawer__logo" href={pages.home[lang]}>
+      <img src={logo.src} width={logo.width} height={logo.height} alt={t('logo.home')} loading="lazy" decoding="async" />
+    </a>
+    <div class="drawer__lang">
+      <LanguageSwitcher lang={lang} links={switcherLinks} />
+    </div>
+    <button class="drawer__close" type="button" aria-label={navText.close[lang]} data-drawer-close>
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+    </button>
+  </div>
+
+  <nav class="drawer__nav" aria-label={navText.label[lang]}>
+    <ul class="drawer__links">
+      <li>
+        <a href={pages.home[lang]} aria-current={current === 'home' ? 'page' : undefined} data-cta="header_menu">
+          {pages.home.name[lang]}
+        </a>
+      </li>
+    </ul>
+    {
+      navGroups.map((group) => (
+        <div class="drawer__group">
+          <button
+            class:list={['drawer__acc', { 'is-current': groupActive(group.items) }]}
+            type="button"
+            aria-expanded="false"
+            aria-controls={`drawer-${group.id}`}
+            data-acc
+          >
+            <span>{group.label[lang]}</span>
+            <svg class="mega__chevron mega__chevron--lg" aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+          </button>
+          <ul class="drawer__sub" id={`drawer-${group.id}`} hidden>
+            {group.items.map((item) => (
+              <li>
+                <a class="drawer__item" href={pages[item.page][lang]} aria-current={item.page === current ? 'page' : undefined} data-cta="header_menu">
+                  <span class="mega__icon" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={icons[item.icon]} />
+                  </span>
+                  <span class="mega__text">
+                    <strong>{item.title[lang]}</strong>
+                    <span>{item.text[lang]}</span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))
+    }
+    <ul class="drawer__links">
+      {
+        navLinks.map((link) => (
+          <li>
+            <a href={pages[link.page][lang]} aria-current={link.page === current ? 'page' : undefined} data-cta="header_menu">
+              {link.label[lang]}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <div class="drawer__footer">
+    <a class="btn btn-primary btn-lg" href={studyHref} data-cta="header_menu">{navText.cta[lang]}</a>
+    <div class="drawer__contact">
+      <a class="btn btn-secondary" href={phone.tel}>
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"></path></svg>
+        <span>{t('cta.call')}<span class="sr-only"> {phone.display}</span></span>
+      </a>
+      <a class="btn btn-secondary" href={phone.whatsapp} rel="noopener">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.7-5A8.5 8.5 0 1 1 8 19.4Z"></path><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 1a4 4 0 0 1-2-2l1-1-1-2Z"></path></svg>
+        <span>{t('cta.whatsapp')}<span class="sr-only"> {phone.display}</span></span>
+      </a>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  const header = document.querySelector<HTMLElement>('[data-site-header]')!;
+  const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // --- Cabecera compacta al hacer scroll (solo transform: sin CLS) -----------
+  let ticking = false;
+  const onScroll = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      if (!document.documentElement.classList.contains('nav-open')) header.classList.toggle('is-scrolled', window.scrollY > 8);
+      ticking = false;
+    });
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // --- Escritorio: panel desplegable -----------------------------------------
+  const mega = header.querySelector<HTMLElement>('[data-mega]')!;
+  const panel = header.querySelector<HTMLElement>('[data-mega-panel]')!;
+  const triggers = [...header.querySelectorAll<HTMLButtonElement>('[data-mega-trigger]')];
+  let active: HTMLButtonElement | null = null;
+  let openTimer = 0;
+  let closeTimer = 0;
+
+  const openPanel = (trigger: HTMLButtonElement) => {
+    clearTimeout(closeTimer);
+    active = trigger;
+    triggers.forEach((t) => t.setAttribute('aria-expanded', String(t === trigger)));
+    panel.dataset.active = trigger.dataset.megaTrigger;
+    if (panel.hidden) {
+      panel.hidden = false;
+      if (!reduceMotion()) {
+        panel.classList.remove('is-entering');
+        void panel.offsetWidth; // reinicia la animación
+        panel.classList.add('is-entering');
+      }
+    }
+  };
+  const closePanel = (focusTrigger = false) => {
+    clearTimeout(openTimer);
+    if (panel.hidden) return;
+    panel.hidden = true;
+    triggers.forEach((t) => t.setAttribute('aria-expanded', 'false'));
+    if (focusTrigger) active?.focus();
+    active = null;
+  };
+
+  triggers.forEach((trigger) => {
+    trigger.addEventListener('click', () => {
+      clearTimeout(openTimer);
+      if (!panel.hidden && active === trigger) closePanel();
+      else openPanel(trigger);
+    });
+    // Apertura al pasar el cursor, con retardo para evitar aperturas accidentales.
+    trigger.addEventListener('pointerenter', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      clearTimeout(closeTimer);
+      clearTimeout(openTimer);
+      openTimer = window.setTimeout(() => openPanel(trigger), panel.hidden ? 140 : 0);
+    });
+    trigger.addEventListener('pointerleave', () => clearTimeout(openTimer));
+  });
+  // Al salir del menú y del panel con el ratón, se cierra (con margen para cruzar el hueco).
+  mega.addEventListener('pointerleave', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    clearTimeout(openTimer);
+    closeTimer = window.setTimeout(() => closePanel(), 220);
+  });
+  mega.addEventListener('pointerenter', () => clearTimeout(closeTimer));
+  document.addEventListener('click', (e) => {
+    if (!mega.contains(e.target as Node)) closePanel();
+  });
+  mega.addEventListener('focusout', (e) => {
+    if (!mega.contains(e.relatedTarget as Node | null)) closePanel();
+  });
+
+  // --- Móvil: menú a pantalla completa (diálogo modal) ------------------------
+  // Fuera del <header>: su position: fixed es siempre relativa a la ventana.
+  // Al abrir: bloquea el scroll del fondo solo en <html> (bloquearlo también en <body>
+  // convertía el body en contenedor de scroll y la cabecera sticky se iba con él: por eso
+  // desaparecían el logo y el botón de cerrar), compensa el ancho de la barra de scroll,
+  // deja inerte el resto de la página y atrapa el foco. Al cerrar, devuelve el foco.
+  const toggle = header.querySelector<HTMLButtonElement>('[data-drawer-toggle]')!;
+  const drawer = document.querySelector<HTMLElement>('[data-drawer]')!;
+  const closeBtn = drawer.querySelector<HTMLButtonElement>('[data-drawer-close]')!;
+  const labelOpen = toggle.querySelector<HTMLElement>('[data-label-open]')!;
+  const labelClose = toggle.querySelector<HTMLElement>('[data-label-close]')!;
+  const root = document.documentElement;
+  const isOpen = () => !drawer.hidden;
+
+  const focusables = () =>
+    [...drawer.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')].filter((el) => el.offsetParent !== null);
+
+  // Todo lo que no es el menú queda inerte (cabecera, main, pie, barra móvil, avisos…).
+  const background = () => [...document.body.children].filter((el): el is HTMLElement => el !== drawer && el instanceof HTMLElement);
+
+  const setDrawer = (open: boolean, returnFocus = true) => {
+    if (open === isOpen()) return;
+    if (open) {
+      const scrollbar = window.innerWidth - root.clientWidth;
+      root.style.setProperty('--scrollbar-comp', `${scrollbar}px`);
+      header.classList.remove('is-scrolled'); // cabecera completa mientras el menú está abierto
+    }
+    drawer.hidden = !open;
+    toggle.setAttribute('aria-expanded', String(open));
+    labelOpen.hidden = open;
+    labelClose.hidden = !open;
+    header.classList.toggle('is-open', open);
+    root.classList.toggle('nav-open', open);
+    background().forEach((el) => (el.inert = open));
+    if (open) {
+      if (!reduceMotion()) {
+        drawer.classList.remove('is-entering');
+        void drawer.offsetWidth;
+        drawer.classList.add('is-entering');
+      }
+      closeBtn.focus();
+    } else {
+      root.style.removeProperty('--scrollbar-comp');
+      onScroll();
+      if (returnFocus) toggle.focus();
+    }
+  };
+
+  toggle.addEventListener('click', () => setDrawer(!isOpen()));
+  closeBtn.addEventListener('click', () => setDrawer(false));
+  drawer.querySelectorAll<HTMLButtonElement>('[data-acc]').forEach((acc) => {
+    acc.addEventListener('click', () => {
+      const open = acc.getAttribute('aria-expanded') !== 'true';
+      acc.setAttribute('aria-expanded', String(open));
+      document.getElementById(acc.getAttribute('aria-controls')!)!.hidden = !open;
+    });
+  });
+  // Cualquier enlace cierra el menú (también los de anclas de la misma página, como #formulari).
+  drawer.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((a) => a.addEventListener('click', () => setDrawer(false, false)));
+
+  // Escape cierra; Tab queda dentro del menú abierto.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (isOpen()) setDrawer(false);
+      else if (!panel.hidden) closePanel(true);
+    }
+    if (e.key === 'Tab' && isOpen()) {
+      const items = focusables();
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (!drawer.contains(document.activeElement)) {
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  });
+
+  // Al pasar a escritorio (≥ 1024 px) con el menú abierto, se cierra.
+  window.matchMedia('(min-width: 64rem)').addEventListener('change', (mq) => {
+    if (mq.matches && isOpen()) setDrawer(false, false);
+    if (!mq.matches) closePanel();
+  });
+</script>

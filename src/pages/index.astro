@@ -1,0 +1,179 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HomePage from '../components/home/HomePage.astro';
+import { homeSchema } from '../components/home/schema';
+import type { HomeContent } from '../components/home/types';
+import logo from '../assets/images/logo-web.webp';
+import { preStudyTexts } from '../components/home/pre-study-texts';
+import { safeJsonLd } from '../lib/json-ld';
+
+// Textos de docs/home-textos.md (català), copiados tal cual.
+const title = 'Consultoria energètica a Girona | Logik Solutions';
+const description =
+  "Revisem la teva factura de llum i gas, comparem ofertes i fem el seguiment tot l'any. Per a empreses, comunitats i llars a Girona i a tot Espanya.";
+
+const content: HomeContent = {
+  hero: {
+    tag: 'Consultoria energètica a Girona i a tot Espanya',
+    title: "Venim a veure't i revisem la teva factura.",
+    titleMark: "veure't",
+    lead: "Comparem ofertes de diverses comercialitzadores i fem el seguiment tot l'any. Per a empreses, comunitats i llars, a Girona i a tot Espanya.",
+    cta: 'Revisa la meva factura →',
+    ctaNote: 'Sense cost per a tu: ens remunera la comercialitzadora.',
+    call: 'Truca al',
+  },
+  logos: { title: 'Empreses que ja confien en nosaltres' },
+  needs: {
+    eyebrow: 'Què necessites?',
+    title: 'Assessoria energètica per a empreses, comunitats i llars a Girona',
+    intro: 'Tria el teu cas i et diem què mirem.',
+    lookLabel: 'Què mirem',
+    items: {
+      empreses: {
+        title: 'Tinc una empresa o un negoci',
+        text: 'Mirem la potència, els horaris de consum i el contracte, i et diem què té sentit canviar.',
+        look: ['Potència contractada i potència que fas servir', 'Franges horàries de consum', 'Condicions i venciment del contracte'],
+        link: 'Empreses i pimes',
+      },
+      comunitats: {
+        title: 'Administro una comunitat',
+        text: "Un sol interlocutor per a l'administrador i els veïns: ascensors, enllumenat i zones comunes.",
+        look: ['Subministraments de les zones comunes', "Coordinació amb l'administrador", 'Seguiment mensual i anual'],
+        link: 'Comunitats de veïns',
+      },
+      llars: {
+        title: 'Vull entendre la meva factura',
+        text: 'Llum i gas explicats amb paraules senzilles i sense lletra petita.',
+        look: ['Què pagues per potència i què per energia', "Si la tarifa s'adapta als teus horaris", 'Els tràmits els fem nosaltres'],
+        link: 'Llars',
+      },
+      autoconsum: {
+        title: 'Vull plaques solars',
+        text: "Primer estudiem el teu consum. Si l'autoconsum té sentit, la instal·lació la fan enginyers i especialistes.",
+        look: ['Estudi del teu consum', 'Enginyers i instal·ladors especialistes', 'Què passa amb els excedents'],
+        link: 'Autoconsum fotovoltaic',
+      },
+    },
+  },
+  // Pre-estudi: textos compartidos con otras páginas (src/components/home/pre-study-texts.ts).
+  preStudy: preStudyTexts.ca,
+  stats: {
+    items: [
+      { value: '+2.000', label: 'clients' },
+      { value: '+10', label: 'anys al sector' },
+      { value: '0 €', label: 'de cost per a tu*' },
+      { value: 'Girona', label: 'visites presencials' },
+    ],
+    note: '*Ens remunera la comercialitzadora.',
+  },
+  year: {
+    eyebrow: 'El teu any amb Logik',
+    title: 'Seguiment de la teva factura de la llum i el gas, mes a mes',
+    intro: "No ens limitem a canviar-te de tarifa: la teva factura es revisa durant tot l'any.",
+    month: 'Mes {n}',
+    middle: 'Mesos 2 a 10',
+    first: [
+      { title: 'Revisió', text: "Mirem la teva factura i el teu contracte per saber des d'on partim." },
+      { title: 'Comparativa', text: "Posem les ofertes de diverses comercialitzadores una al costat de l'altra." },
+      { title: 'Gestió', text: 'Ens ocupem dels tràmits amb la companyia: titularitat, potència i altes.' },
+    ],
+    follow: { title: 'Seguiment', text: 'Cada mes revisem la teva factura. Si hi ha una incidència, la resolem nosaltres.' },
+    renew: { title: 'Renovació', text: "T'avisem per renovar i no se't passi la data." },
+    flag: "T'avisem per renovar",
+    link: 'Veure com treballem',
+  },
+  compare: {
+    eyebrow: 'Pel teu compte o amb Logik',
+    title: "Què canvia quan deixes la teva factura en mans d'una consultoria energètica",
+    topic: 'Tema',
+    self: 'Pel teu compte',
+    logik: 'Amb Logik',
+    rows: [
+      {
+        topic: 'Ofertes',
+        self: 'Obrir les pàgines de cada comercialitzadora i comparar tarifes una a una',
+        logik: 'Comparem per tu les ofertes de diverses comercialitzadores',
+      },
+      {
+        topic: 'Tràmits',
+        self: 'Trucades, esperes i formularis amb la companyia',
+        logik: "Ens n'ocupem nosaltres, amb tracte directe amb els administradors de cada companyia",
+      },
+      { topic: 'Després del canvi', self: 'Ningú no comprova si la factura és la que tocava', logik: 'Revisió mensual i anual de la teva factura' },
+      { topic: 'Renovació', self: "El contracte venç i pot passar que no te n'adonis", logik: "T'avisem al mes 11" },
+      { topic: 'Incidències', self: 'Quan alguna cosa falla, toca trucar', logik: 'Les resolem nosaltres, incloses al servei' },
+    ],
+    close: 'I tot sense cost per a tu: ens remunera la comercialitzadora.',
+  },
+  gestions: {
+    title: 'Tu decideixes què canvia. Nosaltres fem els tràmits.',
+    text: 'Canvis de titularitat, pujades i baixades de potència i altes noves. Tenim tracte directe amb els administradors de cada companyia, i això agilita els tràmits.',
+    rows: ['Canvi de titularitat', 'Pujada o baixada de potència', 'Alta nova'],
+    states: ['Sol·licitat', 'En tràmit', 'Fet'],
+    link: 'Veure les gestions',
+  },
+  solar: {
+    title: 'Plaques solars per a empreses i llars',
+    text: "Estudiem el teu consum i et diem si l'autoconsum té sentit per al teu cas. La instal·lació la fan enginyers i especialistes.",
+    diagram: { sun: 'Sol', panels: 'plaques', home: 'casa o negoci', surplus: 'excedents' },
+    link: "Veure l'autoconsum",
+  },
+  blog: { title: 'Per entendre la teva factura', link: 'Veure tots els articles' },
+  faq: {
+    eyebrow: 'Dubtes?',
+    title: 'Preguntes freqüents sobre consultoria energètica',
+    intro: 'Les respostes a les preguntes que més ens fan.', // [Claude]
+    cardTitle: 'No trobes la teva pregunta?',
+    cardText: "Escriu-nos per WhatsApp o truca'ns al {phone}.",
+    items: [
+      { q: 'Com cobreu?', a: 'El servei no té cost per a tu. Ens remunera la comercialitzadora amb la qual contractes.' },
+      {
+        q: 'Què hi ha a la factura de la llum?',
+        a: "Bàsicament tres blocs: el terme de potència (el que pagues per tenir-la contractada, la facis servir o no), el terme d'energia (el que consumeixes realment) i els impostos i altres conceptes, com el lloguer de l'equip de mesura. Amb una factura recent veiem si cadascun té sentit en el teu cas.",
+      },
+      {
+        q: 'Com sé si tinc la potència adequada?',
+        a: "La potència contractada és el màxim que pots fer servir alhora. Si és més alta del que necessites, la pagues cada mes igualment; si és massa baixa, et pot saltar el general. Amb una factura recent i el teu consum, t'ho podem valorar.",
+      },
+      { q: 'Treballeu amb empreses, comunitats i llars?', a: 'Sí. Treballem amb empreses i pimes, comunitats de veïns i llars.' },
+      {
+        q: 'On treballeu?',
+        a: 'La nostra base és a Girona i fem visites presencials a localitats properes. També treballem a tot Catalunya i a tot Espanya.',
+      },
+      { q: 'Haig de canviar de companyia?', a: 'No necessàriament. Primer revisem el teu contracte i et diem què té sentit en el teu cas.' },
+      {
+        q: 'Quines gestions feu?',
+        a: 'Canvis de titularitat, pujades i baixades de potència i altes noves, amb tracte directe amb els administradors de cada companyia.',
+      },
+      {
+        q: 'Què inclou el seguiment anual?',
+        a: 'Seguiment mensual i anual, la renovació agendada al mes 11 i la gestió de les incidències que hi puguin haver.',
+      },
+      {
+        q: 'Feu instal·lacions de plaques solars?',
+        a: "Sí, per a pimes i llars, amb enginyers i especialistes en instal·lació. La instal·lació té un cost; abans t'expliquem si té sentit pel teu consum.",
+      },
+      {
+        q: 'Què necessito per començar?',
+        a: "Una factura recent. Pots enviar-la pel formulari i la farem servir per preparar el teu estudi, d'acord amb la nostra política de privacitat.",
+      },
+    ],
+  },
+  closing: {
+    title: 'Parlem?',
+    text: "Deixa'ns les teves dades i et truquem. Sense cost per a tu.",
+    points: [
+      'Sense cost per a tu: ens remunera la comercialitzadora',
+      'Ens ocupem dels tràmits amb la companyia',
+      'Seguiment mensual i anual',
+    ],
+  },
+};
+const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
+const schema = homeSchema(content, 'ca', pageUrl, description, new URL(logo.src, Astro.site).href);
+---
+
+<BaseLayout lang="ca" pageKey="home" title={title} description={description}>
+  <Fragment slot="head" set:html={`<script type="application/ld+json">${safeJsonLd(schema)}</script>`} />
+  <HomePage lang="ca" content={content} />
+</BaseLayout>

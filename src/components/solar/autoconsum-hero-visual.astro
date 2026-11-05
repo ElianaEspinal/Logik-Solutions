@@ -1,0 +1,346 @@
+---
+// Visual del hero de Autoconsum (sol → placas → casa → excedentes): SVG + CSS, sin cifras.
+// Contenedor role=img; dentro, todo aria-hidden. Paralaje y pausa fuera de pantalla con JS.
+interface Props {
+  label: string;
+  tags: { sun: string; panels: string; home: string; surplus: string };
+}
+const { label, tags } = Astro.props;
+const rays = Array.from({ length: 12 }, (_, i) => i * 30);
+const panels = [0, 1].flatMap((r) => [0, 1, 2].map((c) => ({ x: 16 + c * 98, y: 8 + r * 26, i: r * 3 + c })));
+const toHouse = 'M231 292C236 320 258 338 278 350';
+const surplus = 'M400 246C450 254 510 252 600 236';
+---
+
+<div class="ahv" role="img" aria-label={label} data-ahv>
+  <span class="ahv__flare" aria-hidden="true"></span>
+  <svg viewBox="0 0 560 460" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="ahv-g" x1="0" y1="0" x2="0" y2="1">
+        <stop class="ahv__s1" offset="0"></stop><stop class="ahv__s2" offset="1"></stop>
+      </linearGradient>
+      <pattern id="ahv-grid" width="12" height="12" patternUnits="userSpaceOnUse">
+        <path class="ahv__gridline" d="M12 0V12M0 12H12"></path>
+      </pattern>
+      {panels.map((p) => <clipPath id={`ahv-c${p.i}`}><rect x={p.x} y={p.y} width="92" height="24" rx="3" /></clipPath>)}
+    </defs>
+
+    <g class="ahv__l ahv__l--house">
+      <path class="ahv__house" d="M110 370 380 272V420H110Z"></path>
+      <rect class="ahv__door" x="150" y="366" width="32" height="54" rx="4"></rect>
+      <rect class="ahv__win" x="260" y="328" width="44" height="36" rx="4"></rect>
+      <rect class="ahv__light" x="260" y="328" width="44" height="36" rx="4"></rect>
+      <path class="ahv__ground" d="M30 420H500"></path>
+    </g>
+
+    <path class="ahv__flow" d={toHouse}></path>
+    <path class="ahv__flow ahv__flow--out" d={surplus}></path>
+
+    <g class="ahv__l ahv__l--panels">
+      <g transform="translate(70 300) rotate(-20)">
+        <rect class="ahv__slab" x="0" y="0" width="320" height="64" rx="6"></rect>
+        {
+          panels.map((p) => (
+            <g>
+              <rect class="ahv__panel" x={p.x} y={p.y} width="92" height="24" rx="3" />
+              <rect x={p.x} y={p.y} width="92" height="24" rx="3" fill="url(#ahv-grid)" />
+              <g clip-path={`url(#ahv-c${p.i})`}>
+                <rect class="ahv__shine" x={p.x - 40} y={p.y - 4} width="22" height="32" style={`--d:${p.i * 0.35}s`} />
+              </g>
+            </g>
+          ))
+        }
+      </g>
+    </g>
+
+    <g class="ahv__l ahv__l--sun">
+      <path class="ahv__beam" d="M452 88 128 278"></path>
+      <path class="ahv__beam" d="M456 96 222 246"></path>
+      <path class="ahv__beam" d="M462 102 316 212"></path>
+      <circle class="ahv__halo" cx="470" cy="70" r="56"></circle>
+      <g class="ahv__rays">
+        {rays.map((deg) => <path d="M470 22V8" transform={`rotate(${deg} 470 70)`} />)}
+      </g>
+      <circle class="ahv__sun" cx="470" cy="70" r="34"></circle>
+    </g>
+
+    <g class="ahv__dots">
+      {[0, 1, 2].map((i) => <circle class="ahv__dot" r="6" style={`--o:${i}`} />)}
+      {[0, 1].map((i) => <circle class="ahv__dot ahv__dot--out" r="4" style={`--o:${i}`} />)}
+    </g>
+  </svg>
+
+  <div class="ahv__l ahv__l--tags" aria-hidden="true">
+    <span class="ahv__tag" style="--t:0;left:52%;top:3%">{tags.sun}</span>
+    <span class="ahv__tag" style="--t:1;left:4%;top:36%">{tags.panels}</span>
+    <span class="ahv__tag" style="--t:2;left:24%;top:80%">{tags.home}</span>
+    <span class="ahv__tag" style="--t:3;right:1%;top:60%">{tags.surplus}</span>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-ahv]').forEach((el) => {
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(([e]) => el.toggleAttribute('data-paused', !e.isIntersecting)).observe(el);
+    }
+    const ok = matchMedia('(pointer: fine)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!ok) return;
+    const zone = el.closest('section') ?? el;
+    let frame = 0;
+    let x = 0;
+    let y = 0;
+    zone.addEventListener('pointermove', (ev) => {
+      const r = el.getBoundingClientRect();
+      x = Math.max(-1, Math.min(1, ((ev.clientX - r.left) / r.width) * 2 - 1));
+      y = Math.max(-1, Math.min(1, ((ev.clientY - r.top) / r.height) * 2 - 1));
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        el.style.setProperty('--px', x.toFixed(3));
+        el.style.setProperty('--py', y.toFixed(3));
+      });
+    });
+    zone.addEventListener('pointerleave', () => {
+      el.style.setProperty('--px', '0');
+      el.style.setProperty('--py', '0');
+    });
+  });
+</script>
+
+<style>
+  .ahv {
+    --px: 0;
+    --py: 0;
+    position: relative;
+    width: 100%;
+    aspect-ratio: 560 / 460;
+  }
+  .ahv svg {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .ahv__flare {
+    position: absolute;
+    top: 15%;
+    left: 84%;
+    width: 64%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-500) 32%, transparent), transparent);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .ahv__l {
+    transition: transform 0.3s ease-out;
+  }
+  .ahv__l--sun {
+    transform: translate(calc(var(--px) * 14px), calc(var(--py) * 14px));
+  }
+  .ahv__l--tags {
+    position: absolute;
+    inset: 0;
+    transform: translate(calc(var(--px) * 10px), calc(var(--py) * 10px));
+  }
+  .ahv__l--panels {
+    transform: translate(calc(var(--px) * 8px), calc(var(--py) * 8px));
+  }
+  .ahv__l--house {
+    transform: translate(calc(var(--px) * 4px), calc(var(--py) * 4px));
+  }
+  .ahv__s1 {
+    stop-color: var(--teal-700);
+  }
+  .ahv__s2 {
+    stop-color: var(--teal-900);
+  }
+  .ahv__gridline {
+    fill: none;
+    stroke: var(--teal-100);
+    stroke-opacity: 0.18;
+    stroke-width: 1;
+  }
+  .ahv__house {
+    fill: var(--teal-700);
+    stroke: color-mix(in srgb, var(--white) 22%, transparent);
+    stroke-width: 1.5;
+  }
+  .ahv__door,
+  .ahv__win {
+    fill: var(--teal-900);
+  }
+  .ahv__light {
+    fill: var(--orange-500);
+    opacity: 0.85;
+    animation: ahv-flicker 4s ease-in-out infinite;
+  }
+  .ahv__ground {
+    stroke: color-mix(in srgb, var(--white) 25%, transparent);
+    stroke-width: 2;
+  }
+  .ahv__slab {
+    fill: var(--teal-900);
+    stroke: color-mix(in srgb, var(--white) 25%, transparent);
+  }
+  .ahv__panel {
+    fill: url(#ahv-g);
+    stroke: color-mix(in srgb, var(--teal-100) 45%, transparent);
+  }
+  .ahv__shine {
+    fill: var(--white);
+    opacity: 0.12;
+    transform: skewX(-20deg);
+    animation: ahv-shine 4s ease-in-out infinite;
+    animation-delay: var(--d);
+  }
+  .ahv__beam {
+    fill: none;
+    stroke: var(--orange-500);
+    stroke-width: 3;
+    stroke-dasharray: 10 12;
+    stroke-linecap: round;
+    opacity: 0.55;
+    animation: ahv-dash 3s linear infinite;
+  }
+  .ahv__halo {
+    fill: color-mix(in srgb, var(--orange-500) 25%, transparent);
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: ahv-breathe 5s ease-in-out infinite;
+  }
+  .ahv__rays {
+    stroke: var(--orange-500);
+    stroke-width: 4;
+    stroke-linecap: round;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: ahv-spin 60s linear infinite;
+  }
+  .ahv__sun {
+    fill: var(--orange-500);
+  }
+  .ahv__flow {
+    fill: none;
+    stroke: var(--orange-500);
+    stroke-width: 3;
+    stroke-opacity: 0.45;
+    stroke-linecap: round;
+  }
+  .ahv__flow--out {
+    stroke-width: 2;
+    stroke-opacity: 0.35;
+    stroke-dasharray: 2 8;
+  }
+  .ahv__dot {
+    display: none;
+    fill: var(--orange-500);
+  }
+  .ahv__dot--out {
+    fill: var(--orange-100);
+  }
+  @supports (offset-path: path('M0 0')) {
+    .ahv__dot {
+      display: inline;
+      transform-box: view-box;
+      offset-path: path('M231 292C236 320 258 338 278 350');
+      offset-rotate: 0deg;
+      offset-distance: calc(var(--o) * 33%);
+      animation: ahv-travel 3s linear infinite;
+      animation-delay: calc(var(--o) * -1s);
+    }
+    .ahv__dot--out {
+      offset-path: path('M400 246C450 254 510 252 600 236');
+      offset-distance: calc(var(--o) * 50%);
+      animation-delay: calc(var(--o) * -1.5s);
+    }
+  }
+  .ahv__tag {
+    position: absolute;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--white) 30%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--teal-900) 55%, transparent);
+    backdrop-filter: blur(6px);
+    color: var(--white);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: nowrap;
+    animation: ahv-float 6s ease-in-out infinite;
+    animation-delay: calc(var(--t) * -1.5s);
+  }
+  .ahv[data-paused] *,
+  .ahv[data-paused] *::before {
+    animation-play-state: paused;
+  }
+  @keyframes ahv-flicker {
+    50% {
+      opacity: 1;
+    }
+  }
+  @keyframes ahv-shine {
+    0% {
+      transform: skewX(-20deg) translateX(0);
+    }
+    60%,
+    100% {
+      transform: skewX(-20deg) translateX(150px);
+    }
+  }
+  @keyframes ahv-dash {
+    to {
+      stroke-dashoffset: -44;
+    }
+  }
+  @keyframes ahv-breathe {
+    0%,
+    100% {
+      opacity: 0.7;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.08);
+    }
+  }
+  @keyframes ahv-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes ahv-travel {
+    from {
+      offset-distance: 0%;
+    }
+    to {
+      offset-distance: 100%;
+    }
+  }
+  @keyframes ahv-float {
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ahv *,
+    .ahv__l {
+      animation: none !important;
+      transition: none !important;
+    }
+    .ahv__l {
+      transform: none !important;
+    }
+    .ahv__light {
+      opacity: 1;
+    }
+    .ahv__beam {
+      stroke-dasharray: none;
+      opacity: 0.3;
+    }
+    .ahv__shine {
+      display: none;
+    }
+  }
+</style>

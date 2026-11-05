@@ -1,0 +1,87 @@
+---
+// Avís legal (LSSI, art. 10). Datos del titular en src/config/legal.ts.
+import LegalPage from '../components/LegalPage.astro';
+import { legal } from '../config/legal';
+import { pages } from '../config/pages';
+---
+
+<LegalPage
+  lang="ca"
+  pageKey="avisLegal"
+  title="Avís legal | Logik Solutions"
+  description="Qui és el titular del web de Logik Solutions, en quines condicions el pots fer servir i qui en té els drets sobre els continguts."
+  heading="Avís legal"
+  ownerTitle="Titular del web"
+  registry
+>
+  <p>
+    Aquest avís recull les dades del titular de {legal.domain} i les condicions d'ús del web, tal com demana la Llei
+    34/2002 de serveis de la societat de la informació i de comerç electrònic (LSSI).
+  </p>
+
+  <h2>Què fem</h2>
+  <p>{legal.tradeName} és una consultoria energètica de {legal.location}. Des d'aquest web expliquem i oferim:</p>
+  <ul>
+    <li>consultoria i assessorament energètic: revisem factures i comparem ofertes de comercialitzadores;</li>
+    <li>gestions amb les companyies: canvis de titular, de potència i altes noves;</li>
+    <li>instal·lacions d'autoconsum fotovoltaic per a empreses, comunitats i llars.</li>
+  </ul>
+
+  <h2>Condicions d'ús</h2>
+  <p>Pots navegar pel web lliurement i sense registrar-te. Si el fas servir, et comprometes a:</p>
+  <ul>
+    <li>fer-ne un ús d'acord amb la llei i amb aquestes condicions;</li>
+    <li>no enviar dades falses ni de terceres persones sense el seu permís;</li>
+    <li>no fer res que pugui danyar el web, impedir-ne el funcionament o accedir a parts que no són públiques.</li>
+  </ul>
+  <p>
+    Podem canviar, actualitzar o retirar continguts del web sense avís previ. Com tractem les teves dades ho expliquem a
+    la <a href={pages.privacitat.ca}>política de privacitat</a>, i les cookies, a la
+    <a href={pages.cookies.ca}>política de cookies</a>.
+  </p>
+
+  <h2>Propietat intel·lectual i industrial</h2>
+  <p>
+    Els textos, el disseny, el logotip, les imatges i la resta de continguts del web són de {legal.holder} o de les
+    persones i empreses que ens n'han donat llicència. Els logotips dels clients es mostren amb el seu permís i continuen
+    sent de les seves empreses.
+  </p>
+  <p>
+    Pots consultar-los i compartir-ne l'enllaç. Per copiar-los, modificar-los o fer-ne un ús comercial necessites la
+    nostra autorització per escrit.
+  </p>
+
+  <h2>Responsabilitat</h2>
+  <ul>
+    <li>
+      La informació del web és orientativa i general. No substitueix l'estudi del teu cas concret, que fem a partir de
+      les teves factures.
+    </li>
+    <li>
+      Qualsevol xifra d'estalvi que aparegui és una estimació orientativa, no una promesa: el resultat real depèn del teu
+      consum, de les tarifes de cada moment i de les condicions de cada companyia.
+    </li>
+    <li>
+      La normativa del sector energètic canvia sovint. Revisem els continguts, però algun pot quedar desactualitzat
+      entre una revisió i la següent.
+    </li>
+    <li>
+      Intentem que el web funcioni sempre, però no podem garantir que no hi hagi interrupcions o errors tècnics.
+    </li>
+  </ul>
+
+  <h2>Enllaços a altres webs</h2>
+  <p>
+    Alguns continguts enllacen a webs d'altres organismes o empreses, sobretot com a font de la informació. Ho fem per
+    facilitar-te la consulta: no vol dir que les recomanem ni que en siguem responsables, i no controlem els seus
+    continguts ni les seves polítiques.
+  </p>
+
+  {/* PENDIENTE DE REVISIÓN LEGAL: redacción prudente de ley aplicable y jurisdicción (marcador en legal.ts). */}
+  <h2>Llei aplicable i jurisdicció</h2>
+  <p>
+    Aquest web es regeix per la legislació espanyola. Si sorgeix algun desacord, mirarem primer de resoldre'l parlant
+    amb tu. Si no és possible, serà competent el jutjat o tribunal que correspongui segons la llei. Si actues com a
+    consumidor, pots acudir sempre als jutjats del teu domicili.
+  </p>
+</LegalPage>

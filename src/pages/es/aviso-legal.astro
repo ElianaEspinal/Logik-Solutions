@@ -1,0 +1,85 @@
+---
+// Aviso legal (LSSI, art. 10). Datos del titular en src/config/legal.ts.
+import LegalPage from '../../components/LegalPage.astro';
+import { legal } from '../../config/legal';
+import { pages } from '../../config/pages';
+---
+
+<LegalPage
+  lang="es"
+  pageKey="avisLegal"
+  title="Aviso legal | Logik Solutions"
+  description="Quién es el titular de la web de Logik Solutions, en qué condiciones puedes usarla y a quién pertenecen sus contenidos."
+  heading="Aviso legal"
+  ownerTitle="Titular de la web"
+  registry
+>
+  <p>
+    En este aviso tienes los datos del titular de {legal.domain} y las condiciones de uso de la web, como exige la Ley
+    34/2002 de servicios de la sociedad de la información y de comercio electrónico (LSSI).
+  </p>
+
+  <h2>A qué nos dedicamos</h2>
+  <p>{legal.tradeName} es una consultoría energética de {legal.location}. En esta web explicamos y ofrecemos:</p>
+  <ul>
+    <li>consultoría y asesoramiento energético: revisamos facturas y comparamos ofertas de comercializadoras;</li>
+    <li>gestiones con las compañías: cambios de titular, de potencia y altas nuevas;</li>
+    <li>instalaciones de autoconsumo fotovoltaico para empresas, comunidades y hogares.</li>
+  </ul>
+
+  <h2>Condiciones de uso</h2>
+  <p>Puedes navegar por la web libremente y sin registrarte. Al usarla, te comprometes a:</p>
+  <ul>
+    <li>usarla conforme a la ley y a estas condiciones;</li>
+    <li>no enviar datos falsos ni datos de otras personas sin su permiso;</li>
+    <li>no hacer nada que pueda dañar la web, impedir que funcione o acceder a zonas que no son públicas.</li>
+  </ul>
+  <p>
+    Podemos cambiar, actualizar o retirar contenidos sin aviso previo. Cómo tratamos tus datos lo explicamos en la
+    <a href={pages.privacitat.es}>política de privacidad</a>, y las cookies, en la
+    <a href={pages.cookies.es}>política de cookies</a>.
+  </p>
+
+  <h2>Propiedad intelectual e industrial</h2>
+  <p>
+    Los textos, el diseño, el logotipo, las imágenes y el resto de contenidos de la web pertenecen a {legal.holder} o a
+    las personas y empresas que nos han dado licencia para usarlos. Los logotipos de clientes se muestran con su permiso
+    y siguen siendo de sus empresas.
+  </p>
+  <p>
+    Puedes consultarlos y compartir el enlace. Para copiarlos, modificarlos o usarlos con fines comerciales necesitas
+    nuestra autorización por escrito.
+  </p>
+
+  <h2>Responsabilidad</h2>
+  <ul>
+    <li>
+      La información de la web es orientativa y general. No sustituye al estudio de tu caso, que hacemos a partir de tus
+      facturas.
+    </li>
+    <li>
+      Cualquier cifra de ahorro que aparezca es una estimación orientativa, no una promesa: el resultado real depende de
+      tu consumo, de las tarifas de cada momento y de las condiciones de cada compañía.
+    </li>
+    <li>
+      La normativa del sector energético cambia a menudo. Revisamos los contenidos, pero alguno puede quedar
+      desactualizado entre una revisión y la siguiente.
+    </li>
+    <li>Procuramos que la web funcione siempre, pero no podemos garantizar que no haya cortes o errores técnicos.</li>
+  </ul>
+
+  <h2>Enlaces a otras webs</h2>
+  <p>
+    Algunos contenidos enlazan a webs de organismos o empresas, sobre todo como fuente de la información. Lo hacemos
+    para que puedas consultarla: no significa que las recomendemos ni que respondamos de ellas, y no controlamos sus
+    contenidos ni sus políticas.
+  </p>
+
+  {/* PENDIENTE DE REVISIÓN LEGAL: redacción prudente de ley aplicable y jurisdicción (marcador en legal.ts). */}
+  <h2>Ley aplicable y jurisdicción</h2>
+  <p>
+    Esta web se rige por la legislación española. Si surge algún desacuerdo, intentaremos primero resolverlo hablando
+    contigo. Si no es posible, será competente el juzgado o tribunal que corresponda según la ley. Si actúas como
+    consumidor, siempre puedes acudir a los juzgados de tu domicilio.
+  </p>
+</LegalPage>

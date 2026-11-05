@@ -1,0 +1,591 @@
+---
+// Hero de la home (docs/home-textos.md, "Hero: versión definitiva"). Cinco elementos:
+// etiqueta (dentro del H1, con la palabra clave), titular, subtítulo, botón principal con
+// microtexto y un enlace discreto de llamada. Un único elemento visual: el rayo con su fondo.
+//
+// Rendimiento: el titular y el botón se pintan sin esperar a ningún JS. La aparición palabra
+// a palabra es CSS y arranca con opacidad 0,15 (nunca 0), para que el titular cuente como
+// pintado desde el primer fotograma (LCP) y no quede invisible si algo falla.
+// El parallax (≤ 12 px, solo escritorio con ratón) es el único JS, y solo mueve el gráfico.
+import { heroTarget } from '../../config/home';
+import type { Locale } from '../../config/pages';
+import { phone } from '../../config/site';
+import type { HomeContent } from './types';
+
+interface Props {
+  lang: Locale;
+  content: HomeContent['hero'];
+}
+
+const { lang, content: c } = Astro.props;
+const words = c.title.split(' ');
+const ctaText = c.cta.replace(/\s*→$/, '');
+---
+
+<section class="hero tech-bg" aria-labelledby="hero-title" data-section="hero">
+  <!-- Fondo: malla de degradados que se desplaza muy despacio y líneas de energía. -->
+  <div class="hero__mesh" aria-hidden="true" data-anim>
+    <span class="hero__blob hero__blob--a"></span>
+    <span class="hero__blob hero__blob--b"></span>
+    <span class="hero__blob hero__blob--c"></span>
+    <span class="hero__line hero__line--1"></span>
+    <span class="hero__line hero__line--2"></span>
+    <span class="hero__line hero__line--3"></span>
+  </div>
+
+  <div class="container hero__grid">
+    <div class="hero__copy">
+      <h1 id="hero-title">
+        <span class="hero__tag"><span class="hero__pulse" aria-hidden="true"></span>{c.tag}</span>
+        {' '}
+        <span class="hero__title">
+          {
+            words.map((word, i) => (
+              <>
+                <span class="hero__word" style={`--w:${i}`}>
+                  {word === c.titleMark ? <span class="hero__mark">{word}</span> : word}
+                </span>
+                {i < words.length - 1 && ' '}
+              </>
+            ))
+          }
+        </span>
+      </h1>
+      <p class="hero__lead">{c.lead}</p>
+      <div class="hero__cta">
+        <a class="btn btn-primary btn-lg hero__btn" href={heroTarget(lang)} data-cta="hero">
+          {ctaText} <span class="arrow" aria-hidden="true">→</span>
+        </a>
+        <p class="hero__note">{c.ctaNote}</p>
+      </div>
+      <a class="hero__call" href={phone.tel}>
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"></path></svg>
+        <span>{c.call} {phone.display}</span>
+      </a>
+    </div>
+
+    <!-- Gráfico del rayo: decorativo. Dimensiones fijas por CSS (sin CLS); no es candidato a LCP. -->
+    <div class="hero__art-wrap" aria-hidden="true" data-anim data-parallax>
+      <svg class="hero__art" viewBox="0 0 400 400" width="400" height="400" focusable="false">
+        <defs>
+          <radialGradient id="hero-glow">
+            <stop offset="0" style="stop-color: var(--orange-500); stop-opacity: 0.55"></stop>
+            <stop offset="1" style="stop-color: var(--orange-500); stop-opacity: 0"></stop>
+          </radialGradient>
+        </defs>
+        <circle cx="200" cy="200" r="190" fill="url(#hero-glow)" opacity=".35"></circle>
+        <circle class="hero__halo" cx="200" cy="200" r="110" fill="url(#hero-glow)"></circle>
+        <circle class="hero__wave" cx="200" cy="200" r="70"></circle>
+        <circle class="hero__wave hero__wave--2" cx="200" cy="200" r="70"></circle>
+        <circle class="hero__wave hero__wave--3" cx="200" cy="200" r="70"></circle>
+        <circle class="hero__ring" cx="200" cy="200" r="160"></circle>
+        <circle class="hero__ring hero__ring--dash" cx="200" cy="200" r="120"></circle>
+        <circle class="hero__ring" cx="200" cy="200" r="80"></circle>
+        <path class="hero__wire" d="M40 200h80M280 200h80M200 40v80M200 280v80"></path>
+        <path class="hero__spark hero__spark--x" d="M40 200h10"></path>
+        <path class="hero__spark hero__spark--x" d="M280 200h10"></path>
+        <path class="hero__spark hero__spark--y" d="M200 40v10"></path>
+        <path class="hero__spark hero__spark--y" d="M200 280v10"></path>
+        <g class="hero__bolt-wrap">
+          <path class="hero__bolt" d="M214 140 168 212h30l-12 48 46-72h-30Z"></path>
+        </g>
+        <circle class="hero__node" cx="40" cy="200" r="7"></circle>
+        <circle class="hero__node" cx="360" cy="200" r="7"></circle>
+        <circle class="hero__node" cx="200" cy="40" r="7"></circle>
+        <circle class="hero__node" cx="200" cy="360" r="7"></circle>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Parallax muy sutil (≤ 12 px) del gráfico con el cursor. Solo escritorio con ratón y
+  // con movimiento permitido; un rAF por fotograma como máximo y nada más.
+  const art = document.querySelector<HTMLElement>('[data-parallax]');
+  const hero = art?.closest<HTMLElement>('.hero');
+  const media = window.matchMedia('(min-width: 64rem) and (pointer: fine) and (prefers-reduced-motion: no-preference)');
+  if (art && hero) {
+    let frame = 0;
+    let x = 0;
+    let y = 0;
+    const apply = () => {
+      frame = 0;
+      art.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+    };
+    hero.addEventListener(
+      'pointermove',
+      (e) => {
+        if (!media.matches) return;
+        const r = hero.getBoundingClientRect();
+        x = ((e.clientX - r.left) / r.width - 0.5) * 24; // -12 … 12 px
+        y = ((e.clientY - r.top) / r.height - 0.5) * 24;
+        if (!frame) frame = requestAnimationFrame(apply);
+      },
+      { passive: true },
+    );
+    hero.addEventListener('pointerleave', () => {
+      x = 0;
+      y = 0;
+      if (!frame) frame = requestAnimationFrame(apply);
+    });
+  }
+</script>
+
+<style>
+  .hero {
+    padding-block: 1.5rem 3.5rem;
+    color: var(--white);
+    /* Curva inferior hacia la banda de logos. */
+    clip-path: ellipse(160% 100% at 50% 0%);
+  }
+
+  /* ---- Fondo animado: malla de degradados + líneas de energía ---- */
+  .hero__mesh {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .hero__blob {
+    position: absolute;
+    width: 36rem;
+    height: 36rem;
+    border-radius: 50%;
+    opacity: 0.55;
+    animation: hero-drift 28s ease-in-out infinite alternate;
+  }
+
+  .hero__blob--a {
+    top: -14rem;
+    right: -12rem;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-500) 45%, transparent), transparent);
+  }
+
+  .hero__blob--b {
+    bottom: -18rem;
+    left: -14rem;
+    background: radial-gradient(closest-side, var(--teal-700), transparent);
+    animation-duration: 34s;
+    animation-direction: alternate-reverse;
+  }
+
+  .hero__blob--c {
+    top: 30%;
+    left: 40%;
+    width: 22rem;
+    height: 22rem;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-500) 22%, transparent), transparent);
+    animation-duration: 22s;
+  }
+
+  @keyframes hero-drift {
+    to {
+      transform: translate3d(-6rem, 4rem, 0) scale(1.15);
+    }
+  }
+
+  .hero__line {
+    position: absolute;
+    left: 0;
+    width: 40%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--orange-500) 80%, transparent), transparent);
+    opacity: 0;
+    transform: translateX(-100%);
+    animation: hero-line 9s linear infinite;
+  }
+
+  .hero__line--1 {
+    top: 22%;
+  }
+
+  .hero__line--2 {
+    top: 58%;
+    animation-delay: -3s;
+    animation-duration: 11s;
+  }
+
+  .hero__line--3 {
+    top: 84%;
+    animation-delay: -6s;
+    animation-duration: 13s;
+  }
+
+  @keyframes hero-line {
+    0% {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+    15%,
+    85% {
+      opacity: 0.7;
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(260%);
+    }
+  }
+
+  /* ---- Texto ---- */
+  .hero__grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .hero h1 {
+    max-width: 18ch;
+    margin-bottom: 1rem;
+    color: var(--white);
+  }
+
+  .hero__tag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: fit-content;
+    margin-bottom: 0.875rem;
+    padding: 0.25rem 0.875rem 0.25rem 0.625rem;
+    border: 1px solid color-mix(in srgb, var(--white) 25%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--white) 8%, transparent);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.4;
+  }
+
+  .hero__pulse {
+    position: relative;
+    flex: none;
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    background: var(--orange-500);
+  }
+
+  .hero__pulse::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--orange-500);
+    animation: hero-pulse 2s ease-out infinite;
+  }
+
+  @keyframes hero-pulse {
+    to {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
+
+  .hero__title {
+    display: block;
+  }
+
+  .hero__word {
+    display: inline-block;
+  }
+
+  /* Trazo naranja bajo la palabra marcada ("veure't" / "verte"): se dibuja con scaleX. */
+  .hero__mark {
+    position: relative;
+    display: inline-block;
+    white-space: nowrap;
+  }
+
+  .hero__mark::after {
+    content: '';
+    position: absolute;
+    left: -0.05em;
+    right: -0.05em;
+    bottom: -0.12em;
+    height: 0.32em;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M3 14 C 50 4, 120 4, 197 10' fill='none' stroke='%23fd6200' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E")
+      center / 100% 100% no-repeat;
+    transform-origin: left center;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__word {
+      animation: hero-word 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      animation-delay: calc(0.1s + var(--w) * 70ms);
+    }
+
+    .hero__mark::after {
+      animation: hero-draw 0.7s cubic-bezier(0.6, 0, 0.2, 1) 0.9s both;
+    }
+  }
+
+  @keyframes hero-word {
+    from {
+      opacity: 0.15;
+      transform: translateY(0.35em);
+    }
+  }
+
+  @keyframes hero-draw {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  .hero__lead {
+    max-width: 36rem;
+    margin-bottom: 1.25rem;
+    color: var(--teal-100);
+    font-size: 1.125rem;
+  }
+
+  .hero__cta {
+    display: grid;
+    gap: 0.5rem;
+    justify-items: start;
+  }
+
+  .hero__btn {
+    width: 100%;
+  }
+
+  .hero__note {
+    margin: 0;
+    color: var(--teal-100);
+  }
+
+  /* Enlace discreto de llamada (texto, no botón). */
+  .hero__call {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    margin-top: 0.5rem;
+    color: var(--white);
+    font-weight: 700;
+  }
+
+  .hero__call svg {
+    flex: none;
+    color: var(--orange-500);
+  }
+
+  @media (min-width: 30rem) {
+    .hero__btn {
+      width: auto;
+    }
+  }
+
+  /* ---- Gráfico del rayo ---- */
+  .hero__art-wrap {
+    justify-self: center;
+    width: 9rem;
+    aspect-ratio: 1;
+    margin-block: -0.5rem 0;
+    pointer-events: none;
+    transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .hero__art {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  @media (min-width: 48rem) {
+    .hero {
+      padding-block: 3rem 5rem;
+    }
+
+    .hero__grid {
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .hero__art-wrap {
+      width: 100%;
+      max-width: 17rem;
+      margin: 0;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .hero {
+      padding-block: 4rem 6rem;
+    }
+
+    .hero__grid {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap: 3.5rem;
+    }
+
+    .hero__art-wrap {
+      max-width: 27rem;
+    }
+
+    .hero__lead {
+      font-size: 1.25rem;
+    }
+  }
+
+  .hero__ring {
+    fill: none;
+    stroke: color-mix(in srgb, var(--white) 22%, transparent);
+    stroke-width: 1.5;
+  }
+
+  .hero__ring--dash {
+    stroke: var(--orange-500);
+    stroke-dasharray: 4 14;
+    transform-origin: 200px 200px;
+    animation: hero-spin 40s linear infinite;
+  }
+
+  @keyframes hero-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* "Respiración": halo que late y anillos que se expanden desde el rayo. */
+  .hero__halo {
+    transform-origin: 200px 200px;
+    animation: hero-breathe 3.2s ease-in-out infinite;
+  }
+
+  @keyframes hero-breathe {
+    0%,
+    100% {
+      opacity: 0.35;
+      transform: scale(0.9);
+    }
+    50% {
+      opacity: 0.85;
+      transform: scale(1.08);
+    }
+  }
+
+  .hero__wave {
+    fill: none;
+    stroke: var(--orange-500);
+    stroke-width: 2;
+    opacity: 0;
+    transform-origin: 200px 200px;
+    animation: hero-wave 4.8s ease-out infinite;
+  }
+
+  .hero__wave--2 {
+    animation-delay: 1.6s;
+  }
+
+  .hero__wave--3 {
+    animation-delay: 3.2s;
+  }
+
+  @keyframes hero-wave {
+    0% {
+      opacity: 0.7;
+      transform: scale(0.8);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(2.4);
+    }
+  }
+
+  .hero__wire {
+    fill: none;
+    stroke: color-mix(in srgb, var(--white) 22%, transparent);
+    stroke-width: 2;
+  }
+
+  .hero__spark {
+    fill: none;
+    stroke: var(--orange-500);
+    stroke-width: 3;
+    stroke-linecap: round;
+    animation: hero-spark-x 2.4s linear infinite;
+  }
+
+  .hero__spark--y {
+    animation-name: hero-spark-y;
+  }
+
+  @keyframes hero-spark-x {
+    0% {
+      transform: translateX(0);
+      opacity: 0;
+    }
+    8%,
+    88% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(70px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes hero-spark-y {
+    0% {
+      transform: translateY(0);
+      opacity: 0;
+    }
+    8%,
+    88% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(70px);
+      opacity: 0;
+    }
+  }
+
+  .hero__bolt-wrap {
+    transform-origin: 200px 200px;
+    animation: hero-bolt 3.2s ease-in-out infinite;
+  }
+
+  @keyframes hero-bolt {
+    50% {
+      transform: scale(1.06);
+    }
+  }
+
+  .hero__bolt {
+    fill: var(--orange-500);
+    filter: drop-shadow(0 0 18px var(--orange-500));
+  }
+
+  .hero__node {
+    fill: var(--teal-900);
+    stroke: var(--orange-500);
+    stroke-width: 3;
+  }
+
+  /* Movimiento reducido: todo estático (el gráfico se ve igual, sin bucles ni desplazamientos). */
+  @media (prefers-reduced-motion: reduce) {
+    .hero__blob,
+    .hero__line,
+    .hero__pulse::after,
+    .hero__ring--dash,
+    .hero__halo,
+    .hero__wave,
+    .hero__spark,
+    .hero__bolt-wrap {
+      animation: none;
+    }
+
+    .hero__line,
+    .hero__wave {
+      display: none;
+    }
+
+    .hero__art-wrap {
+      transition: none;
+    }
+  }
+</style>

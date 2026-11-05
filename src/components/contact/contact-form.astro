@@ -1,0 +1,951 @@
+---
+// Formulario de contacto en dos pasos ("El teu cas" y "Les teves dades").
+// Sin JS: los dos pasos seguidos y envío nativo al mismo destino.
+// Con JS (src/scripts/contact-form.ts): pasos, validación en línea, fetch y estados.
+// Destino: PUBLIC_FORM_ENDPOINT (src/config/form.ts). Adjunto: PUBLIC_FORM_ATTACHMENTS.
+// Nombres de campo estables y en minúsculas, iguales en catalán y castellano.
+import { SITE_ENV } from 'astro:env/server';
+import FileDrop from '../file-drop.astro';
+import { TRACKING_PARAMS } from '../../config/calculator';
+import { formAttachments, formEndpoint, formEnabled } from '../../config/form';
+import { pages, type Locale } from '../../config/pages';
+import { phone } from '../../config/site';
+import { CHANNELS, DEFAULT_CHANNEL, NEEDS, PROFILES, type Need, type Profile } from '../../lib/contact';
+import type { ContactContent } from './types';
+import { useTranslations } from '../../i18n/ui';
+
+interface Props {
+  lang: Locale;
+  c: ContactContent['form'];
+}
+
+const { lang, c } = Astro.props;
+const isStaging = SITE_ENV === 'staging';
+const id = (name: string) => `cf-${name}`;
+const t = useTranslations(lang);
+const stepLabel = (n: number) => c.step.replace('{n}', String(n)).replace('{total}', '2');
+
+const i18n = {
+  step: c.step,
+  titles: c.steps,
+  sending: c.sending,
+  errors: c.errors,
+  channels: c.channelsText,
+};
+
+// Iconos de línea (24 px), decorativos.
+const profileIcons: Record<Profile, string> = {
+  empresa: '<path d="M3 21h18M5 21V6l7-3v18M12 9h7v12"/><path d="M8 9h1M8 13h1M8 17h1M15 13h1M15 17h1"/>',
+  comunitat: '<path d="M3 21h18M4 21V8l5-3 5 3v13M14 21V11h6v10"/><path d="M7 11h1M7 15h1M10 11h1M10 15h1"/>',
+  administrador: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v2h6V3M8 10h8M8 14h8M8 18h5"/>',
+  llar: '<path d="m3 11 9-8 9 8M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>',
+};
+const needIcons: Record<Need, string> = {
+  factura: '<path d="M6 2h9l4 4v16l-3-2-2 2-2-2-2 2-2-2-2 2Z"/><path d="M9 9h6M9 13h6"/>',
+  gestions: '<path d="M8 3h8l4 4v14H4V3h4"/><path d="m8 14 2.5 2.5L16 11"/>',
+  plaques: '<path d="M3 20l3-9h12l3 9Z"/><path d="M9 11l-1 9M15 11l1 9M4.5 15.5h15M12 2v3M18 4l-2 2M6 4l2 2"/>',
+  altra: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12Z"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5M12 16.5v.01"/>',
+};
+const check = '<path d="m5 12 5 5 9-10"/>';
+const [consentBefore, consentAfter] = c.consent.split(c.consentLink);
+---
+
+<div
+  class="cf"
+  id="formulari"
+  data-contact
+  data-i18n={JSON.stringify(i18n)}
+  data-endpoint={formEndpoint || undefined}
+  data-section="contacte"
+>
+  <div class="cf-progress cf-js" data-progress-wrap>
+    <p class="cf-progress__label" data-step-label>{stepLabel(1)}</p>
+    <div class="cf-progress__track" aria-hidden="true">
+      <span class="cf-progress__bar" data-progress></span>
+    </div>
+  </div>
+  <p class="sr-only" aria-live="polite" data-live></p>
+
+  <form
+    class="cf-form"
+    action={formEndpoint || undefined}
+    method="POST"
+    enctype={formAttachments ? 'multipart/form-data' : undefined}
+    data-cf-form
+    data-contact-form
+    data-enabled={formEnabled ? 'true' : 'false'}
+  >
+    <input type="hidden" name="origen" value="contacte" />
+    <input type="hidden" name="idioma" value={lang} />
+    <!-- Sin JS no se sabe el perfil al cargar: el script pone el asunto completo. -->
+    <input type="hidden" name="_subject" value="Nova consulta web — contacte" />
+    {TRACKING_PARAMS.map((key) => <input type="hidden" name={key} value="" />)}
+
+    <!-- Paso 1 -->
+    <section class="cf-step" data-step="1" aria-labelledby={id('s1-title')}>
+      <h2 class="cf-step__title" id={id('s1-title')} tabindex="-1" data-step-title>{c.steps[0]}</h2>
+
+      <fieldset class="cf-group" data-group="perfil" aria-describedby={id('perfil-error')}>
+        <legend class="cf-legend">{c.profile.legend}</legend>
+        <div class="cf-options">
+          {
+            PROFILES.map((key) => (
+              <label class="cf-option">
+                <input class="cf-option__input" type="radio" name="perfil" value={key} required />
+                <span class="cf-option__box">
+                  <span class="cf-option__icon" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={profileIcons[key]} />
+                  </span>
+                  <span class="cf-option__label">{c.profile.options[key].label}</span>
+                  <span class="cf-option__mark" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" set:html={check} />
+                  </span>
+                </span>
+              </label>
+            ))
+          }
+        </div>
+        <p class="field__error" id={id('perfil-error')} data-error-for="perfil" hidden></p>
+      </fieldset>
+
+      <fieldset class="cf-group" data-group="necessitat" aria-describedby={id('necessitat-error')}>
+        <legend class="cf-legend">{c.need.legend}</legend>
+        <div class="cf-chips">
+          {
+            NEEDS.map((key) => (
+              <label class="cf-chip">
+                <input class="cf-chip__input" type="radio" name="necessitat" value={key} required />
+                <span class="cf-chip__box">
+                  <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={needIcons[key]} />
+                  {c.need.options[key].label}
+                </span>
+              </label>
+            ))
+          }
+        </div>
+        <p class="field__error" id={id('necessitat-error')} data-error-for="necessitat" hidden></p>
+      </fieldset>
+
+      <div class="cf-field">
+        <label for={id('localitat')}>
+          {c.locality.label} <span class="cf-optional">{c.locality.optional}</span>
+        </label>
+        <input
+          id={id('localitat')}
+          name="localitat"
+          type="text"
+          autocomplete="address-level2"
+          maxlength="80"
+          placeholder={c.locality.placeholder}
+        />
+      </div>
+
+      <div class="cf-actions cf-js">
+        <button class="btn btn-lg cf-next" type="button" data-next>
+          {c.next.replace(/\s*→$/, '')} <span aria-hidden="true">→</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Paso 2 -->
+    <section class="cf-step" data-step="2" aria-labelledby={id('s2-title')}>
+      <div class="cf-step__head">
+        <button class="cf-back cf-js" type="button" data-back>
+          <span aria-hidden="true">←</span>
+          {c.back.replace(/^←\s*/, '')}
+        </button>
+        <h2 class="cf-step__title" id={id('s2-title')} tabindex="-1" data-step-title>{c.steps[1]}</h2>
+      </div>
+
+      <div class="cf-field">
+        <label for={id('nom')}>{c.name}</label>
+        <input id={id('nom')} name="nom" type="text" autocomplete="name" autocapitalize="words" maxlength="100" required />
+        <p class="field__error" id={id('nom-error')} data-error-for="nom" hidden></p>
+      </div>
+
+      <div class="cf-field">
+        <label for={id('email')}>{c.email}</label>
+        <input id={id('email')} name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="120" required />
+        <p class="field__error" id={id('email-error')} data-error-for="email" hidden></p>
+      </div>
+
+      <div class="cf-field">
+        <label for={id('telefon')}>
+          {c.phone} <span class="cf-optional" data-phone-optional hidden>{c.phoneOptional}</span>
+        </label>
+        <input
+          id={id('telefon')}
+          name="telefon"
+          type="tel"
+          pattern="[0-9 +\(\)\.\-]{9,20}"
+          inputmode="tel"
+          autocomplete="tel"
+          maxlength="20"
+          required
+          aria-describedby={id('telefon-hint')}
+        />
+        <p class="cf-hint" id={id('telefon-hint')}>{c.phoneHint}</p>
+        <p class="field__error" id={id('telefon-error')} data-error-for="telefon" hidden></p>
+      </div>
+
+      <fieldset class="cf-group">
+        <legend class="cf-legend">{c.channel.legend}</legend>
+        <div class="cf-segmented">
+          {
+            CHANNELS.map((key) => (
+              <label class="cf-seg">
+                <input class="cf-seg__input" type="radio" name="preferencia_contacte" value={key} checked={key === DEFAULT_CHANNEL} />
+                <span class="cf-seg__box">{c.channel.options[key]}</span>
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+
+      <div class="cf-field">
+        <label for={id('missatge')}>
+          {c.message} <span class="cf-optional">{c.messageOptional}</span>
+        </label>
+        <textarea id={id('missatge')} name="missatge" rows="3" maxlength="2000"></textarea>
+      </div>
+
+      {formAttachments && <FileDrop lang={lang} idPrefix="cf" label={c.attach.label} hint={c.attach.hint} privacy={c.attach.privacy} />}
+      {!formAttachments && <p class="cf-note">{c.attachOff}</p>}
+
+      <div class="cf-field consent cf-consent">
+        <input id={id('consentiment')} name="consentiment" type="checkbox" value="acceptat" required aria-describedby={id('consentiment-error')} />
+        <label for={id('consentiment')}>
+          {consentBefore}<a href={pages.privacitat[lang]} target="_blank" rel="noopener">{c.consentLink}</a>{consentAfter}
+        </label>
+        <p class="field__error" id={id('consentiment-error')} data-error-for="consentiment" hidden></p>
+      </div>
+      {/* Primera capa de información (LOPDGDD, art. 11): responsable, finalidad, derechos y enlace. */}
+      <p class="form-privacy" id={id('privacy-info')}>
+        {t('form.privacyInfo').split(t('form.consentLink'))[0]}<a href={pages.privacitat[lang]} target="_blank" rel="noopener">{t('form.consentLink')}</a>{t('form.privacyInfo').split(t('form.consentLink'))[1]}
+      </p>
+
+      <!-- Honeypot antispam: fuera de la vista; las personas no lo ven ni lo enfocan. -->
+      <div class="cf-trap" aria-hidden="true">
+        <label for={id('website')}>Website</label>
+        <input id={id('website')} type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" />
+      </div>
+
+      <div class="cf-send-error" role="alert" data-send-error hidden>
+        <p>
+          {c.error.split(phone.display)[0]}<a href={phone.tel}>{phone.display}</a>{c.error.split(phone.display)[1]}
+        </p>
+      </div>
+
+      {
+        !formEnabled && isStaging && (
+          <p class="staging-marker" data-staging-only>
+            {c.noEndpoint}
+          </p>
+        )
+      }
+
+      <button class="btn btn-primary btn-lg cf-submit" type="submit" data-submit data-label={c.submit.replace(/\s*→$/, '')}>
+        <span class="cf-spinner" aria-hidden="true"></span>
+        <span data-submit-label>{c.submit.replace(/\s*→$/, '')}</span>
+        <span class="cf-submit__arrow" aria-hidden="true">→</span>
+      </button>
+      <!-- Solo si la necesidad no es plaques solars (la fotovoltaica sí tiene coste). -->
+      <p class="cf-cost" data-cost>{c.cost}</p>
+    </section>
+  </form>
+
+  <div class="cf-success" data-success hidden>
+    <svg class="cf-success__check" aria-hidden="true" width="64" height="64" viewBox="0 0 52 52">
+      <circle cx="26" cy="26" r="24" fill="none" stroke-width="3"></circle>
+      <path d="m15 27 7 7 15-16" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg>
+    <h2 class="cf-success__title" tabindex="-1" data-success-title>
+      {c.success.title.split('{nom}')[0]}<span data-success-name></span>{c.success.title.split('{nom}')[1]}
+    </h2>
+    <p class="cf-success__text">
+      {c.success.text.split('{canal}')[0]}<span data-success-channel></span>{c.success.text.split('{canal}')[1]}
+    </p>
+    <p class="cf-success__urgent">{c.success.urgent}</p>
+    <div class="cf-success__actions">
+      <a class="btn btn-secondary" href={phone.tel}>{c.success.call} {phone.display}</a>
+      <a class="btn btn-ghost" href={phone.whatsapp} target="_blank" rel="noopener noreferrer">{c.success.whatsapp}</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { initContactForm } from '../../scripts/contact-form';
+
+  document.querySelectorAll<HTMLElement>('[data-contact]').forEach(initContactForm);
+</script>
+
+<style>
+  /* Sin JS: fuera lo que solo funciona con JS (progreso, Continuar, Enrere). */
+  html:not(.js) .cf-js {
+    display: none !important;
+  }
+
+  .cf {
+    display: grid;
+    gap: 0;
+    min-width: 0;
+  }
+
+  /* ---- Progreso ---- */
+  .cf-progress {
+    margin-bottom: 1.25rem;
+  }
+
+  .cf-progress[hidden] {
+    display: none;
+  }
+
+  .cf-progress__label {
+    margin: 0 0 0.5rem;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+
+  .cf-progress__track {
+    overflow: hidden;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--teal-100);
+  }
+
+  .cf-progress__bar {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--orange-700), var(--orange-500));
+    transform: scaleX(var(--p, 0.5));
+    transform-origin: left;
+    transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  /* ---- Pasos ---- */
+  .cf-form {
+    display: grid;
+    gap: 2.5rem; /* sin JS: los dos pasos seguidos */
+    min-width: 0;
+  }
+
+  .cf-form[hidden],
+  .cf-step[hidden] {
+    display: none;
+  }
+
+  .cf-step {
+    display: grid;
+    gap: 1.25rem;
+    min-width: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .cf-step.is-entering {
+      animation: cf-in 0.25s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+
+    .cf-step.is-entering-back {
+      animation: cf-in-back 0.25s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+  }
+
+  /* Movimiento reducido: solo fundido, sin desplazamiento. */
+  @media (prefers-reduced-motion: reduce) {
+    .cf-step.is-entering,
+    .cf-step.is-entering-back {
+      animation: cf-fade 0.15s linear both;
+    }
+  }
+
+  @keyframes cf-in {
+    from {
+      opacity: 0;
+      transform: translateX(1rem);
+    }
+  }
+
+  @keyframes cf-in-back {
+    from {
+      opacity: 0;
+      transform: translateX(-1rem);
+    }
+  }
+
+  @keyframes cf-fade {
+    from {
+      opacity: 0;
+    }
+  }
+
+  .cf-step__head {
+    display: grid;
+    gap: 0.25rem;
+    justify-items: start;
+  }
+
+  .cf-step__title {
+    margin: 0;
+    font-size: clamp(1.3125rem, 2vw + 0.875rem, 1.625rem);
+  }
+
+  .cf-step__title:focus,
+  .cf-success__title:focus {
+    outline: none;
+  }
+
+  .cf-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 44px;
+    margin-left: -0.25rem;
+    padding: 0 0.25rem;
+    border: 0;
+    background: none;
+    color: var(--teal-900);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .cf-back span {
+    transition: transform 0.2s ease;
+  }
+
+  .cf-back:is(:hover, :focus-visible) span {
+    transform: translateX(-4px);
+  }
+
+  /* ---- Grupos y campos ---- */
+  .cf-group {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .cf-legend {
+    margin-bottom: 0.625rem;
+    padding: 0;
+    font-weight: 700;
+  }
+
+  .cf-field {
+    margin: 0;
+  }
+
+  .cf-field input:not([type='checkbox']),
+  .cf-field textarea {
+    min-height: 48px;
+    border-color: color-mix(in srgb, var(--teal-900) 35%, transparent);
+    border-radius: 0.75rem;
+    font-size: 1rem; /* 16 px: iOS no hace zoom */
+  }
+
+  .cf-field textarea {
+    resize: vertical;
+  }
+
+  .cf-field input::placeholder {
+    color: var(--text-muted);
+    opacity: 1;
+  }
+
+  .cf-optional {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  .cf-optional[hidden] {
+    display: none;
+  }
+
+  .cf-hint {
+    margin: 0.375rem 0 0;
+    color: var(--text-muted);
+  }
+
+  /* ---- Perfil: tarjetas con icono (radio accesible: flechas dentro del grupo) ---- */
+  .cf-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
+  }
+
+  .cf-option,
+  .cf-chip,
+  .cf-seg {
+    position: relative;
+    display: block;
+    margin: 0;
+    font-weight: 400;
+    cursor: pointer;
+  }
+
+  .cf-option__input,
+  .cf-chip__input,
+  .cf-seg__input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .cf-option__box {
+    position: relative;
+    display: grid;
+    gap: 0.5rem;
+    align-content: start;
+    height: 100%;
+    min-height: 6rem;
+    padding: 0.875rem;
+    border: 1.5px solid var(--teal-100);
+    border-radius: 1rem;
+    background: var(--white);
+    transition:
+      border-color 0.15s,
+      background-color 0.15s,
+      box-shadow 0.15s,
+      transform 0.2s;
+  }
+
+  .cf-option__icon {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.75rem;
+    background: var(--teal-100);
+    color: var(--teal-900);
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+  }
+
+  .cf-option__label {
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .cf-option__mark {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 1.5px solid var(--teal-100);
+    border-radius: 50%;
+    color: transparent;
+    transition:
+      background-color 0.15s,
+      border-color 0.15s;
+  }
+
+  .cf-option__input:checked + .cf-option__box {
+    border-color: var(--teal-900);
+    background: var(--orange-100);
+    box-shadow: 0 0 0 1px var(--teal-900);
+  }
+
+  .cf-option__input:checked + .cf-option__box .cf-option__icon {
+    background: var(--teal-900);
+    color: var(--orange-500);
+  }
+
+  .cf-option__input:checked + .cf-option__box .cf-option__mark {
+    border-color: var(--orange-500);
+    background: var(--orange-500);
+    color: var(--teal-900);
+  }
+
+  /* ---- Necesidad: chips ---- */
+  .cf-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .cf-chip__box {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.5rem 1rem;
+    border: 1.5px solid var(--teal-100);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--teal-900);
+    font-weight: 600;
+    line-height: 1.25;
+    transition:
+      border-color 0.15s,
+      background-color 0.15s;
+  }
+
+  .cf-chip__box svg {
+    flex: none;
+    color: var(--orange-700);
+  }
+
+  .cf-chip__input:checked + .cf-chip__box {
+    border-color: var(--teal-900);
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .cf-chip__input:checked + .cf-chip__box svg {
+    color: var(--orange-500);
+  }
+
+  /* ---- Canal: control segmentado ---- */
+  .cf-segmented {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: 0.875rem;
+    background: var(--teal-100);
+  }
+
+  .cf-seg__box {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 44px;
+    padding: 0.375rem 0.125rem;
+    border-radius: 0.625rem;
+    color: var(--teal-900);
+    font-weight: 700;
+    text-align: center;
+    transition:
+      background-color 0.15s,
+      box-shadow 0.15s;
+  }
+
+  .cf-seg__input:checked + .cf-seg__box {
+    background: var(--white);
+    box-shadow: 0 0.25rem 0.75rem -0.25rem color-mix(in srgb, var(--teal-900) 35%, transparent);
+  }
+
+  /* Marca de la opción elegida: barra naranja abajo (no ocupa ancho: cabe "WhatsApp" a 360 px). */
+  .cf-seg__input:checked + .cf-seg__box::after {
+    content: '';
+    position: absolute;
+    inset: auto 30% 0.3rem;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--orange-500);
+  }
+
+  /* Foco visible en las opciones (el input está encima, transparente). */
+  .cf-option__input:focus-visible + .cf-option__box,
+  .cf-chip__input:focus-visible + .cf-chip__box,
+  .cf-seg__input:focus-visible + .cf-seg__box {
+    outline: 2px solid var(--orange-700);
+    outline-offset: 3px;
+  }
+
+  @media (hover: hover) {
+    .cf-option:hover .cf-option__box {
+      border-color: var(--teal-900);
+      transform: translateY(-2px);
+    }
+
+    .cf-chip:hover .cf-chip__box {
+      border-color: var(--teal-900);
+    }
+  }
+
+  .cf-group.is-invalid .cf-option__box,
+  .cf-group.is-invalid .cf-chip__box {
+    border-color: var(--orange-700);
+  }
+
+  /* ---- Botones ---- */
+  .cf-actions {
+    display: grid;
+  }
+
+  /* Continuar: teal hasta elegir perfil y necesidad; entonces se destaca en naranja. Nunca gris. */
+  .cf-next {
+    width: 100%;
+    background: var(--teal-900);
+    color: var(--white);
+    transition:
+      background-color 0.2s,
+      color 0.2s,
+      box-shadow 0.2s,
+      transform 0.15s;
+  }
+
+  .cf-next:hover {
+    background: var(--teal-700);
+  }
+
+  .cf-next.is-ready {
+    background: var(--orange-500);
+    color: var(--teal-900);
+    box-shadow: 0 0.5rem 1.5rem -0.5rem var(--orange-500);
+  }
+
+  .cf-next.is-ready:hover {
+    border-color: var(--teal-900);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .cf-next.is-ready {
+      animation: cf-pop 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+  }
+
+  @keyframes cf-pop {
+    50% {
+      transform: scale(1.03);
+    }
+  }
+
+  .cf-submit {
+    width: 100%;
+    min-height: 56px;
+  }
+
+  .cf-submit[aria-busy='true'] .cf-submit__arrow {
+    display: none;
+  }
+
+  .cf-spinner {
+    display: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 2.5px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: cf-spin 0.7s linear infinite;
+  }
+
+  .cf-submit[aria-busy='true'] .cf-spinner {
+    display: inline-block;
+  }
+
+  @keyframes cf-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Botón deshabilitado solo durante el envío: sin el gris genérico. */
+  .cf-submit[disabled] {
+    opacity: 0.85;
+    cursor: progress;
+  }
+
+  /* "Sense cost per a tu": oculto si no hay necesidad elegida o si es plaques solars.
+     Funciona sin JS con :has(); con JS lo controla también el atributo hidden. */
+  .cf-cost {
+    display: none;
+    margin: -0.5rem 0 0;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  .cf-form:has([name='necessitat']:checked:not([value='plaques'])) .cf-cost {
+    display: block;
+  }
+
+  .cf-form .cf-cost[hidden] {
+    display: none;
+  }
+
+  :global(.is-enhanced) .cf-cost:not([hidden]) {
+    display: block;
+  }
+
+  /* ---- Consentimiento ---- */
+  .cf-consent {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 0.75rem;
+    align-items: start;
+  }
+
+  .cf-consent input[type='checkbox'] {
+    margin-top: 0.125rem;
+  }
+
+  .cf-consent label {
+    margin: 0;
+    font-weight: 400;
+  }
+
+  .cf-consent .field__error {
+    grid-column: 1 / -1;
+  }
+
+  .cf-note {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: var(--teal-100);
+    color: var(--teal-900);
+  }
+
+  /* Honeypot: fuera de la vista (no display:none, que algunos bots detectan). */
+  .cf-trap {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .cf-send-error {
+    padding: 1rem;
+    border-left: 4px solid var(--orange-700);
+    border-radius: 0.75rem;
+    background: var(--orange-100);
+    color: var(--teal-900);
+    font-weight: 700;
+  }
+
+  .cf-send-error[hidden] {
+    display: none;
+  }
+
+  .cf-send-error p {
+    margin: 0;
+  }
+
+  /* orange-700 no llega a 4,5 sobre orange-100: el enlace va en teal. */
+  .cf-send-error a {
+    color: var(--teal-900);
+    text-decoration-color: currentColor;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+
+  /* ---- Éxito ---- */
+  .cf-success {
+    display: grid;
+    justify-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 0.25rem 2rem;
+    text-align: center;
+  }
+
+  .cf-success[hidden] {
+    display: none;
+  }
+
+  .cf-success__title {
+    margin: 0.5rem 0 0;
+    font-size: clamp(1.5rem, 2vw + 1rem, 2rem);
+  }
+
+  .cf-success__text {
+    max-width: 30rem;
+    margin: 0;
+    font-size: 1.125rem;
+  }
+
+  .cf-success__urgent {
+    margin: 0.5rem 0 0;
+    color: var(--text-muted);
+  }
+
+  .cf-success__actions {
+    display: grid;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 24rem;
+  }
+
+  .cf-success__actions .btn-ghost {
+    color: var(--teal-900);
+  }
+
+  .cf-success__check {
+    stroke: var(--orange-700);
+  }
+
+  .cf-success__check circle {
+    stroke-dasharray: 151;
+    stroke-dashoffset: 151;
+    animation: cf-draw 0.6s ease-out forwards;
+  }
+
+  .cf-success__check path {
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+    animation: cf-draw 0.4s 0.45s ease-out forwards;
+  }
+
+  @keyframes cf-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cf-success__check circle,
+    .cf-success__check path {
+      stroke-dashoffset: 0;
+      animation: none;
+    }
+  }
+
+  @media (min-width: 30rem) {
+    .cf-options {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .cf-success__actions {
+      grid-template-columns: 1fr 1fr;
+      max-width: 32rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .cf-options {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .cf-option__box {
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      min-height: 4.5rem;
+      padding-right: 2.75rem;
+    }
+
+    .cf-option__mark {
+      top: 50%;
+      transform: translateY(-50%);
+    }
+  }
+
+  @media (min-width: 80rem) {
+    .cf-options {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .cf-option__box {
+      grid-template-columns: none;
+      align-items: start;
+      min-height: 6rem;
+      padding-right: 0.875rem;
+    }
+
+    .cf-option__mark {
+      top: 0.75rem;
+      transform: none;
+    }
+  }
+</style>

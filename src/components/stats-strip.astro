@@ -1,0 +1,232 @@
+---
+// Franja de cifras (home y Nosaltres). Al entrar en pantalla (una vez, en todos los dispositivos):
+// revelado escalonado, línea naranja que se dibuja y contadores de 0 a su valor.
+// El valor final está en el HTML: sin JS o con movimiento reducido se ve directamente.
+// Solo cifras confirmadas por Logik (docs/contexto.md).
+interface Props {
+  items: { value: string; label: string }[];
+  note?: string;
+  /** data-section para la analítica (por defecto "cifras"). */
+  section?: string;
+  /** Nombre accesible de la franja (opcional). */
+  label?: string;
+}
+
+const { items, note, section = 'cifras', label } = Astro.props;
+
+// "+2.000" -> { prefix: '+', to: 2000, suffix: '' }. Lo que no es una cifra no se anima.
+const counter = (value: string) => {
+  const match = value.match(/^(\D*?)(\d[\d.]*)(.*)$/);
+  const to = match ? Number(match[2].replace(/\./g, '')) : 0;
+  return match && to > 0 ? { prefix: match[1], to, suffix: match[3] } : null;
+};
+---
+
+<!--
+  7. Cifras. Al entrar en pantalla (una vez, en todos los dispositivos): revelado escalonado,
+  línea naranja que se dibuja y contadores de 0 a su valor. El valor final está en el HTML.
+-->
+<section class="stats tech-bg" data-section={section} aria-label={label}>
+  <div class="container">
+    <ul class="stats__list" data-stats style={`--cols:${items.length}`}>
+      {
+        items.map((item, i) => {
+          const count = counter(item.value);
+          return (
+            <li style={`--i:${i}`}>
+              <span
+                class="stats__value"
+                data-count-to={count?.to}
+                data-prefix={count?.prefix}
+                data-suffix={count?.suffix}
+                style={`min-width:${item.value.length}ch`}
+              >
+                {item.value}
+              </span>
+              <span class="stats__label">{item.label}</span>
+            </li>
+          );
+        })
+      }
+    </ul>
+    {note && <p class="stats__note">{note}</p>}
+  </div>
+</section>
+
+<script>
+  // Franja de cifras: un único IntersectionObserver (umbral bajo, una sola vez) activa a la vez
+  // el revelado escalonado, la línea y los contadores, en todos los dispositivos. Antes, los
+  // contadores y el revelado tenían observadores distintos: en móvil el contador podía acabar
+  // mientras la cifra aún estaba oculta, y no se veía ningún efecto.
+  // Sin JS o con movimiento reducido: valores finales directamente.
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const formatNumber = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const COUNT_MS = 1200;
+  const STAGGER_MS = 120;
+
+  const runCounter = (el: HTMLElement, delay: number) => {
+    const to = Number(el.dataset.countTo);
+    const prefix = el.dataset.prefix ?? '';
+    const suffix = el.dataset.suffix ?? '';
+    const final = el.textContent;
+    el.textContent = `${prefix}0${suffix}`;
+    const start = performance.now() + delay;
+    const step = (now: number) => {
+      const p = Math.min(Math.max((now - start) / COUNT_MS, 0), 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = p < 1 ? `${prefix}${formatNumber(Math.round(to * eased))}${suffix}` : final;
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+
+  // Todas las franjas de la página (puede haber más de una).
+  document.querySelectorAll<HTMLElement>('[data-stats]').forEach((stats) => {
+  if (reduceMotion || !('IntersectionObserver' in window)) return;
+    stats.classList.add('is-waiting'); // solo con JS: oculta hasta entrar en pantalla
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        observer.disconnect();
+        stats.classList.remove('is-waiting');
+        stats.classList.add('is-active');
+        stats.querySelectorAll<HTMLElement>('li').forEach((li, i) => {
+          const value = li.querySelector<HTMLElement>('[data-count-to]');
+          if (value) runCounter(value, i * STAGGER_MS);
+        });
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -10% 0px' },
+    );
+    observer.observe(stats);
+  });
+</script>
+
+<style>
+  /* ---- Cifras ---- */
+  .stats {
+    padding-block: 3rem 2rem;
+    color: var(--white);
+  }
+
+  .stats__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .stats__list li {
+    position: relative;
+    display: grid;
+    gap: 0.5rem;
+    align-content: start;
+    min-width: 0;
+    padding-left: 1rem;
+    border-left: 2px solid color-mix(in srgb, var(--orange-500) 35%, transparent);
+  }
+
+  /* Línea naranja que se dibuja de arriba abajo sobre el borde, y un destello que la recorre. */
+  .stats__list li::before,
+  .stats__list li::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -2px;
+    width: 2px;
+    height: 100%;
+    background: var(--orange-500);
+    transform-origin: top;
+  }
+
+  .stats__list li::after {
+    height: 30%;
+    background: linear-gradient(var(--white), transparent);
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .stats__list:global(.is-waiting) li {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .stats__list:global(.is-waiting) li::before {
+      transform: scaleY(0);
+    }
+
+    .stats__list:global(.is-active) li {
+      animation: stats-in 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      animation-delay: calc(var(--i, 0) * 120ms);
+    }
+
+    .stats__list:global(.is-active) li::before {
+      animation: stats-line 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+      animation-delay: calc(var(--i, 0) * 120ms + 0.15s);
+    }
+
+    .stats__list:global(.is-active) li::after {
+      animation: stats-spark 1.2s ease-out both;
+      animation-delay: calc(var(--i, 0) * 120ms + 0.4s);
+    }
+  }
+
+  @keyframes stats-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+  }
+
+  @keyframes stats-line {
+    from {
+      transform: scaleY(0);
+    }
+  }
+
+  @keyframes stats-spark {
+    0% {
+      opacity: 0;
+      transform: translateY(0);
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(240%);
+    }
+  }
+
+  .stats__value {
+    display: inline-block;
+    color: var(--orange-500);
+    font-family: var(--font-heading);
+    font-size: clamp(1.75rem, 7.5vw, 3.5rem);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .stats__label {
+    color: var(--white);
+  }
+
+  .stats__note {
+    margin: 2rem 0 0;
+    color: var(--teal-100);
+  }
+
+  @media (min-width: 64rem) {
+    .stats {
+      padding-block: 4rem 2.5rem;
+    }
+
+    /* Una columna por cifra (4 en la home, 3 en Nosaltres). */
+    .stats__list {
+      grid-template-columns: repeat(var(--cols, 4), 1fr);
+    }
+  }
+</style>

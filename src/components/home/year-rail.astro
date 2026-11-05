@@ -1,0 +1,429 @@
+---
+// "El teu any amb Logik": recorrido de 12 meses.
+// - Escritorio: carril horizontal de 12 puntos y, debajo, tres tarjetas alineadas con su tramo
+//   (mes 1, meses 2 a 10 y mes 11).
+// - Móvil: las tres tarjetas en vertical, con una línea a la izquierda; cada tarjeta lleva sus puntos.
+// La línea naranja se rellena a medida que se hace scroll (IntersectionObserver, sin listeners
+// de scroll) y cada hito se enciende al llegar. Sin JS o con movimiento reducido: todo relleno.
+// Los puntos y la línea son decorativos (aria-hidden); el contenido está en la lista de tarjetas.
+import { pages, type Locale } from '../../config/pages';
+import type { HomeContent } from './types';
+
+interface Props {
+  lang: Locale;
+  content: HomeContent['year'];
+}
+
+const { lang, content: c } = Astro.props;
+const month = (n: number) => c.month.replace('{n}', String(n));
+const months = Array.from({ length: 12 }, (_, i) => i + 1);
+// Progreso del carril (0–1) al encender cada tarjeta: mes 1, mes 10 (fin del seguimiento) y mes 11–12.
+const stops = [1 / 12, 10 / 12, 1];
+---
+
+<section class="section tech-bg slant year-section" aria-labelledby="year-title" data-section="linea-tiempo">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.eyebrow}</p>
+      <h2 id="year-title">{c.title}</h2>
+      <p class="section-head__intro">{c.intro}</p>
+    </div>
+
+    <div class="year" data-year style={`--progress:1`}>
+      <!-- Carril de escritorio: 12 puntos. -->
+      <div class="year__rail" aria-hidden="true">
+        <span class="year__track"><span class="year__fill"></span></span>
+        <ol class="year__dots">
+          {
+            months.map((n) => (
+              <li class:list={['year__dot', { 'year__dot--first': n === 1, 'year__dot--follow': n > 1 && n < 11, 'year__dot--renew': n === 11 }]} data-month={n}>
+                <span class="year__bullet">{n === 11 && <span class="year__flag">{c.flag}</span>}</span>
+                <span class="year__num">{n}</span>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+
+      <!-- Hitos (contenido real). En móvil llevan una línea vertical a la izquierda. -->
+      <span class="year__vtrack" aria-hidden="true"><span class="year__vfill"></span></span>
+      <ol class="year__cards">
+        <li class="year__card year__card--first" data-year-stop={stops[0]}>
+          <p class="year__when">{month(1)}</p>
+          <ul class="year__steps">
+            {
+              c.first.map((step) => (
+                <li>
+                  <h3>{step.title}</h3>
+                  <p>{step.text}</p>
+                </li>
+              ))
+            }
+          </ul>
+        </li>
+        <li class="year__card year__card--follow" data-year-stop={stops[1]}>
+          <p class="year__when">{c.middle}</p>
+          <span class="year__mini" aria-hidden="true">{months.slice(1, 10).map(() => <span />)}</span>
+          <h3>{c.follow.title}</h3>
+          <p>{c.follow.text}</p>
+        </li>
+        <li class="year__card year__card--renew" data-year-stop={stops[2]}>
+          <p class="year__when">{month(11)}</p>
+          <span class="year__badge" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5" /></svg>
+            {c.flag}
+          </span>
+          <h3>{c.renew.title}</h3>
+          <p>{c.renew.text}</p>
+        </li>
+      </ol>
+    </div>
+
+    <p class="section__more">
+      <a class="btn btn-primary" href={pages.comTreballem[lang]} data-cta>
+        {c.link} <span aria-hidden="true">→</span>
+      </a>
+    </p>
+  </div>
+</section>
+
+<script>
+  // Relleno del carril al hacer scroll: cada tarjeta, al llegar a la mitad de la pantalla,
+  // fija el progreso y enciende su hito. Por defecto (sin JS o con movimiento reducido) todo
+  // está relleno y encendido; el script solo lo "vacía" si va a poder rellenarlo.
+  const year = document.querySelector<HTMLElement>('[data-year]');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (year && !reduce && 'IntersectionObserver' in window) {
+    const cards = [...year.querySelectorAll<HTMLElement>('[data-year-stop]')];
+    const dots = [...year.querySelectorAll<HTMLElement>('[data-month]')];
+    const lit = new Set<HTMLElement>();
+    const paint = () => {
+      const progress = Math.max(0, ...[...lit].map((card) => Number(card.dataset.yearStop)));
+      year.style.setProperty('--progress', String(progress));
+      dots.forEach((dot) => dot.classList.toggle('is-lit', Number(dot.dataset.month) / 12 <= progress + 0.001));
+      cards.forEach((card) => card.classList.toggle('is-lit', lit.has(card)));
+    };
+    year.classList.add('is-pending');
+    paint();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) lit.add(entry.target as HTMLElement);
+        }
+        paint();
+      },
+      { rootMargin: '0px 0px -45% 0px' },
+    );
+    cards.forEach((card) => observer.observe(card));
+  }
+</script>
+
+<style>
+  .year-section {
+    color: var(--white);
+  }
+
+  .year-section h2 {
+    color: var(--white);
+  }
+
+  .year {
+    position: relative;
+  }
+
+  /* ---- Carril de escritorio ---- */
+  .year__rail {
+    display: none;
+  }
+
+  .year__track,
+  .year__vtrack {
+    position: absolute;
+    overflow: hidden;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--white) 18%, transparent);
+  }
+
+  .year__fill,
+  .year__vfill {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, var(--orange-700), var(--orange-500));
+    transform: scaleX(var(--progress, 1));
+    transform-origin: left;
+    transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .year__vfill {
+    background: linear-gradient(180deg, var(--orange-700), var(--orange-500));
+    transform: scaleY(var(--progress, 1));
+    transform-origin: top;
+  }
+
+  /* ---- Tarjetas (móvil: columna con línea vertical) ---- */
+  .year__vtrack {
+    top: 0.75rem;
+    bottom: 0.75rem;
+    left: 0.6875rem;
+    width: 3px;
+  }
+
+  .year__cards {
+    display: grid;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0 0 0 2.25rem;
+    list-style: none;
+  }
+
+  .year__card {
+    position: relative;
+    padding: 1.25rem;
+    border: 1px solid color-mix(in srgb, var(--white) 14%, transparent);
+    border-radius: 1.25rem;
+    /* Casi teal-900: el naranja de "Mes 1" (20 px en negrita, texto grande) mantiene el contraste. */
+    background: color-mix(in srgb, var(--white) 4%, var(--teal-900));
+    transition:
+      border-color 0.4s,
+      box-shadow 0.4s;
+  }
+
+  /* Punto de cada tarjeta sobre la línea vertical (móvil). */
+  .year__card::before {
+    content: '';
+    position: absolute;
+    top: 1.375rem;
+    left: -2.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 3px solid var(--orange-500);
+    border-radius: 50%;
+    background: var(--orange-500);
+    box-shadow: 0 0 0 4px var(--teal-900);
+    transition:
+      background-color 0.3s,
+      transform 0.3s;
+  }
+
+  .year__card.is-lit,
+  :global(html:not(.js)) .year__card {
+    border-color: color-mix(in srgb, var(--orange-500) 55%, transparent);
+    box-shadow: 0 0 2.5rem -1rem var(--orange-500);
+  }
+
+  .year.is-pending .year__card:not(.is-lit)::before {
+    background: var(--teal-900);
+    transform: scale(0.8);
+  }
+
+  .year__when {
+    margin: 0 0 0.75rem;
+    color: var(--orange-500);
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .year__card h3 {
+    margin-bottom: 0.375rem;
+    color: var(--white);
+  }
+
+  .year__card p:not(.year__when) {
+    margin: 0;
+    color: var(--teal-100);
+  }
+
+  .year__steps {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Puntos de los meses 2 a 10, con un pulso suave escalonado. */
+  .year__mini {
+    display: flex;
+    gap: 0.375rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .year__mini span {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    background: var(--orange-500);
+  }
+
+  .year__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 0.875rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    background: var(--orange-500);
+    color: var(--teal-900);
+    font-weight: 700;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .year__card.is-lit .year__mini span,
+    .year__dot--follow.is-lit .year__bullet {
+      animation: year-pulse 2.4s ease-in-out infinite;
+    }
+
+    .year__mini span:nth-child(2n),
+    .year__dot--follow:nth-child(2n) .year__bullet {
+      animation-delay: 0.4s;
+    }
+
+    .year__mini span:nth-child(3n),
+    .year__dot--follow:nth-child(3n) .year__bullet {
+      animation-delay: 0.8s;
+    }
+  }
+
+  @keyframes year-pulse {
+    50% {
+      opacity: 0.55;
+      transform: scale(1.25);
+    }
+  }
+
+  .section__more {
+    margin: 2rem 0 0;
+  }
+
+  /* ---- Escritorio: carril horizontal de 12 puntos + tarjetas en 12 columnas ---- */
+  @media (min-width: 64rem) {
+    .year__rail {
+      position: relative;
+      display: block;
+      margin-bottom: 1.75rem;
+      padding-top: 2.75rem; /* sitio para la bandera del mes 11 */
+    }
+
+    .year__track {
+      top: calc(2.75rem + 0.75rem - 1.5px);
+      left: calc(100% / 24);
+      right: calc(100% / 24);
+      height: 3px;
+    }
+
+    .year__dots {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .year__dot {
+      display: grid;
+      justify-items: center;
+      gap: 0.5rem;
+    }
+
+    .year__bullet {
+      position: relative;
+      display: block;
+      width: 1.5rem;
+      height: 1.5rem;
+      border: 3px solid color-mix(in srgb, var(--white) 35%, transparent);
+      border-radius: 50%;
+      background: var(--teal-900);
+      transition:
+        background-color 0.3s,
+        border-color 0.3s,
+        transform 0.3s;
+    }
+
+    .year__dot--follow .year__bullet {
+      width: 1rem;
+      height: 1rem;
+      margin-block: 0.25rem;
+    }
+
+    /* Encendido: por defecto todos (sin JS); con JS, según el progreso. */
+    .year:not(.is-pending) .year__bullet,
+    .year__dot.is-lit .year__bullet {
+      border-color: var(--orange-500);
+      background: var(--orange-500);
+    }
+
+    .year__dot--first .year__bullet,
+    .year__dot--renew .year__bullet {
+      box-shadow: 0 0 0 5px color-mix(in srgb, var(--orange-500) 25%, transparent);
+    }
+
+    .year__num {
+      color: var(--teal-100);
+      font-weight: 700;
+    }
+
+    .year__flag {
+      position: absolute;
+      bottom: calc(100% + 0.5rem);
+      left: 50%;
+      padding: 0.25rem 0.625rem;
+      border-radius: 0.5rem;
+      background: var(--orange-500);
+      color: var(--teal-900);
+      font-size: 1rem;
+      font-weight: 700;
+      white-space: nowrap;
+      transform: translateX(-50%);
+    }
+
+    .year__flag::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      border: 6px solid transparent;
+      border-top-color: var(--orange-500);
+      transform: translateX(-50%);
+    }
+
+    .year__vtrack,
+    .year__card::before,
+    .year__mini,
+    .year__badge {
+      display: none;
+    }
+
+    .year__cards {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 1.25rem;
+      padding: 0;
+    }
+
+    .year__card--first {
+      grid-column: 1 / 5;
+    }
+
+    .year__card--follow {
+      grid-column: 5 / 10;
+      align-self: start;
+    }
+
+    .year__card--renew {
+      grid-column: 10 / 13;
+      align-self: start;
+    }
+
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .year__fill,
+    .year__vfill,
+    .year__card,
+    .year__card::before,
+    .year__bullet {
+      transition: none;
+    }
+  }
+</style>

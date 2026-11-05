@@ -1,0 +1,1310 @@
+---
+// Empreses i pimes / Empresas y pymes. Un solo objetivo: que el responsable de un negocio entienda
+// su factura, vea que trabajamos con empresas y empiece el pre-estudi (o llame).
+// Orden: hero · cifras · per a qui (sectores) · què mirem a la factura · et reconeixes? ·
+// què fem · com t'acompanyem · logos · per aprofundir (blog, si hay) · FAQ · pre-estudi.
+// Solo datos confirmados (docs/contexto.md). Sin fotos de personas: visuales SVG de marca.
+// Reutiliza: stats-strip, logos-band, faq-accordion, post-card y pre-study (perfil "empresa"
+// ya resuelto, pagina_origen = "empreses").
+// Medición: cta_click (empreses_hero, empreses_reconeix, empreses_com_treballem, empreses_cierre),
+// sector_select { sector }, click_call (location = empreses), blog_card_click (location = empreses)
+// y los del pre-estudi (calc_start, calc_step, generate_lead).
+import FaqAccordion from '../home/faq-accordion.astro';
+import PreStudy from '../home/pre-study.astro';
+import { preStudyTexts } from '../home/pre-study-texts';
+import LogosBand from '../logos-band.astro';
+import StatsStrip from '../stats-strip.astro';
+import PostCard from '../blog/post-card.astro';
+import { PRE_STUDY_ID } from '../../config/home';
+import { pages, type Locale } from '../../config/pages';
+import { phone } from '../../config/site';
+import { getPublishedPosts } from '../../lib/blog';
+import type { BillIcon, BusinessContent, SectorKey, StepIcon } from './types';
+import '../../styles/motion.css';
+
+interface Props {
+  lang: Locale;
+  content: BusinessContent;
+}
+
+const { lang, content: c } = Astro.props;
+const words = c.hero.title.split(' ');
+const noArrow = (s: string) => s.replace(/\s*→$/, '');
+const studyHref = `#${PRE_STUDY_ID[lang]}`;
+const activityOptions = preStudyTexts[lang].supply.activity.options;
+
+// "Per aprofundir": hasta 3 artículos publicados del idioma; primero "Empreses", después "Factura i potència".
+const published = await getPublishedPosts(lang);
+const related = [
+  ...published.filter((p) => p.data.category === 'empreses'),
+  ...published.filter((p) => p.data.category === 'factura'),
+].slice(0, 3);
+
+const sectorIcons: Record<SectorKey, string> = {
+  hostaleria: '<path d="M4 3v8a3 3 0 0 0 6 0V3M7 3v18"/><path d="M17 3c-2 2-2.5 5-2.5 8h4.5V3ZM19 11v10"/>',
+  comerc: '<path d="M4 9h16l-1.5-5h-13Z"/><path d="M5 9v11h14V9"/><path d="M10 20v-6h4v6"/>',
+  tallers: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5Z"/>',
+  cliniques: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/>',
+  altres: '<path d="M3 21h18M5 21V5l8-3v19M13 8h6v13"/><path d="M8 8h2M8 12h2M8 16h2M16 12h1M16 16h1"/>',
+};
+const billIcons: Record<BillIcon, string> = {
+  gauge: '<path d="M4 17a8 8 0 1 1 16 0"/><path class="ic-needle" d="M12 17l4-5"/><circle cx="12" cy="17" r="1.5"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path class="ic-hand" d="M12 7v5l3 2"/><path class="ic-a" d="M12 3a9 9 0 0 1 7.8 4.5"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path class="ic-a ic-alert" d="M12 13v3M12 18.5v.5"/>',
+};
+const stepIcons: Record<StepIcon, string> = {
+  invoice: '<path d="M6 3h9l3 3v15H6Z"/><path d="M9 8h5M9 11h3"/><circle class="ic-a" cx="14.5" cy="15" r="2.75"/><path class="ic-a" d="m16.5 17 2.5 2.5"/>',
+  compare: '<path d="M4 20h16"/><rect x="5" y="11" width="3" height="9" rx=".5"/><rect class="ic-a" x="10.5" y="5" width="3" height="15" rx=".5"/><rect x="16" y="14" width="3" height="6" rx=".5"/>',
+  stamp: '<path d="M14 3H6v18h7"/><path d="M14 3l4 4v5"/><path d="M14 3v4h4M9 11h5M9 14h2"/><circle class="ic-a" cx="17.5" cy="17.5" r="3.5"/>',
+  bell: '<path d="M6 17v-6a6 6 0 0 1 12 0v6l1.5 2h-15Z"/><path d="M10 21a2 2 0 0 0 4 0"/><path class="ic-a" d="M12 2v1.5"/>',
+};
+const serviceIcons = {
+  comTreballem: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/>',
+  gestio: '<path d="M8 3h8l4 4v14H4V3h4"/><path d="M16 3v4h4"/><path d="m8 14 2.5 2.5L16 11"/>',
+  autoconsum: '<path d="M3 20l3-9h12l3 9Z"/><path d="M9 11l-1 9M15 11l1 9M4.5 15.5h15M12 2v3M18 4l-2 2M6 4l2 2"/>',
+} as const;
+const check = '<path d="m5 12 5 5 9-10"/>';
+const phoneIcon =
+  '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/>';
+---
+
+<!-- 1. Hero -->
+<section class="bz-hero tech-bg" aria-labelledby="bz-title" data-section="empreses">
+  <div class="bz-hero__mesh" aria-hidden="true" data-anim>
+    <span class="bz-hero__blob bz-hero__blob--a"></span>
+    <span class="bz-hero__blob bz-hero__blob--b"></span>
+  </div>
+  <div class="container bz-hero__grid">
+    <div>
+      <p class="bz-hero__tag"><span class="bz-hero__pulse" aria-hidden="true"></span>{c.hero.tag}</p>
+      <h1 id="bz-title">
+        {
+          words.map((word, i) => (
+            <>
+              <span class="bz-hero__word" style={`--w:${i}`}>
+                {word}
+              </span>
+              {i < words.length - 1 && ' '}
+            </>
+          ))
+        }
+      </h1>
+      <p class="bz-hero__lead">{c.hero.lead}</p>
+      <a class="btn btn-primary btn-lg bz-hero__btn" href={studyHref} data-cta="empreses_hero">
+        {noArrow(c.hero.cta)} <span class="arrow" aria-hidden="true">→</span>
+      </a>
+      <p class="bz-hero__note">{c.hero.note}</p>
+      <a class="bz-call" href={phone.tel}>
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={phoneIcon} />
+        <span>{c.hero.call} {phone.display}</span>
+      </a>
+    </div>
+
+    <!-- Factura que se descompone en sus tres bloques (decorativa; lo explica la sección 3). -->
+    <div class="bz-bill" aria-hidden="true" data-anim>
+      <div class="bz-bill__paper">
+        <span class="bz-bill__head"></span>
+        <span class="bz-bill__line"></span>
+        <span class="bz-bill__line bz-bill__line--short"></span>
+      </div>
+      {
+        c.hero.blocks.map((block, i) => (
+          <span class:list={['bz-bill__block', `bz-bill__block--${i}`]} style={`--b:${i}`}>
+            <span class="bz-bill__dot" />
+            {block}
+          </span>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<StatsStrip items={c.stats} section="empreses" />
+
+<!-- 2. Per a qui: sectores -->
+<section class="section surface-white surface-grid" aria-labelledby="bz-sectors-title" data-section="empreses">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.sectors.eyebrow}</p>
+      <h2 id="bz-sectors-title">{c.sectors.title}</h2>
+      <p class="section-head__intro">{c.sectors.text}</p>
+    </div>
+    <ul class="bz-sectors">
+      {
+        c.sectors.items.map((item, i) => (
+          <li data-reveal style={`--i:${i}`}>
+            <a
+              class="bz-sector card-lift"
+              href={studyHref}
+              data-sector={item.key}
+              data-activity={item.activity && activityOptions.includes(item.activity) ? item.activity : undefined}
+            >
+              <span class="bz-sector__icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={sectorIcons[item.key]} />
+              </span>
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="bz-sectors__hint" data-reveal>{c.sectors.hint}</p>
+  </div>
+</section>
+
+<!-- 3. Què mirem a la factura d'un negoci -->
+<section class="section bz-bill-section" aria-labelledby="bz-billx-title" data-section="empreses">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.bill.eyebrow}</p>
+      <h2 id="bz-billx-title">{c.bill.title}</h2>
+      <p class="section-head__intro">{c.bill.intro}</p>
+    </div>
+    <ul class="bz-cards">
+      {
+        c.bill.items.map((item, i) => (
+          <li class:list={['bz-card', 'card', `bz-card--${item.icon}`]} data-reveal data-bz-card style={`--i:${i}`} data-open={i === 0 ? '' : undefined}>
+            <h3 class="bz-card__title">
+              <button class="bz-card__head" type="button" aria-expanded={i === 0 ? 'true' : 'false'} aria-controls={`bz-card-${i}`} data-bz-toggle>
+                <span class="bz-card__icon" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={billIcons[item.icon]} />
+                </span>
+                <span class="bz-card__label">{item.title}</span>
+                <svg class="bz-card__chev" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+            </h3>
+            <div class="bz-card__panel" id={`bz-card-${i}`}>
+              <div class="bz-card__inner">
+                <p class="bz-card__text">{item.text}</p>
+                <p class="bz-card__look">
+                  <strong>{c.bill.lookLabel}</strong> {item.look}
+                </p>
+                {item.source && (
+                  <p class="bz-card__source">
+                    <a href={item.source.href} rel="noopener noreferrer" target="_blank">
+                      {item.source.label}
+                    </a>
+                  </p>
+                )}
+              </div>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<!-- 4. Et reconeixes? (autocalificación; el mensaje y el botón tienen el sitio reservado: sin CLS) -->
+<section class="section band-alt" aria-labelledby="bz-fit-title" data-section="empreses">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.fit.eyebrow}</p>
+      <h2 id="bz-fit-title">{c.fit.title}</h2>
+    </div>
+    <div class="bz-fit" data-fit>
+      <fieldset class="bz-fit__set">
+        <legend class="sr-only">{c.fit.label}</legend>
+        <div class="bz-fit__chips">
+          {
+            c.fit.items.map((item, i) => (
+              <label class="bz-fit__chip" data-reveal style={`--i:${i}`}>
+                <input type="checkbox" name="situacio" value={String(i + 1)} />
+                <span class="bz-fit__box" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" set:html={check} />
+                </span>
+                <span>{item}</span>
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+      <div class="bz-fit__result">
+        <p class="bz-fit__msg bz-fit__msg--help" data-fit-help>{c.fit.help}</p>
+        <p class="bz-fit__msg bz-fit__msg--yes" data-fit-yes aria-live="polite">{c.fit.yes}</p>
+      </div>
+      <a class="btn btn-secondary bz-fit__btn" href={studyHref} data-cta="empreses_reconeix" data-fit-btn>
+        {noArrow(c.fit.cta)} <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Què fem per a la teva empresa -->
+<section class="section surface-white" aria-labelledby="bz-services-title" data-section="empreses">
+  <div class="container">
+    <h2 id="bz-services-title" class="bz-h2" data-reveal>{c.services.title}</h2>
+    <ul class="bz-services">
+      {
+        c.services.items.map((item, i) => (
+          <li class="bz-service card card-lift" data-reveal style={`--i:${i}`}>
+            <span class="bz-service__icon" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={serviceIcons[item.page]} />
+            </span>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+            <a class="bz-service__link" href={pages[item.page][lang]}>
+              {noArrow(item.link)} <span aria-hidden="true">→</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<!-- 6. Com t'acompanyem: 4 hitos (más compacto que el carril de 12 meses de la home) -->
+<section class="section bz-steps-section" aria-labelledby="bz-steps-title" data-section="empreses">
+  <div class="container">
+    <h2 id="bz-steps-title" class="bz-h2" data-reveal>{c.steps.title}</h2>
+    <div class="bz-steps" data-bz-steps style="--progress:1">
+      <span class="bz-steps__track" aria-hidden="true"><span class="bz-steps__fill"></span></span>
+      <ol class="bz-steps__list">
+        {
+          c.steps.items.map((step, i) => (
+            <li class="bz-step" data-bz-step={i}>
+              <span class="bz-step__icon" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={stepIcons[step.icon]} />
+              </span>
+              <span class="bz-step__num" aria-hidden="true">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <h3>{step.title}</h3>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+    <p class="bz-steps__more">
+      <a class="btn btn-secondary" href={pages.comTreballem[lang]} data-cta="empreses_com_treballem">
+        {noArrow(c.steps.cta)} <span aria-hidden="true">→</span>
+      </a>
+    </p>
+  </div>
+</section>
+
+<!-- 7. Logos (mismo componente que la home) -->
+<LogosBand lang={lang} title={c.logosTitle} section="empreses" titleId="bz-logos-title" />
+
+<!-- 8. Per aprofundir: solo si hay artículos publicados (si no, ni el título ni el hueco) -->
+{
+  related.length > 0 && (
+    <section class="section band-alt" aria-labelledby="bz-blog-title" data-section="empreses" data-bz-blog>
+      <div class="container">
+        <h2 id="bz-blog-title" class="bz-h2" data-reveal>
+          {c.blogTitle}
+        </h2>
+        <div class="bz-posts">
+          {related.map((post, i) => (
+            <PostCard post={post} lang={lang} position={i + 1} heading="h3" />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<!-- 9. Preguntes freqüents (6, acordeón exclusivo; el JSON-LD FAQPage sale de los mismos textos) -->
+<FaqAccordion lang={lang} content={c.faq} idPrefix="bz-faq" section="empreses" />
+
+<!-- 10. Pre-estudi del negoci: perfil "empresa" ya resuelto -->
+<PreStudy
+  lang={lang}
+  content={{ ...preStudyTexts[lang], title: c.study.title, lead: c.study.lead }}
+  presetProfile="empresa"
+  origin="empreses"
+/>
+<div class="bz-after" data-section="empreses">
+  <div class="container bz-after__inner">
+    <p class="bz-after__call">
+      {c.study.callLead}{' '}
+      <a href={phone.tel} data-cta="empreses_cierre">{phone.display}</a>
+    </p>
+    <p class="bz-after__other">
+      <span>{c.study.other}</span>
+      <a class="bz-arrow-link" href={pages.comunitats[lang]}>{pages.comunitats.name[lang]} <span aria-hidden="true">→</span></a>
+      <a class="bz-arrow-link" href={pages.llars[lang]}>{pages.llars.name[lang]} <span aria-hidden="true">→</span></a>
+    </p>
+  </div>
+</div>
+
+<script>
+  import { track } from '../../scripts/analytics';
+  import { initDecor, initReveal } from '../../scripts/motion';
+
+  initReveal();
+  initDecor();
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // --- Sectores: preseleccionan la actividad del pre-estudi (si hay coincidencia) y lanzan
+  // sector_select. El enlace (#pre-estudi) hace el scroll suave; sin JS también funciona.
+  document.querySelectorAll<HTMLAnchorElement>('[data-sector]').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      track('sector_select', { sector: chip.dataset.sector, location: 'empreses' });
+      const value = chip.dataset.activity;
+      const select = document.querySelector<HTMLSelectElement>('[data-pre-study] select[name="activitat"]');
+      if (value && select && [...select.options].some((o) => o.value === value)) {
+        select.value = value;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+  });
+
+  // --- Què mirem a la factura: acordeón solo en móvil (< 48rem); en escritorio, todo abierto.
+  document.querySelectorAll<HTMLButtonElement>('[data-bz-toggle]').forEach((button) => {
+    const card = button.closest<HTMLElement>('[data-bz-card]')!;
+    button.addEventListener('click', () => {
+      if (window.matchMedia('(min-width: 48rem)').matches) return;
+      const open = !card.hasAttribute('data-open');
+      card.toggleAttribute('data-open', open);
+      button.setAttribute('aria-expanded', String(open));
+    });
+  });
+  const syncCards = () => {
+    const desktop = window.matchMedia('(min-width: 48rem)').matches;
+    document.querySelectorAll<HTMLElement>('[data-bz-card]').forEach((card) => {
+      const button = card.querySelector('[data-bz-toggle]')!;
+      if (desktop) button.setAttribute('aria-expanded', 'true');
+      else button.setAttribute('aria-expanded', String(card.hasAttribute('data-open')));
+    });
+  };
+  syncCards();
+  window.matchMedia('(min-width: 48rem)').addEventListener('change', syncCards);
+
+  // --- Et reconeixes?: con una o más casillas marcadas cambia el mensaje y se destaca el botón.
+  document.querySelectorAll<HTMLElement>('[data-fit]').forEach((fit) => {
+    const boxes = [...fit.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
+    const button = fit.querySelector<HTMLElement>('[data-fit-btn]')!;
+    const update = () => {
+      const any = boxes.some((b) => b.checked);
+      fit.classList.toggle('is-yes', any);
+      button.classList.toggle('btn-primary', any);
+      button.classList.toggle('btn-secondary', !any);
+    };
+    boxes.forEach((b) => b.addEventListener('change', update));
+    update();
+  });
+
+  // --- Com t'acompanyem: la línea se rellena al hacer scroll y cada hito se enciende.
+  const stepsRoot = document.querySelector<HTMLElement>('[data-bz-steps]');
+  if (stepsRoot && !reduce && 'IntersectionObserver' in window) {
+    const steps = [...stepsRoot.querySelectorAll<HTMLElement>('[data-bz-step]')];
+    let reached = -1;
+    const paint = () => {
+      stepsRoot.style.setProperty('--progress', String((reached + 1) / steps.length));
+      steps.forEach((s, i) => s.classList.toggle('is-lit', i <= reached));
+    };
+    stepsRoot.classList.add('is-pending');
+    paint();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) if (e.isIntersecting) reached = Math.max(reached, Number((e.target as HTMLElement).dataset.bzStep));
+        paint();
+      },
+      { rootMargin: '0px 0px -40% 0px' },
+    );
+    steps.forEach((s) => observer.observe(s));
+  }
+
+  // --- Per aprofundir: blog_card_click con location = empreses.
+  document.querySelector('[data-bz-blog]')?.addEventListener('click', (event) => {
+    const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[data-card-link]');
+    if (!link) return;
+    const { slug, position, lang } = link.dataset;
+    track('blog_card_click', { slug, position: Number(position), lang, location: 'empreses' });
+  });
+</script>
+
+<style>
+  /* ---------------- 1. Hero ---------------- */
+  .bz-hero {
+    padding-block: 1.5rem 3rem;
+    color: var(--white);
+  }
+
+  .bz-hero__mesh {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .bz-hero__blob {
+    position: absolute;
+    width: 34rem;
+    height: 34rem;
+    border-radius: 50%;
+    opacity: 0.55;
+    animation: bz-drift 28s ease-in-out infinite alternate;
+  }
+
+  .bz-hero__blob--a {
+    top: -14rem;
+    right: -12rem;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-500) 45%, transparent), transparent);
+  }
+
+  .bz-hero__blob--b {
+    bottom: -18rem;
+    left: -14rem;
+    background: radial-gradient(closest-side, var(--teal-700), transparent);
+    animation-duration: 34s;
+    animation-direction: alternate-reverse;
+  }
+
+  @keyframes bz-drift {
+    to {
+      transform: translate3d(-6rem, 4rem, 0) scale(1.15);
+    }
+  }
+
+  .bz-hero__grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .bz-hero__tag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: fit-content;
+    margin-bottom: 0.875rem;
+    padding: 0.25rem 0.875rem 0.25rem 0.625rem;
+    border: 1px solid color-mix(in srgb, var(--white) 25%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--white) 8%, transparent);
+    font-weight: 700;
+  }
+
+  .bz-hero__pulse {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    background: var(--orange-500);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--orange-500) 30%, transparent);
+  }
+
+  .bz-hero h1 {
+    max-width: 20ch;
+    margin-bottom: 1rem;
+    color: var(--white);
+  }
+
+  .bz-hero__word {
+    display: inline-block;
+  }
+
+  /* Aparición palabra a palabra desde opacidad 0,15 (nunca 0: no retrasa el LCP). */
+  @media (prefers-reduced-motion: no-preference) {
+    .bz-hero__word {
+      animation: bz-word 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      animation-delay: calc(0.1s + var(--w) * 60ms);
+    }
+  }
+
+  @keyframes bz-word {
+    from {
+      opacity: 0.15;
+      transform: translateY(0.35em);
+    }
+  }
+
+  .bz-hero__lead {
+    max-width: 38rem;
+    margin-bottom: 1.25rem;
+    color: var(--teal-100);
+    font-size: 1.125rem;
+  }
+
+  .bz-hero__btn {
+    width: 100%;
+  }
+
+  .bz-hero__note {
+    margin: 0.5rem 0 0;
+    color: var(--teal-100);
+  }
+
+  .bz-call {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    margin-top: 0.25rem;
+    color: var(--white);
+    font-weight: 700;
+  }
+
+  .bz-call svg {
+    flex: none;
+    color: var(--orange-500);
+  }
+
+  @media (min-width: 30rem) {
+    .bz-hero__btn {
+      width: auto;
+    }
+  }
+
+  /* Factura que se descompone: papel + tres bloques que se iluminan en secuencia y flotan. */
+  .bz-bill {
+    position: relative;
+    justify-self: center;
+    width: min(100%, 17rem);
+    height: 13rem;
+  }
+
+  .bz-bill__paper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
+    align-content: start;
+    gap: 0.5rem;
+    width: 9rem;
+    height: 11.5rem;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    background: var(--white);
+    box-shadow: 0 1.5rem 3rem -1.5rem color-mix(in srgb, var(--orange-500) 60%, transparent);
+    transform: rotate(-6deg);
+  }
+
+  .bz-bill__head {
+    width: 60%;
+    height: 0.625rem;
+    border-radius: 999px;
+    background: var(--teal-900);
+  }
+
+  .bz-bill__line {
+    height: 0.375rem;
+    border-radius: 999px;
+    background: var(--teal-100);
+  }
+
+  .bz-bill__line--short {
+    width: 70%;
+  }
+
+  .bz-bill__block {
+    position: absolute;
+    right: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 12rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid color-mix(in srgb, var(--white) 20%, transparent);
+    border-radius: 0.875rem;
+    background: color-mix(in srgb, var(--white) 4%, var(--teal-900));
+    color: var(--white);
+    font-weight: 700;
+    line-height: 1.3;
+    box-shadow: 0 0.75rem 1.5rem -1rem var(--teal-900);
+  }
+
+  .bz-bill__block--0 {
+    top: 1.5rem;
+  }
+
+  .bz-bill__block--1 {
+    top: 5.25rem;
+    right: 1.25rem;
+  }
+
+  .bz-bill__block--2 {
+    top: 9rem;
+  }
+
+  .bz-bill__dot {
+    flex: none;
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    background: var(--orange-500);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .bz-bill__block {
+      animation:
+        bz-float 6s ease-in-out infinite,
+        bz-glow 6s ease-in-out infinite;
+      animation-delay: calc(var(--b) * 2s), calc(var(--b) * 2s);
+    }
+  }
+
+  @keyframes bz-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  /* El brillo va en una sombra que no cambia el texto: el contraste se mantiene. */
+  @keyframes bz-glow {
+    0%,
+    30%,
+    100% {
+      box-shadow: 0 0.75rem 1.5rem -1rem var(--teal-900);
+    }
+    12% {
+      box-shadow:
+        0 0 0 2px var(--orange-500),
+        0 0 1.5rem -0.25rem var(--orange-500);
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .bz-hero {
+      padding-block: 3.5rem 4.5rem;
+    }
+
+    .bz-hero__grid {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      align-items: center;
+      gap: 2.5rem;
+    }
+
+    .bz-bill {
+      width: 20rem;
+      height: 15rem;
+    }
+
+    .bz-bill__paper {
+      width: 10.5rem;
+      height: 13.5rem;
+    }
+
+    .bz-bill__block--1 {
+      top: 6rem;
+    }
+
+    .bz-bill__block--2 {
+      top: 10.5rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .bz-hero__lead {
+      font-size: 1.25rem;
+    }
+  }
+
+  /* ---------------- Comunes ---------------- */
+  .bz-h2 {
+    max-width: 44rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .bz-arrow-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 44px;
+    color: var(--orange-700);
+    font-weight: 700;
+  }
+
+  /* ---------------- 2. Sectores ---------------- */
+  .bz-sectors {
+    display: flex;
+    gap: 0.625rem;
+    margin: 0 -1rem;
+    padding: 0.25rem 1rem 0.75rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 1rem;
+    scrollbar-width: thin;
+    list-style: none;
+  }
+
+  .bz-sectors li {
+    flex: none;
+    scroll-snap-align: start;
+  }
+
+  .bz-sector {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 52px;
+    padding: 0.5rem 1.125rem 0.5rem 0.5rem;
+    border: 1.5px solid var(--teal-100);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--teal-900);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .bz-sector:is(:hover, :focus-visible) {
+    border-color: var(--teal-900);
+  }
+
+  .bz-sector__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--teal-900);
+    color: var(--orange-500);
+  }
+
+  .bz-sectors__hint {
+    margin: 0.75rem 0 0;
+    color: var(--text-muted);
+  }
+
+  @media (min-width: 48rem) {
+    .bz-sectors {
+      flex-wrap: wrap;
+      margin-inline: 0;
+      padding-inline: 0;
+      overflow: visible;
+    }
+  }
+
+  /* ---------------- 3. Què mirem a la factura ---------------- */
+  .bz-cards {
+    display: grid;
+    gap: 1rem;
+    align-items: start;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .bz-card {
+    overflow: hidden;
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease,
+      border-color 0.2s;
+  }
+
+  .bz-card:is(:focus-within, :active) {
+    border-color: var(--orange-700);
+  }
+
+  .bz-card__head {
+    display: flex;
+    gap: 0.875rem;
+    align-items: center;
+    width: 100%;
+    min-height: 56px;
+    padding: 1.25rem 1.25rem 0.75rem;
+    border: 0;
+    background: none;
+    color: var(--teal-900);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .bz-card__title {
+    margin: 0;
+  }
+
+  .bz-card__label {
+    flex: 1;
+    font-family: var(--font-heading);
+    font-size: 1.1875rem;
+    font-weight: 700;
+  }
+
+  .bz-card__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 0.875rem;
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .bz-card__icon :global(.ic-a),
+  .bz-card__icon :global(.ic-needle),
+  .bz-card__icon :global(.ic-hand) {
+    stroke: var(--orange-500);
+  }
+
+  .bz-card__chev {
+    flex: none;
+    color: var(--orange-700);
+    transition: transform 0.25s ease;
+  }
+
+  .bz-card[data-open] .bz-card__chev {
+    transform: rotate(180deg);
+  }
+
+  .bz-card__inner {
+    padding: 0 1.25rem 1.25rem;
+  }
+
+  .bz-card__text {
+    color: var(--text-muted);
+  }
+
+  .bz-card__look {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: var(--orange-100);
+    color: var(--teal-900);
+  }
+
+  .bz-card__source {
+    margin: 0.75rem 0 0;
+  }
+
+  .bz-card__source a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--teal-900);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+
+  /* Móvil con JS: acordeón (la primera abierta). Sin JS, todo abierto. */
+  @media (max-width: 47.99rem) {
+    .js .bz-card__panel {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.28s ease;
+    }
+
+    .js .bz-card[data-open] .bz-card__panel {
+      grid-template-rows: 1fr;
+    }
+
+    .js .bz-card__inner {
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .js .bz-card:not([data-open]) .bz-card__inner {
+      padding-bottom: 0;
+    }
+  }
+
+  /* Escritorio: en fila, todo abierto; al pasar el cursor o enfocar se eleva y el icono se anima. */
+  @media (min-width: 48rem) {
+    .bz-cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+
+    .bz-card__head {
+      flex-direction: column;
+      align-items: flex-start;
+      cursor: default;
+    }
+
+    .bz-card__chev {
+      display: none;
+    }
+
+    .bz-card:is(:hover, :focus-within) {
+      transform: translateY(-4px);
+      box-shadow: 0 1.25rem 2.5rem -1.25rem color-mix(in srgb, var(--teal-900) 35%, transparent);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .bz-card__icon :global(.ic-needle) {
+      transform-box: view-box;
+      transform-origin: 12px 17px;
+      transition: transform 0.6s cubic-bezier(0.3, 1.4, 0.5, 1);
+    }
+
+    .bz-card:is(:hover, :focus-within, :active) .bz-card__icon :global(.ic-needle) {
+      transform: rotate(-70deg);
+    }
+
+    .bz-card__icon :global(.ic-hand) {
+      transform-box: view-box;
+      transform-origin: 12px 12px;
+      transition: transform 0.6s ease;
+    }
+
+    .bz-card:is(:hover, :focus-within, :active) .bz-card__icon :global(.ic-hand) {
+      transform: rotate(120deg);
+    }
+
+    .bz-card:is(:hover, :focus-within, :active) .bz-card__icon :global(.ic-alert) {
+      animation: bz-blink 0.9s ease-in-out 2;
+    }
+  }
+
+  @keyframes bz-blink {
+    50% {
+      opacity: 0.2;
+    }
+  }
+
+  /* ---------------- 4. Et reconeixes? ---------------- */
+  .bz-fit__set {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .bz-fit__chips {
+    display: grid;
+    gap: 0.625rem;
+  }
+
+  .bz-fit__chip {
+    position: relative;
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    min-height: 56px;
+    margin: 0;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid color-mix(in srgb, var(--teal-900) 15%, transparent);
+    border-radius: 1rem;
+    background: var(--white);
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      border-color 0.15s,
+      background-color 0.15s,
+      transform 0.2s;
+  }
+
+  .bz-fit__chip input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .bz-fit__box {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid var(--teal-900);
+    border-radius: 0.375rem;
+    color: transparent;
+    transition: background-color 0.15s;
+  }
+
+  .bz-fit__chip:has(input:checked) {
+    border-color: var(--teal-900);
+    background: var(--orange-100);
+  }
+
+  .bz-fit__chip:has(input:checked) .bz-fit__box {
+    border-color: var(--orange-500);
+    background: var(--orange-500);
+    color: var(--teal-900);
+  }
+
+  .bz-fit__chip:has(input:focus-visible) {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  .bz-fit__chip:active {
+    transform: scale(0.99);
+  }
+
+  /* Mensaje: los dos estados ocupan la misma celda (sin CLS al marcar). */
+  .bz-fit__result {
+    display: grid;
+    margin: 1.25rem 0 1rem;
+  }
+
+  .bz-fit__msg {
+    grid-area: 1 / 1;
+    margin: 0;
+    transition:
+      opacity 0.25s ease,
+      transform 0.25s ease;
+  }
+
+  .bz-fit__msg--help {
+    color: var(--text-muted);
+  }
+
+  .bz-fit__msg--yes {
+    color: var(--teal-900);
+    font-size: 1.125rem;
+    font-weight: 700;
+    opacity: 0;
+    transform: translateY(6px);
+    visibility: hidden;
+  }
+
+  .bz-fit.is-yes .bz-fit__msg--help {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .bz-fit.is-yes .bz-fit__msg--yes {
+    opacity: 1;
+    transform: none;
+    visibility: visible;
+  }
+
+  /* Sin JS: el mensaje de ayuda y el botón, siempre visibles. */
+
+  @media (min-width: 48rem) {
+    .bz-fit__chips {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* ---------------- 5. Què fem ---------------- */
+  .bz-services {
+    display: grid;
+    gap: 1rem;
+    align-items: start;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .bz-service {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+  }
+
+  .bz-service:focus-within {
+    border-color: var(--orange-700);
+  }
+
+  .bz-service__icon {
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    margin-bottom: 1rem;
+    border-radius: 0.875rem;
+    background: var(--orange-100);
+    color: var(--teal-900);
+  }
+
+  .bz-service p {
+    color: var(--text-muted);
+  }
+
+  .bz-service__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 44px;
+    color: var(--orange-700);
+    font-weight: 700;
+  }
+
+  /* Toda la tarjeta es un único enlace (stretched link). */
+  .bz-service__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  @media (min-width: 48rem) {
+    .bz-services {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+  }
+
+  /* ---------------- 6. Com t'acompanyem ---------------- */
+  .bz-steps {
+    --dot: 3.25rem;
+    position: relative;
+  }
+
+  .bz-steps__track {
+    position: absolute;
+    top: 1rem;
+    bottom: 1rem;
+    left: calc(var(--dot) / 2 - 1.5px);
+    width: 3px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: var(--teal-100);
+  }
+
+  .bz-steps__fill {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(var(--orange-700), var(--orange-500));
+    transform: scaleY(var(--progress, 1));
+    transform-origin: top;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .bz-steps__list {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .bz-step {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--dot) minmax(0, 1fr);
+    gap: 0 1rem;
+    align-items: center;
+  }
+
+  .bz-step__icon {
+    z-index: 1;
+    display: grid;
+    grid-row: span 2;
+    place-items: center;
+    width: var(--dot);
+    height: var(--dot);
+    border-radius: 50%;
+    background: var(--teal-900);
+    color: var(--white);
+    box-shadow: 0 0 0 5px var(--cream);
+    transition:
+      background-color 0.3s,
+      transform 0.3s;
+  }
+
+  .bz-step__icon :global(.ic-a) {
+    stroke: var(--orange-500);
+  }
+
+  .bz-steps.is-pending .bz-step:not(.is-lit) .bz-step__icon {
+    background: var(--teal-100);
+    color: var(--teal-900);
+    transform: scale(0.88);
+  }
+
+  .bz-step__num {
+    color: var(--orange-700);
+    font-family: var(--font-heading);
+    font-weight: 700;
+  }
+
+  .bz-step h3 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+
+  .bz-steps__more {
+    margin: 1.75rem 0 0;
+  }
+
+  @media (min-width: 48rem) {
+    .bz-steps__track {
+      top: calc(var(--dot) / 2 - 1.5px);
+      bottom: auto;
+      left: 12.5%;
+      right: 12.5%;
+      width: auto;
+      height: 3px;
+    }
+
+    .bz-steps__fill {
+      background: linear-gradient(90deg, var(--orange-700), var(--orange-500));
+      transform: scaleX(var(--progress, 1));
+      transform-origin: left;
+    }
+
+    .bz-steps__list {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+
+    .bz-step {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      gap: 0.5rem;
+      text-align: center;
+    }
+
+    .bz-step__icon {
+      grid-row: auto;
+    }
+  }
+
+  /* ---------------- 8. Blog ---------------- */
+  .bz-posts {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  @media (min-width: 48rem) {
+    .bz-posts {
+      grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    }
+  }
+
+  /* ---------------- 10. Bajo el pre-estudi ---------------- */
+  .bz-after {
+    padding-block: 0 3rem;
+    background: var(--cream);
+  }
+
+  .bz-after__inner {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .bz-after__call,
+  .bz-after__other {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1rem;
+    align-items: center;
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .bz-after__call a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--orange-700);
+  }
+
+  .bz-after__other span:first-child {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bz-hero__blob,
+    .bz-steps__fill,
+    .bz-step__icon,
+    .bz-card,
+    .bz-fit__msg,
+    .bz-fit__chip {
+      animation: none;
+      transition: none;
+    }
+  }
+</style>

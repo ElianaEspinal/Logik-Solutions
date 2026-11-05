@@ -1,0 +1,509 @@
+---
+// Home (estructura opción A de docs/contexto.md; textos en docs/home-textos.md). Orden:
+//   1 cabecera (layout) · 2 hero · 3 logos · 4 perfiles (bento) · 5 pre-estudi
+//   6 el teu any (12 meses) · 7 comparativa · 8 cifras · 9 gestiones + autoconsumo
+//   10 testimonios (sin publicar hasta tenerlos) · 11 blog (cuando haya artículos)
+//   12 FAQ (acordeón) · 13 cierre "Parlem?" con formulario · 14 pie (layout)
+// Movimiento y superficies: src/styles/motion.css y src/scripts/motion.ts.
+// La tarjeta derecha de autoconsumo (esquema animado) se conserva sin cambios.
+import { SITE_ENV } from 'astro:env/server';
+import ContactForm from '../ContactForm.astro';
+import LogosBand from '../logos-band.astro';
+import StatsStrip from '../stats-strip.astro';
+import CompareTable from './compare-table.astro';
+import FaqAccordion from './faq-accordion.astro';
+import GestionsCard from './gestions-card.astro';
+import Hero from './hero.astro';
+import NeedsBento from './needs-bento.astro';
+import PreStudy from './pre-study.astro';
+import YearRail from './year-rail.astro';
+import { CLOSING_FORM_ID, PRE_STUDY_ENABLED } from '../../config/home';
+import { pages, type Locale } from '../../config/pages';
+import { phone, site } from '../../config/site';
+import { useTranslations } from '../../i18n/ui';
+import { getPosts, postPath } from '../../lib/blog';
+import type { HomeContent } from './types';
+import '../../styles/motion.css';
+
+interface Props {
+  lang: Locale;
+  content: HomeContent;
+}
+
+const { lang, content: c } = Astro.props;
+const t = useTranslations(lang);
+const isStaging = SITE_ENV === 'staging';
+const posts = (await getPosts(lang)).slice(0, 3);
+const dateFormat = new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'long', year: 'numeric' });
+
+---
+
+<!-- 2. Hero -->
+<Hero lang={lang} content={c.hero} />
+
+<!-- 3. Logos de clientes (src/components/logos-band.astro) -->
+<LogosBand lang={lang} title={c.logos.title} />
+
+<!-- 4. Perfiles: bento interactivo -->
+<NeedsBento lang={lang} content={c.needs} />
+
+<!-- 5. Pre-estudi / preestudio por pasos: principal captación de leads de la home -->
+{PRE_STUDY_ENABLED && <PreStudy lang={lang} content={c.preStudy} />}
+
+<!-- 6. El teu any amb Logik: recorrido de 12 meses -->
+<YearRail lang={lang} content={c.year} />
+
+<!-- 7. Pel teu compte o amb Logik -->
+<CompareTable content={c.compare} />
+
+<!-- 7. Cifras (src/components/stats-strip.astro) -->
+<StatsStrip items={c.stats.items} note={c.stats.note} />
+
+<!-- 8. Gestiones y autoconsumo (con esquema animado) -->
+<section class="section" aria-label={`${c.gestions.title} · ${c.solar.title}`}>
+  <div class="container split">
+    <GestionsCard lang={lang} content={c.gestions} />
+
+    <div class="feature card" data-section="autoconsum" data-reveal style="--i:1">
+      <h2>{c.solar.title}</h2>
+      <p class="muted">{c.solar.text}</p>
+      <figure class="solar" data-anim>
+        <svg
+          viewBox="0 0 340 180"
+          role="img"
+          aria-label={`${c.solar.diagram.sun} → ${c.solar.diagram.panels} → ${c.solar.diagram.home} → ${c.solar.diagram.surplus}`}
+          width="340"
+          height="180"
+        >
+          <g class="solar__sun">
+            <circle cx="40" cy="40" r="16"></circle>
+            <path d="M40 12v6M40 62v6M12 40h6M62 40h6M20 20l4 4M56 56l4 4M20 60l4-4M56 24l4-4"></path>
+          </g>
+          <path class="solar__flow" d="M64 54 L112 86"></path>
+          <path class="solar__spark solar__spark--diag" d="M64 54 l6 4"></path>
+          <path class="solar__house" d="M100 156V102l52-40 52 40v54Z"></path>
+          <path class="solar__panels" d="M114 90l38-29 38 29-8 6-30-22-30 22Z"></path>
+          <path class="solar__flow" d="M208 130 H268"></path>
+          <path class="solar__spark solar__spark--x" d="M208 130 h8"></path>
+          <g class="solar__grid">
+            <path d="M292 156V96M278 108h28M282 122h20M292 96l-10 60M292 96l10 60"></path>
+          </g>
+          <text x="40" y="88" text-anchor="middle">{c.solar.diagram.sun}</text>
+          <text x="152" y="50" text-anchor="middle">{c.solar.diagram.panels}</text>
+          <text x="152" y="174" text-anchor="middle">{c.solar.diagram.home}</text>
+          <text x="292" y="86" text-anchor="middle">{c.solar.diagram.surplus}</text>
+        </svg>
+      </figure>
+      <a class="btn btn-secondary" href={pages.autoconsum[lang]} data-cta>
+        {c.solar.link} <span aria-hidden="true">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- 9. Testimonios: solo reales. Sin textos todavía, la sección no se publica. -->
+{
+  isStaging && (
+    <div class="container" data-staging-only>
+      <p class="staging-marker">
+        {lang === 'ca' ? (
+          <>
+            <strong>PENDENT · Testimonis o casos reals.</strong> No hi ha textos a docs/home-textos.md. En producció aquesta
+            secció no es mostra fins que n'hi hagi (amb permís del client).
+          </>
+        ) : (
+          <>
+            <strong>PENDIENTE · Testimonios o casos reales.</strong> No hay textos en docs/home-textos.md. En producción esta
+            sección no se muestra hasta tenerlos (con permiso del cliente).
+          </>
+        )}
+      </p>
+    </div>
+  )
+}
+
+<!-- 10. Blog: tres últimos artículos; la sección se oculta hasta que haya artículos publicados -->
+{
+  posts.length > 0 && (
+    <section class="section band-alt" aria-labelledby="blog-title" data-section="blog">
+      <div class="container">
+        <h2 id="blog-title" class="section__title" data-reveal>
+          {c.blog.title}
+        </h2>
+        <ul class="posts">
+          {posts.map((post, i) => (
+            <li class="card posts__item" data-reveal style={`--i:${i}`}>
+              <time datetime={post.data.pubDate.toISOString().slice(0, 10)}>{dateFormat.format(post.data.pubDate)}</time>
+              <h3>
+                <a href={postPath(post)}>{post.data.title}</a>
+              </h3>
+              <p class="muted">{post.data.description}</p>
+            </li>
+          ))}
+        </ul>
+        <p class="section__more">
+          <a class="btn btn-secondary" href={pages.blog[lang]} data-cta>
+            {c.blog.link} <span aria-hidden="true">→</span>
+          </a>
+        </p>
+      </div>
+    </section>
+  )
+}
+{
+  isStaging && posts.length === 0 && (
+    <div class="container" data-staging-only>
+      <p class="staging-marker">
+        {lang === 'ca' ? (
+          <><strong>PENDENT · Blog.</strong> Sense articles publicats: la secció apareix sola quan n'hi hagi.</>
+        ) : (
+          <><strong>PENDIENTE · Blog.</strong> Sin artículos publicados: la sección aparece sola cuando los haya.</>
+        )}
+      </p>
+    </div>
+  )
+}
+
+<!-- 12. FAQ: acordeón, 10 preguntas (iguales que en el JSON-LD FAQPage) -->
+<FaqAccordion lang={lang} content={c.faq} />
+
+<!-- 12. Cierre: Parlem? -->
+<section class="section closing" id={CLOSING_FORM_ID} aria-labelledby="closing-title" data-section="cierre">
+  <div class="container closing__grid">
+    <div class="closing__panel tech-bg">
+      <h2 id="closing-title">{c.closing.title}</h2>
+      <p class="closing__text">{c.closing.text}</p>
+      <ul class="closing__points">
+        {
+          c.closing.points.map((point) => (
+            <li>
+              <span class="closing__check" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10" /></svg>
+              </span>
+              {point}
+            </li>
+          ))
+        }
+      </ul>
+      <ul class="closing__contacts">
+        <li>
+          <a href={phone.tel}>
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"></path></svg>
+            <span><span class="sr-only">{t('cta.callAt')} </span>{phone.display}</span>
+          </a>
+        </li>
+        <li>
+          <a href={phone.whatsapp} rel="noopener">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.7-5A8.5 8.5 0 1 1 8 19.4Z"></path><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 1a4 4 0 0 1-2-2l1-1-1-2Z"></path></svg>
+            {t('cta.whatsappLong')}
+          </a>
+        </li>
+        <li>
+          <a href={`mailto:${site.email}`}>
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3 7 9 6 9-6"></path></svg>
+            {site.email}
+          </a>
+        </li>
+      </ul>
+    </div>
+    <div class="closing__card card">
+      <ContactForm lang={lang} variant="closing" />
+    </div>
+  </div>
+</section>
+
+<script>
+  import { initDecor, initReveal } from '../../scripts/motion';
+
+  // Revelado al hacer scroll y bucles decorativos solo en pantalla (src/scripts/motion.ts).
+  initReveal();
+  initDecor();
+
+
+</script>
+
+<style>
+  /* ---- Títulos de sección ---- */
+  .section__title {
+    max-width: 40rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .section__more {
+    margin: 2rem 0 0;
+  }
+
+  /* ---- Gestiones y autoconsumo ---- */
+  .split {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  @media (min-width: 64rem) {
+    .split {
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+  }
+
+  .feature {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.5rem;
+  }
+
+  .feature h2 {
+    font-size: clamp(1.375rem, 2.5vw + 0.75rem, 1.875rem);
+  }
+
+  .feature .btn {
+    margin-top: auto;
+  }
+
+  @media (min-width: 48rem) {
+    .feature {
+      padding: 2rem;
+    }
+  }
+
+  .solar {
+    width: 100%;
+    margin: 0 0 1.5rem;
+  }
+
+  .solar svg {
+    width: 100%;
+    max-width: 26rem;
+    height: auto;
+  }
+
+  .solar text {
+    fill: var(--teal-900);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .solar__sun {
+    fill: none;
+    stroke: var(--orange-500);
+    stroke-width: 3;
+    stroke-linecap: round;
+    transform-origin: 40px 40px;
+    animation: spin 18s linear infinite;
+  }
+
+  .solar__sun circle {
+    fill: var(--orange-100);
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .solar__house {
+    fill: var(--teal-100);
+    stroke: var(--teal-900);
+    stroke-width: 3;
+    stroke-linejoin: round;
+  }
+
+  .solar__panels {
+    fill: var(--teal-700);
+  }
+
+  .solar__grid {
+    fill: none;
+    stroke: var(--teal-900);
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+
+  /* Cable discontinuo estático; el movimiento lo hace un pulso con transform y opacity
+     (animar stroke-dashoffset repintaba el SVG en cada fotograma y cargaba el hilo principal). */
+  .solar__flow {
+    fill: none;
+    stroke: color-mix(in srgb, var(--orange-500) 45%, transparent);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 6 8;
+  }
+
+  .solar__spark {
+    fill: none;
+    stroke: var(--orange-500);
+    stroke-width: 4;
+    stroke-linecap: round;
+    animation: spark-diag 1.6s linear infinite;
+  }
+
+  .solar__spark--x {
+    animation-name: spark-x-short;
+  }
+
+  @keyframes spark-diag {
+    0% {
+      transform: translate(0, 0);
+      opacity: 0;
+    }
+    15%,
+    85% {
+      opacity: 1;
+    }
+    100% {
+      transform: translate(42px, 28px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes spark-x-short {
+    0% {
+      transform: translateX(0);
+      opacity: 0;
+    }
+    15%,
+    85% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(52px);
+      opacity: 0;
+    }
+  }
+
+  /* Gráficos decorativos: sus animaciones solo corren mientras están en pantalla. */
+  [data-anim] :global(*) {
+    animation-play-state: paused;
+  }
+
+  [data-anim]:global(.is-playing) :global(*) {
+    animation-play-state: running;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .solar__sun,
+    .solar__spark {
+      animation: none;
+    }
+  }
+
+  /* ---- Blog ---- */
+  .posts {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .posts__item {
+    padding: 1.5rem;
+  }
+
+  .posts__item time {
+    color: var(--text-muted);
+  }
+
+  @media (min-width: 64rem) {
+    .posts {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  /* ---- Cierre ---- */
+  .closing__grid {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .closing__panel {
+    padding: 1.75rem 1.5rem;
+    border-radius: 1.5rem;
+    color: var(--white);
+  }
+
+  .closing__panel h2 {
+    color: var(--white);
+    font-size: clamp(2rem, 5vw + 1rem, 3.25rem);
+  }
+
+  .closing__text {
+    color: var(--teal-100);
+    font-size: 1.125rem;
+  }
+
+  .closing__points {
+    display: grid;
+    gap: 0.875rem;
+    margin: 1.5rem 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .closing__points li {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    font-weight: 700;
+  }
+
+  .closing__check {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background: var(--orange-500);
+    color: var(--teal-900);
+  }
+
+  .closing__contacts {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 1.25rem 0 0;
+    border-top: 1px solid color-mix(in srgb, var(--white) 18%, transparent);
+    list-style: none;
+  }
+
+  .closing__contacts a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 44px;
+    color: var(--white);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .closing__contacts svg {
+    flex: none;
+    color: var(--orange-500);
+  }
+
+  .closing__card {
+    padding: 1.5rem 1.25rem;
+    border: 0;
+    box-shadow: 0 1.5rem 3rem -1.5rem color-mix(in srgb, var(--teal-900) 35%, transparent);
+  }
+
+  @media (min-width: 64rem) {
+    .closing__grid {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      align-items: stretch;
+      gap: 2rem;
+    }
+
+    .closing__panel {
+      padding: 3rem;
+    }
+
+    .closing__card {
+      padding: 2.5rem;
+    }
+  }
+</style>

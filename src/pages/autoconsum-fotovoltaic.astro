@@ -1,0 +1,167 @@
+---
+// Autoconsum fotovoltaic (català). Textos de Eliana (encargo del 4/11/2026), con apòstrof recte.
+// Los marcados [Claude] no estaban en el encargo.
+// En esta página nunca "sense cost" ni "gratis": la instal·lació té un cost.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SolarPage from '../components/solar/solar-page.astro';
+import { solarSchema } from '../components/solar/schema';
+import type { SolarContent } from '../components/solar/types';
+import { pages } from '../config/pages';
+import logo from '../assets/images/logo-web.webp';
+import { safeJsonLd } from '../lib/json-ld';
+
+const title = 'Plaques solars a Girona i autoconsum | Logik Solutions';
+const description =
+  'Plaques solars a Girona per a llars, comunitats i pimes: estudiem el teu consum i, si té sentit, la instal·lació la fan enginyers i especialistes.';
+
+const content: SolarContent = {
+  hero: {
+    tag: 'Autoconsum fotovoltaic',
+    title: 'Plaques solars a Girona, amb estudi previ del teu consum',
+    lead: "Energia solar per a llars, comunitats i pimes. Primer estudiem el teu consum; si l'autoconsum té sentit, la instal·lació la fan enginyers i especialistes.",
+    cta: 'Estudia el meu consum →',
+    note: "Abans d'instal·lar, t'expliquem si té sentit pel teu consum.",
+    call: 'Truca al',
+    visual: {
+      label: "Esquema: el sol il·lumina les plaques, que alimenten la casa; l'energia que no es consumeix són els excedents.",
+      tags: { sun: 'Sol', panels: 'Plaques', home: 'Casa', surplus: 'Excedents' },
+    },
+  },
+  // Rótulos de las cifras [Claude], los mismos que en Empreses i pimes: las cifras son las confirmadas.
+  stats: [
+    { value: '+2.000', label: 'clients' },
+    { value: '+10', label: 'anys al sector' },
+    { value: '12 mesos', label: 'de seguiment' },
+  ],
+  who: {
+    eyebrow: 'Per a qui',
+    title: 'Autoconsum fotovoltaic per a llars, comunitats i pimes',
+    start: 'Començar el pre-estudi',
+    items: [
+      {
+        persona: 'llar',
+        profile: 'llar',
+        page: 'llars',
+        title: 'Plaques solars per a casa',
+        text: "Estudiem el teu consum per saber si l'autoconsum té sentit a casa.",
+        link: 'Llars →',
+      },
+      {
+        persona: 'comunitat',
+        profile: 'comunitat',
+        page: 'comunitats',
+        title: 'Per a comunitats de veïns',
+        text: "Estudiem el consum de les zones comunes, amb un sol interlocutor per a l'administrador i els veïns.",
+        link: 'Comunitats de veïns →',
+      },
+      {
+        persona: 'pime',
+        profile: 'empresa',
+        page: 'empreses',
+        title: 'Plaques solars per a empreses i pimes',
+        text: "Estudiem el consum del teu negoci abans de parlar d'instal·lar.",
+        link: 'Empreses i pimes →',
+      },
+    ],
+  },
+  path: {
+    eyebrow: 'Com ho fem',
+    title: "De l'estudi del teu consum a la instal·lació fotovoltaica",
+    items: [
+      { title: 'Estudiem el teu consum', text: "Mirem com consumeixes per saber si l'autoconsum té sentit." },
+      { title: "T'expliquem si té sentit", text: "Abans de parlar d'instal·lar, et diem si l'autoconsum encaixa amb el teu consum." },
+      { title: "La instal·lació, amb especialistes", text: 'La fan enginyers i especialistes en instal·lació. La instal·lació té un cost.' },
+      { title: 'Què passa amb els excedents', text: "T'expliquem què passa amb l'energia que no consumeixes." },
+    ],
+  },
+  consum: {
+    eyebrow: "Abans d'instal·lar",
+    title: 'Quan consumeixes, importa',
+    intro: 'Les plaques produeixen de dia. Per això, abans de res, mirem a quines hores consumeixes.',
+    label: 'Quan consumeixes?', // [Claude]: nombre accesible del grupo
+    // [Claude]: descripción accesible del gráfico, sin cifras.
+    chartLabel: "Gràfic d'un dia: la producció solar es concentra a les hores de sol; la silueta mostra quan consumeixes.",
+    items: [
+      { shape: 'dia', q: 'Consumeixo sobretot de dia', a: "Com més coincideix el teu consum amb les hores de sol, més sentit sol tenir l'autoconsum." },
+      { shape: 'vespre', q: 'Consumeixo sobretot al vespre', a: 'Ho estudiem amb calma: mirem el teu consum i què passa amb els excedents abans de proposar res.' },
+      { shape: 'mixt', q: 'Una mica de cada', a: "Mirem el teu consum i t'expliquem què té sentit." },
+      { shape: 'nose', q: 'No ho sé', a: 'No passa res: amb una factura recent i el teu consum ho veiem plegats.' },
+    ],
+    cta: 'Estudia el meu consum →',
+  },
+  trust: {
+    title: 'Un estudi seriós i una instal·lació amb especialistes',
+    items: [
+      { title: 'Estudi previ', text: "Primer estudiem el teu consum i t'expliquem si té sentit." },
+      { title: 'Enginyers i especialistes', text: 'La instal·lació la fan enginyers i especialistes en instal·lació.' },
+    ],
+  },
+  blogTitle: 'Per aprofundir', // [Claude]: mismo título que en Empreses i pimes
+  faq: {
+    eyebrow: 'Dubtes?',
+    title: 'Preguntes freqüents sobre plaques solars i autoconsum',
+    items: [
+      {
+        q: 'Quant costa instal·lar plaques solars?',
+        a: "Depèn de cada cas: del consum i del tipus d'instal·lació. Per això primer estudiem el teu consum i t'expliquem si té sentit abans de parlar d'instal·lar. La instal·lació té un cost.",
+      },
+      {
+        q: "Com sé si l'autoconsum té sentit per a mi?",
+        a: "Depèn del teu consum, sobretot de quan consumeixes. Amb una factura recent i el teu consum, t'ho valorem abans de parlar d'instal·lar.",
+      },
+      {
+        q: 'Feu instal·lacions per a comunitats de veïns?',
+        a: "Sí, amb enginyers i especialistes en instal·lació. Estudiem el consum de les zones comunes i tenim un sol interlocutor per a l'administrador i els veïns.",
+      },
+      {
+        q: 'Feu instal·lacions per a llars i pimes?',
+        a: 'Sí, per a llars, comunitats i pimes, amb enginyers i especialistes en instal·lació.',
+      },
+      {
+        q: 'Qui fa la instal·lació?',
+        a: "Enginyers i especialistes en instal·lació. Nosaltres estudiem el teu consum i t'expliquem si té sentit.",
+      },
+      {
+        q: 'Què són els excedents?',
+        a: "És l'energia que produeixes i no consumeixes. Durant l'estudi t'expliquem què passa amb ella en el teu cas.",
+      },
+      {
+        q: 'On instal·leu?',
+        a: "La nostra base és a Girona i fem visites presencials a localitats properes. Explica'ns on és la instal·lació i t'ho confirmem.",
+      },
+    ],
+  },
+  study: {
+    title: 'Comença el pre-estudi solar',
+    lead: "Ens expliques el teu consum en uns quants passos i t'expliquem si l'autoconsum té sentit. La instal·lació té un cost.",
+    // [Claude]: la frase habitual del pre-estudi sin "Sense cost per a tu: ens remunera la comercialitzadora."
+    note: 'No és una oferta ni un compromís.',
+    points: ['Estudi previ del teu consum', 'Enginyers i especialistes en instal·lació', "T'expliquem si té sentit abans d'instal·lar"],
+    callLead: 'Prefereixes trucar?',
+    other: 'Només vols revisar la factura?',
+  },
+  serviceType: 'Instal·lació de plaques solars i autoconsum fotovoltaic',
+  audience: ['Llars', 'Comunitats de veïns', 'Pimes'],
+  breadcrumbHome: 'Inici',
+};
+
+const pageUrl = new URL(pages.autoconsum.ca, Astro.site).href;
+const logoUrl = new URL(logo.src, Astro.site).href;
+const schema = solarSchema({
+  lang: 'ca',
+  pageUrl,
+  homeUrl: new URL(pages.home.ca, Astro.site).href,
+  title,
+  description,
+  homeName: content.breadcrumbHome,
+  pageName: pages.autoconsum.name.ca,
+  serviceType: content.serviceType,
+  audience: content.audience,
+  faq: content.faq.items,
+});
+---
+
+<BaseLayout lang="ca" pageKey="autoconsum" title={title} description={description} og={{ image: logoUrl, imageAlt: 'Logik Solutions' }}>
+  <Fragment slot="head" set:html={`<script type="application/ld+json">${safeJsonLd(schema)}</script>`} />
+  <SolarPage lang="ca" content={content} />
+</BaseLayout>

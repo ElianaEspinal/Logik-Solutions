@@ -1,0 +1,123 @@
+---
+import { SITE_ENV } from 'astro:env/server';
+import CookieBanner from '../components/CookieBanner.astro';
+import MobileBar from '../components/MobileBar.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import '../styles/fonts.css';
+import '../styles/tokens.css';
+import '../styles/global.css';
+import '../styles/header.css';
+// Favicons originales de src/assets/images, sin tocar: Vite los copia tal cual a /_astro/.
+import faviconIco from '../assets/images/favicon.ico?url';
+import favicon16 from '../assets/images/favicon-16x16.png?url';
+import favicon32 from '../assets/images/favicon-32x32.png?url';
+import appleTouchIcon from '../assets/images/apple-touch-icon.png?url';
+import { locales, pages, type Locale, type PageEntry, type PageKey } from '../config/pages';
+import { useTranslations } from '../i18n/ui';
+import { absoluteUrl, getHreflangLinks, type Alternates } from '../i18n/utils';
+
+interface Props {
+  lang: Locale;
+  title: string;
+  description: string;
+  /** Página de src/config/pages.ts: de ahí salen canonical, hreflang y noindex. */
+  pageKey?: PageKey;
+  /** Para páginas fuera del listado (artículos del blog). */
+  alternates?: Alternates;
+  /** Destino del selector si la página no existe en el otro idioma. */
+  switcherFallback?: PageKey;
+  noindex?: boolean;
+  /** false: sin la barra fija de llamar/WhatsApp en móvil (contacto: ya tiene los botones arriba). */
+  mobileBar?: boolean;
+  /** false: sin el mapa del pie (contacto: ya tiene su propio mapa). */
+  footerMap?: boolean;
+  /** Destino del botón "Demana el teu estudi" de la cabecera (por defecto, el formulario de la home). */
+  ctaHref?: string;
+  /** "noindex, follow" en lugar de "noindex, nofollow" (índice del blog sin artículos: se siguen sus enlaces). */
+  noindexFollow?: boolean;
+  /** Open Graph de artículo: og:type article, imagen y fechas (URL absoluta e ISO 8601). */
+  og?: { type?: 'website' | 'article'; image?: string; imageAlt?: string; imageWidth?: number; imageHeight?: number; publishedTime?: string; modifiedTime?: string };
+}
+
+const { lang, title, description, pageKey, mobileBar = true, footerMap = true, ctaHref, noindexFollow = false, og = {} } = Astro.props;
+const t = useTranslations(lang);
+const isStaging = SITE_ENV === 'staging';
+const route: PageEntry | undefined = pageKey ? pages[pageKey] : undefined;
+const alternates: Alternates = route ?? Astro.props.alternates ?? {};
+const canonicalPath = alternates[lang];
+const hreflangLinks = canonicalPath ? getHreflangLinks(alternates, Astro.site) : [];
+// noindex: siempre en staging. En producción solo la lista blanca (404, src/config/indexing.ts),
+// el índice del blog sin artículos y los borradores (que en producción no se construyen).
+const noindex = isStaging || Astro.props.noindex || route?.draft;
+const fallback = Astro.props.switcherFallback ?? 'home';
+
+const switcherLinks = Object.fromEntries(
+  locales.map((l) => [l, alternates[l] ?? pages[fallback][l]]),
+) as Record<Locale, string>;
+---
+
+<!doctype html>
+<html lang={lang} class:list={[{ 'no-mobile-bar': !mobileBar }]}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {canonicalPath && <link rel="canonical" href={absoluteUrl(canonicalPath, Astro.site)} />}
+    {hreflangLinks.map((link) => <link rel="alternate" hreflang={link.hreflang} href={link.href} />)}
+    {noindex && <meta name="robots" content={noindexFollow && !isStaging ? 'noindex, follow' : 'noindex, nofollow'} />}
+    <meta property="og:type" content={og.type ?? 'website'} />
+    {og.image && <meta property="og:image" content={og.image} />}
+    {og.image && og.imageWidth && <meta property="og:image:width" content={String(og.imageWidth)} />}
+    {og.image && og.imageHeight && <meta property="og:image:height" content={String(og.imageHeight)} />}
+    {og.image && og.imageAlt && <meta property="og:image:alt" content={og.imageAlt} />}
+    {og.publishedTime && <meta property="article:published_time" content={og.publishedTime} />}
+    {og.modifiedTime && <meta property="article:modified_time" content={og.modifiedTime} />}
+    <meta property="og:site_name" content="Logik Solutions" />
+    <meta property="og:locale" content={lang === 'ca' ? 'ca_ES' : 'es_ES'} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {canonicalPath && <meta property="og:url" content={absoluteUrl(canonicalPath, Astro.site)} />}
+    <meta name="twitter:card" content={og.image ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {og.image && <meta name="twitter:image" content={og.image} />}
+    {og.image && og.imageAlt && <meta name="twitter:image:alt" content={og.imageAlt} />}
+    <meta name="theme-color" content="#01323a" />
+    <link rel="icon" href={faviconIco} />
+    <link rel="icon" type="image/png" sizes="32x32" href={favicon32} />
+    <link rel="icon" type="image/png" sizes="16x16" href={favicon16} />
+    <link rel="apple-touch-icon" href={appleTouchIcon} />
+    <!-- Solo las dos tipografías del primer pantallazo (titular y texto). -->
+    <link rel="preload" href="/fonts/sora-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <!--
+      Google Consent Mode v2: todo "denied" por defecto, antes de cualquier otro script. No carga nada:
+      GTM solo se inyecta tras aceptar (src/scripts/consent.ts), que envía entonces el "consent update".
+    -->
+    <script is:inline data-consent-default>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied'});</script>
+    <!-- Marca que hay JS: solo entonces se pliega el menú y se activan las animaciones. -->
+    <script is:inline>document.documentElement.classList.add('js')</script>
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{t('skip')}</a>
+    {
+      isStaging && (
+        <p class="staging-ribbon" data-staging-only>
+          {lang === 'ca'
+            ? "Entorn de proves · noindex · no es carrega GTM tret que PUBLIC_GTM_TEST=true"
+            : 'Entorno de pruebas · noindex · no se carga GTM salvo con PUBLIC_GTM_TEST=true'}
+        </p>
+      )
+    }
+    <CookieBanner lang={lang} />
+    <SiteHeader lang={lang} switcherLinks={switcherLinks} current={pageKey} ctaHref={ctaHref} />
+    <main id="main">
+      <slot />
+    </main>
+    <SiteFooter lang={lang} map={footerMap} />
+    {mobileBar && <MobileBar lang={lang} />}
+  </body>
+</html>

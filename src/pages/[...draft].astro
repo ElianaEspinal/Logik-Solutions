@@ -1,0 +1,20 @@
+---
+// Borradores en catalán: una página por cada entrada con draft: true en src/config/pages.ts.
+// Al terminar una página, crea su archivo propio y pon draft: false (deja de generarse aquí).
+import DraftPage from '../components/DraftPage.astro';
+import { draftKeys, pages, type PageKey } from '../config/pages';
+import { SITE_ENV } from 'astro:env/server';
+
+export function getStaticPaths() {
+  // Un borrador es solo un estado de trabajo: en producción no se construye.
+  if (SITE_ENV === 'production') return [];
+  return draftKeys.map((key) => ({
+    params: { draft: pages[key].ca.replace(/^\/|\/$/g, '') },
+    props: { pageKey: key },
+  }));
+}
+
+const { pageKey } = Astro.props as { pageKey: PageKey };
+---
+
+<DraftPage lang="ca" pageKey={pageKey} />

@@ -1,0 +1,16 @@
+---
+// Artículos del blog (es): src/content/blog/es/. Plantilla: src/components/blog/blog-post.astro.
+import BlogPost from '../../../components/blog/blog-post.astro';
+import { getPosts, postLang, postSlug, type Post } from '../../../lib/blog';
+
+export async function getStaticPaths() {
+  const all = await getPosts();
+  return all
+    .filter((post) => postLang(post) === 'es')
+    .map((post) => ({ params: { slug: postSlug(post) }, props: { post, all } }));
+}
+
+const { post, all } = Astro.props as { post: Post; all: Post[] };
+---
+
+<BlogPost post={post} all={all} />

@@ -1,0 +1,33 @@
+{
+  "name": "logik-solutions-web",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.23.4"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro check && cross-env SITE_ENV=production astro build && cross-env SITE_ENV=production node scripts/check-build.mjs && cross-env SITE_ENV=production node scripts/check-security.mjs && cross-env SITE_ENV=production node scripts/check-text.mjs",
+    "build:staging": "astro check && cross-env SITE_ENV=staging astro build && cross-env SITE_ENV=staging node scripts/check-build.mjs && cross-env SITE_ENV=staging node scripts/check-text.mjs",
+    "build:staging:gtm": "astro check && cross-env SITE_ENV=staging PUBLIC_GTM_TEST=true astro build && cross-env SITE_ENV=staging PUBLIC_GTM_TEST=true node scripts/check-build.mjs && cross-env SITE_ENV=staging node scripts/check-text.mjs",
+    "preview": "astro preview",
+    "check": "npm run build",
+    "check:dist": "node scripts/check-build.mjs",
+    "check:links": "node scripts/check-links.mjs && node scripts/check-seo.mjs",
+    "check:text": "node scripts/check-text.mjs",
+    "check:seo": "node scripts/check-seo.mjs",
+    "check:security": "node scripts/check-security.mjs"
+  },
+  "dependencies": {
+    "@astrojs/markdown-remark": "7.3.5",
+    "@astrojs/rss": "4.0.19",
+    "astro": "7.4.6"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.12",
+    "@types/node": "24.19.2",
+    "cross-env": "10.1.0",
+    "typescript": "6.0.3"
+  }
+}

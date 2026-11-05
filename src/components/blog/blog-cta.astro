@@ -1,0 +1,116 @@
+---
+// Único CTA del índice y del final de cada artículo: botón al mismo destino que el hero
+// (blogCtaHref, src/config/blog.ts) y enlace de llamada (teléfono de src/config/site.ts).
+// cta_click con section = blog_index | blog_post; click_call con location = blog.
+import { blogCtaHref, blogText } from '../../config/blog';
+import type { Locale } from '../../config/pages';
+import { phone } from '../../config/site';
+
+interface Props {
+  lang: Locale;
+  variant: 'index' | 'post';
+  /** Estado vacío del índice: sin título propio (lo pone el bloque vacío). */
+  bare?: boolean;
+  /**
+   * CTA propio de un artículo (frontmatter `cta`): título, texto del botón y section de cta_click.
+   * Mismo destino (pre-estudi) y mismo teléfono. Sin el texto genérico de apoyo.
+   */
+  custom?: { title: string; button: string; section: string };
+}
+
+const { lang, variant, bare = false, custom } = Astro.props;
+const t = blogText[lang];
+const title = custom?.title ?? (variant === 'post' ? t.postCtaTitle : t.ctaTitle);
+const section = custom?.section ?? (variant === 'post' ? 'blog_post' : 'blog_index');
+---
+
+<div class:list={['blog-cta', { 'blog-cta--bare': bare, 'tech-bg': !bare }]}>
+  {
+    !bare && (
+      <>
+        <h2 class="blog-cta__title">{title}</h2>
+        {!custom && <p class="blog-cta__text">{t.ctaText}</p>}
+      </>
+    )
+  }
+  <div class="blog-cta__actions">
+    <a class="btn btn-primary btn-lg" href={blogCtaHref(lang)} data-cta={section}>
+      {custom?.button ?? t.ctaButton} <span aria-hidden="true">→</span>
+    </a>
+    <a class="blog-cta__call" href={phone.tel}>{t.ctaCall} {phone.display}</a>
+  </div>
+</div>
+
+<style>
+  /* CTA propio sin texto de apoyo: aire entre el título y los botones. */
+  .blog-cta__title + .blog-cta__actions {
+    margin-top: 1.25rem;
+  }
+
+  .blog-cta {
+    padding: 2rem 1.25rem;
+    border-radius: 1.5rem;
+    color: var(--white);
+  }
+
+  .blog-cta--bare {
+    padding: 0;
+    color: inherit;
+  }
+
+  .blog-cta__title {
+    margin-bottom: 0.5rem;
+    color: var(--white);
+  }
+
+  .blog-cta__text {
+    max-width: 36rem;
+    margin-bottom: 1.5rem;
+    color: var(--teal-100);
+    font-size: 1.125rem;
+  }
+
+  .blog-cta__actions {
+    display: grid;
+    gap: 0.5rem;
+    justify-items: start;
+  }
+
+  .blog-cta__actions .btn {
+    width: 100%;
+  }
+
+  .blog-cta__call {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 700;
+  }
+
+  .blog-cta--bare .blog-cta__call {
+    color: var(--teal-900);
+  }
+
+  @media (min-width: 30rem) {
+    .blog-cta__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.5rem;
+      align-items: center;
+    }
+
+    .blog-cta__actions .btn {
+      width: auto;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .blog-cta {
+      padding: 3rem;
+    }
+
+    .blog-cta--bare {
+      padding: 0;
+    }
+  }
+</style>

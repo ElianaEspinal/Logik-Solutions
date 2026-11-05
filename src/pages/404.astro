@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { pages } from '../config/pages';
+import { phone } from '../config/site';
+---
+
+<!-- Textos de la 404 redactados por Claude: pendientes de revisión. -->
+<BaseLayout lang="ca" title="Pàgina no trobada | Logik Solutions" description="Aquesta pàgina no existeix o ha canviat d'adreça." noindex>
+  <section class="container section not-found">
+    <h1>No trobem aquesta pàgina</h1>
+    <p>Pot ser que hagi canviat d'adreça. Torna a l'inici o truca'ns al <a href={phone.tel}>{phone.display}</a>.</p>
+    <p><a class="btn btn-primary" href={pages.home.ca}>Tornar a l'inici</a></p>
+  </section>
+</BaseLayout>

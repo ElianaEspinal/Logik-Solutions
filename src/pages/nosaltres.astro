@@ -1,0 +1,95 @@
+---
+// Nosaltres (català). Textos de Eliana (encargo del 3/11/2026), con apòstrof recte.
+// Los marcados [Claude] no estaban en el encargo.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AboutPage from '../components/about/about-page.astro';
+import { aboutSchema } from '../components/about/schema';
+import type { AboutContent } from '../components/about/types';
+import { pages } from '../config/pages';
+import { phone } from '../config/site';
+import logo from '../assets/images/logo-web.webp';
+import { safeJsonLd } from '../lib/json-ld';
+
+const title = 'Nosaltres | Consultora energètica a Girona | Logik Solutions';
+const description =
+  "Logik Solutions és una consultora energètica de Girona dirigida per Lluís Soldevila, amb més de 10 anys d'experiència i una àmplia cartera de clients.";
+
+const content: AboutContent = {
+  hero: {
+    tag: 'Nosaltres',
+    title: 'Una consultora energètica a Girona amb nom i cognoms',
+    lead: "Dirigida per Lluís Soldevila. Venim a veure't, revisem la teva factura i te la seguim tot l'any, per a empreses, comunitats i llars.",
+    cta: 'Parla amb nosaltres →',
+    call: 'Truca al',
+  },
+  stats: [
+    { value: '+10', label: "anys d'experiència al sector" },
+    { value: '+2.000', label: 'clients a la cartera' },
+    { value: '12 mesos', label: 'de seguiment, amb avís de renovació al mes 11' },
+  ],
+  why: {
+    title: 'La factura arriba cada mes. Entendre-la no hauria de ser un altre maldecap.',
+    text: "La factura de la llum i del gas arriba cada mes, i no sempre hi ha temps per mirar-se-la. A Logik Solutions ens la mirem nosaltres: comparem ofertes de diverses comercialitzadores, ens ocupem dels tràmits i la revisem durant tot l'any, perquè el que has contractat continuï tenint sentit. Ho fem des de Girona, amb tracte proper i preus honestos.",
+  },
+  founder: {
+    label: 'Qui hi ha al capdavant',
+    text: "Lluís Soldevila va fundar Logik Solutions i la dirigeix des de Girona. Gestiona una àmplia cartera de clients —empreses, comunitats de veïns i llars— i el servei és presencial: fem visites a Girona i a localitats properes. Si vols conèixer-lo, truca'ns i en parlem.",
+    call: 'Truca al',
+  },
+  how: {
+    title: 'Com ens entenem',
+    items: [
+      { title: 'Cara a cara', text: 'Fem visites presencials a Girona i a localitats properes. Si cal, ens asseiem amb tu i mirem la factura plegats.' },
+      { title: 'Preus honestos', text: 'Primer revisem el teu contracte i només et proposem canvis que tinguin sentit en el teu cas.' },
+      { title: "Tot l'any", text: "Seguiment mensual i anual. T'avisem al mes 11 per renovar i resolem les incidències." },
+      { title: 'Tracte directe', text: 'Tenim contacte directe amb els administradors de cada companyia, i això agilita els tràmits.' },
+      { title: 'Sense cost per a tu', text: 'En consultoria i gestions, ens remunera la comercialitzadora.' },
+    ],
+  },
+  services: { title: 'Què podem fer per tu', solarNote: "Amb enginyers i especialistes en instal·lació." },
+  where: {
+    title: 'On treballem', // [Claude]: nombre de la sección
+    text: 'La nostra base és a Girona i fem visites presencials a localitats properes. També treballem a tot Catalunya i a tot Espanya.',
+    rings: ['Girona', 'Catalunya', 'Espanya'],
+  },
+  logosTitle: 'Empreses que ja confien en nosaltres',
+  faq: {
+    title: 'Preguntes freqüents sobre Logik Solutions',
+    items: [
+      { q: 'Qui dirigeix Logik Solutions?', a: "Lluís Soldevila, amb més de 10 anys d'experiència en el sector energètic." },
+      { q: 'Quina experiència teniu?', a: 'Més de 10 anys i una cartera de més de 2.000 clients: empreses, comunitats de veïns i llars.' },
+      { q: 'On sou?', a: 'La nostra base és a Girona i fem visites presencials a localitats properes. També treballem a tot Catalunya i a tot Espanya.' },
+      {
+        q: 'Com puc parlar amb vosaltres?',
+        a: `Pots trucar o escriure'ns per WhatsApp al ${phone.display}, enviar el formulari de contacte o demanar una visita presencial.`,
+      },
+    ],
+  },
+  closing: {
+    title: 'Parlem de la teva factura?',
+    text: "Explica'ns el teu cas i et diem què mirem i com ho fem.",
+    cta: 'Revisa la meva factura →',
+    call: 'Truca al',
+  },
+  breadcrumbHome: 'Inici',
+};
+
+const pageUrl = new URL(pages.nosaltres.ca, Astro.site).href;
+const logoUrl = new URL(logo.src, Astro.site).href;
+const schema = aboutSchema({
+  lang: 'ca',
+  pageUrl,
+  homeUrl: new URL(pages.home.ca, Astro.site).href,
+  title,
+  description,
+  logoUrl,
+  homeName: content.breadcrumbHome,
+  pageName: pages.nosaltres.name.ca,
+  faq: content.faq.items,
+});
+---
+
+<BaseLayout lang="ca" pageKey="nosaltres" title={title} description={description} og={{ image: logoUrl, imageAlt: 'Logik Solutions' }}>
+  <Fragment slot="head" set:html={`<script type="application/ld+json">${safeJsonLd(schema)}</script>`} />
+  <AboutPage lang="ca" content={content} />
+</BaseLayout>

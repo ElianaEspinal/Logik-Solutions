@@ -1,0 +1,144 @@
+---
+// Política de cookies. La tabla recoge solo lo que se carga de verdad (código y GTM):
+// - logik_consent (localStorage) y logik_consent_closed (sessionStorage): src/scripts/consent.ts.
+// - _ga y _ga_QCSEZ3YWK2: Google Analytics 4 (G-QCSEZ3YWK2) vía GTM, solo con consentimiento.
+//   Duraciones por defecto de Google: https://developers.google.com/tag-platform/security/concepts/cookies
+// Si se añade una etiqueta en GTM o un contenido externo, actualizar esta tabla y docs/cookies.md.
+import LegalPage from '../components/LegalPage.astro';
+import { ADS_CONSENT, legal, pending, thirdPartyPolicies as tp } from '../config/legal';
+import { pages } from '../config/pages';
+---
+
+<LegalPage
+  lang="ca"
+  pageKey="cookies"
+  title="Política de cookies del web | Logik Solutions"
+  description="Quines cookies i quin emmagatzematge fa servir el web de Logik Solutions, per a què serveixen, quant duren i com pots canviar la teva elecció."
+  heading="Política de cookies"
+  ownerTitle="Responsable"
+>
+  <h2 id="que-son">Què són les cookies</h2>
+  <p>
+    Les cookies són petits arxius que un web desa al teu navegador. Alguns són imprescindibles perquè el web funcioni o
+    per recordar una decisió teva; d'altres serveixen per comptar visites i saber quines pàgines es consulten. Aquí
+    també expliquem l'emmagatzematge local del navegador (localStorage i sessionStorage), que funciona de manera
+    semblant.
+  </p>
+
+  <h2 id="per-a-que">Per a què les fem servir</h2>
+  <ul>
+    <li>
+      <strong>Tècniques:</strong> recorden si acceptes o rebutges les cookies, perquè no t'ho preguntem a cada pàgina.
+      Són necessàries i sempre estan actives.
+    </li>
+    <li>
+      <strong>Analítica:</strong> Google Analytics compta les visites i ens diu quines pàgines es fan servir i quins
+      botons es toquen. Només s'activen si les acceptes.
+    </li>
+    <li>
+      <strong>Contingut extern:</strong> el mapa de Google Maps només es carrega si l'acceptes o si toques "Carregar el
+      contingut". Fins aleshores no es connecta amb Google.
+    </li>
+  </ul>
+  {!ADS_CONSENT && <p>No fem servir cookies de publicitat.</p>}
+
+  <h2 id="taula">Cookies i emmagatzematge que fem servir</h2>
+  <table class="legal-table">
+    <caption>Llista completa</caption>
+    <thead>
+      <tr>
+        <th scope="col">Nom</th>
+        <th scope="col">Titular</th>
+        <th scope="col">Finalitat</th>
+        <th scope="col">Durada</th>
+        <th scope="col">Categoria</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td data-label="Nom"><code>logik_consent</code> (localStorage)</td>
+        <td data-label="Titular">Pròpia ({legal.tradeName})</td>
+        <td data-label="Finalitat">Guardar la teva elecció sobre les cookies i la data en què la vas fer.</td>
+        <td data-label="Durada">12 mesos; després te la tornem a preguntar</td>
+        <td data-label="Categoria">Tècnica</td>
+      </tr>
+      <tr>
+        <td data-label="Nom"><code>logik_consent_closed</code> (sessionStorage)</td>
+        <td data-label="Titular">Pròpia ({legal.tradeName})</td>
+        <td data-label="Finalitat">Recordar que has tancat el bàner sense triar, perquè no torni a sortir durant la visita. No activa cap cookie.</td>
+        <td data-label="Durada">Fins que tanques la pestanya o el navegador</td>
+        <td data-label="Categoria">Tècnica</td>
+      </tr>
+      <tr>
+        <td data-label="Nom"><code>_ga</code></td>
+        <td data-label="Titular">Tercer (Google)</td>
+        <td data-label="Finalitat">Distingir visitants per comptar les visites de manera agregada.</td>
+        <td data-label="Durada">2 anys</td>
+        <td data-label="Categoria">Analítica</td>
+      </tr>
+      <tr>
+        <td data-label="Nom"><code>_ga_QCSEZ3YWK2</code></td>
+        <td data-label="Titular">Tercer (Google)</td>
+        <td data-label="Finalitat">Mantenir l'estat de la sessió a Google Analytics.</td>
+        <td data-label="Durada">2 anys</td>
+        <td data-label="Categoria">Analítica</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Les durades de <code>_ga</code> i <code>_ga_QCSEZ3YWK2</code> són les que indica Google per defecte; alguns
+    navegadors les escurcen. Google Tag Manager, que només es carrega si acceptes l'analítica, no instal·la cookies
+    pròpies.
+  </p>
+  <p>
+    Si carregues el mapa, Google pot instal·lar les seves pròpies cookies des dels seus dominis. Les explica a la seva
+    <a href={tp.googleCookies} target="_blank" rel="noopener noreferrer">pàgina sobre cookies</a>.
+  </p>
+
+  {
+    ADS_CONSENT && (
+      <>
+        <h3>Publicitat</h3>
+        <p>{pending('cookies de publicitat: nom, titular, finalitat i durada', '').ca}</p>
+      </>
+    )
+  }
+
+  <h2 id="decisio">Com acceptar, rebutjar o canviar la teva decisió</h2>
+  <ul>
+    <li>
+      Quan entres per primer cop, el bàner et deixa triar entre "Acceptar-ho tot", "Rebutjar-ho tot" i "Configurar".
+      Els tres botons són iguals: rebutjar és tan fàcil com acceptar.
+    </li>
+    <li>A "Configurar" pots activar només les categories que vulguis. Cap no ve activada.</li>
+    <li>
+      Si tanques el bàner sense triar, o si continues navegant, no activem res. El web funciona igual si rebutges les
+      cookies.
+    </li>
+    <li>Guardem la teva decisió 12 mesos. Després te la tornem a preguntar.</li>
+    <li>
+      Pots canviar-la quan vulguis amb l'enllaç "Configurar cookies", al peu de totes les pàgines. Si retires
+      l'analítica, esborrem les cookies de Google Analytics i recarreguem la pàgina sense carregar-lo.
+    </li>
+  </ul>
+  <p>
+    <button class="btn btn-secondary" type="button" data-cookie-open hidden>Configurar cookies</button>
+  </p>
+  <p>
+    També pots esborrar o bloquejar les cookies des de la configuració del navegador. Per no enviar dades a Google
+    Analytics en cap web, Google ofereix un
+    <a href={tp.googleAnalyticsOptOut} target="_blank" rel="noopener noreferrer">complement per al navegador</a>.
+  </p>
+
+  <h2 id="tercers">Dades que reben tercers</h2>
+  <p>
+    Si acceptes l'analítica, Google rep dades d'ús del web: pàgines visitades, dispositiu, ubicació aproximada i accions
+    com tocar el botó de trucar. Si carregues el mapa, Google rep la petició del mapa des del teu navegador. Com les
+    tracta Google ho explica a la seva
+    <a href={tp.google} target="_blank" rel="noopener noreferrer">política de privacitat</a>.
+  </p>
+  <p>
+    Com tractem nosaltres les dades personals ho tens a la
+    <a href={pages.privacitat.ca}>política de privacitat</a>.
+  </p>
+</LegalPage>

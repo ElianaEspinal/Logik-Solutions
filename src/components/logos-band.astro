@@ -1,0 +1,287 @@
+---
+// Banda de logos de clientes (home y Nosaltres): un solo tono; color al pasar el cursor, tocar o enfocar.
+// Móvil: dos marquesinas en sentidos opuestos. Escritorio: una tira continua.
+// Movimiento reducido: sin animación (cada fila se desplaza a mano).
+// Los bucles se pausan fuera de pantalla: [data-anim] + initDecor() (src/scripts/motion.ts).
+import { Picture } from 'astro:assets';
+import type { Locale } from '../config/pages';
+import { useTranslations } from '../i18n/ui';
+import { clients, logoSize } from '../lib/clients';
+import '../styles/motion.css';
+
+interface Props {
+  lang: Locale;
+  title: string;
+  /** data-section para la analítica (por defecto "logos"). */
+  section?: string;
+  /** id del título, único en la página. */
+  titleId?: string;
+}
+
+const { lang, title, section = 'logos', titleId = 'logos-title' } = Astro.props;
+const t = useTranslations(lang);
+// Logos en dos filas (la primera con un logo más si el total es impar).
+const half = Math.ceil(clients.length / 2);
+const logoRows = [clients.slice(0, half), clients.slice(half)];
+---
+
+<!--
+  3. Logos de clientes: un solo tono; color al pasar el cursor, tocar o enfocar.
+  Dos filas (original + duplicado aria-hidden para el bucle):
+  - móvil: dos marquesinas en sentidos opuestos;
+  - escritorio: las cuatro listas se ordenan (order) en una sola tira continua, como antes.
+-->
+<section class="logos" aria-labelledby={titleId} data-section={section}>
+  <div class="container">
+    <h2 id={titleId} class="logos__title">{title}</h2>
+  </div>
+  <div class="logos__viewport" tabindex="0" aria-labelledby={titleId} data-anim>
+    <div class="logos__track">
+      {
+        logoRows.map((row, r) => (
+          <div class="logos__row" data-row={r}>
+            {[0, 1].map((copy) => (
+              <ul class="logos__list" aria-hidden={copy === 1 ? 'true' : undefined} data-copy={copy} style={`--order:${copy * 2 + r}`}>
+                {row.map((client) => {
+                  const size = logoSize(client.logo, 56);
+                  return (
+                    <li class="logos__item">
+                      <Picture
+                        src={client.logo}
+                        formats={['avif', 'webp']}
+                        width={size.width}
+                        height={size.height}
+                        densities={[1, 2]}
+                        alt={copy === 1 ? '' : `${t('logos.alt')} ${client.name}`}
+                        loading="lazy"
+                        decoding="async"
+                        class:list={['logos__img', { 'logos__img--opaque': !client.transparent }]}
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            ))}
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  import { initDecor } from '../scripts/motion';
+
+  initDecor();
+</script>
+
+<style>
+  /* ---- Logos ---- */
+  .logos {
+    padding-block: 2rem 2.25rem;
+    border-bottom: 1px solid var(--teal-100);
+  }
+
+  .logos__title {
+    margin-bottom: 1.25rem;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .logos__viewport:focus-visible {
+    outline-offset: -3px;
+  }
+
+  .logos__list {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .logos__item {
+    display: grid;
+    flex: none;
+    place-items: center;
+    min-width: 0;
+  }
+
+  .logos__item :global(img) {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+    filter: grayscale(1);
+    opacity: 0.75;
+    transition:
+      filter 0.25s,
+      opacity 0.25s;
+  }
+
+  /* Recortes con fondo blanco: el blanco se funde con el fondo crema. */
+  .logos__item :global(.logos__img--opaque) {
+    mix-blend-mode: multiply;
+  }
+
+  /* Color al pasar el cursor, al tocar (:active) o con el carrusel enfocado. */
+  @media (hover: hover) {
+    .logos__item:hover :global(img) {
+      filter: none;
+      opacity: 1;
+    }
+  }
+
+  .logos__item:active :global(img),
+  .logos__viewport:focus-visible :global(img) {
+    filter: none;
+    opacity: 1;
+  }
+
+  /* ---- Móvil (< 48rem): dos filas en movimiento, en sentidos opuestos ---- */
+  @media (max-width: 47.99rem) {
+    .logos__track {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .logos__row {
+      display: flex;
+      width: max-content;
+    }
+
+    .logos__list {
+      gap: 2rem;
+      padding-right: 2rem; /* mismo hueco entre la lista y su duplicado: bucle sin salto */
+    }
+
+    .logos__item {
+      height: 44px;
+    }
+
+    .logos__item :global(img) {
+      max-height: 40px;
+      max-width: 7.5rem;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .logos__viewport {
+        overflow: hidden;
+        mask-image: linear-gradient(90deg, transparent, var(--white) 12%, var(--white) 88%, transparent);
+      }
+
+      .logos__row[data-row='0'] {
+        animation: marquee 42s linear infinite;
+      }
+
+      .logos__row[data-row='1'] {
+        animation: marquee-back 46s linear infinite;
+      }
+
+      /* Pausa al tocar, al pasar el cursor y con foco. */
+      .logos__viewport:is(:hover, :focus, :focus-within, :active) .logos__row {
+        animation-play-state: paused;
+      }
+    }
+
+    /* Movimiento reducido: sin animación; cada fila se desplaza a mano, con imán por logo. */
+    @media (prefers-reduced-motion: reduce) {
+      .logos__row {
+        width: auto;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: thin;
+        padding-inline: 1rem;
+        scroll-padding-inline: 1rem;
+      }
+
+      .logos__item {
+        scroll-snap-align: start;
+      }
+
+      .logos__list[data-copy='1'] {
+        display: none;
+      }
+    }
+  }
+
+  /* ---- Escritorio (≥ 48rem): igual que antes (una tira; rejilla centrada sin movimiento) ---- */
+  @media (min-width: 48rem) {
+    .logos__row,
+    .logos__list {
+      display: contents;
+    }
+
+    .logos__track {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.5rem 3rem;
+      max-width: 72rem;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+
+    .logos__list[data-copy='1'] {
+      display: none;
+    }
+
+    .logos__item {
+      height: 64px;
+    }
+
+    .logos__item :global(img) {
+      max-height: 56px;
+    }
+  }
+
+  /* Escritorio con movimiento permitido: carrusel continuo con bordes difuminados. */
+  @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) {
+    .logos__viewport {
+      overflow: hidden;
+      mask-image: linear-gradient(90deg, transparent, var(--white) 10%, var(--white) 90%, transparent);
+    }
+
+    .logos__track {
+      flex-wrap: nowrap;
+      gap: 0;
+      width: max-content;
+      max-width: none;
+      margin: 0;
+      padding: 0;
+      animation: marquee 50s linear infinite;
+    }
+
+    /* Originales de las dos filas y después sus duplicados: misma tira que antes. */
+    .logos__list,
+    .logos__list[data-copy='1'] {
+      display: flex;
+      order: var(--order);
+      flex-wrap: nowrap;
+      gap: 3.5rem;
+      padding: 0 1.75rem;
+    }
+
+    .logos__viewport:hover .logos__track,
+    .logos__viewport:focus-within .logos__track,
+    .logos__viewport:focus .logos__track {
+      animation-play-state: paused;
+    }
+  }
+
+  @keyframes marquee {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes marquee-back {
+    from {
+      transform: translateX(-50%);
+    }
+  }
+</style>

@@ -1,0 +1,1521 @@
+---
+// Pre-estudi / preestudio de la home: asistente por pasos que capta el lead dentro
+// de la propia sección (sin redirigir). Sustituye a la antigua mini calculadora.
+//
+// Reglas (CLAUDE.md, docs/contexto.md y src/config/calculator.ts):
+//   - No se calcula ni se muestra ningún ahorro. Solo el gasto anual aproximado
+//     (importe mensual × 12), rotulado como "càlcul simple".
+//   - Nada se envía antes del último paso; el progreso vive solo en memoria.
+//   - Destino: PUBLIC_FORM_ENDPOINT (el mismo que el formulario de cierre). Vacío -> el
+//     asistente funciona, pero el envío queda desactivado (aviso solo en staging).
+//   - Adjunto de factura solo con PUBLIC_FORM_ATTACHMENTS=true (componente compartido).
+//   - Sin JS: los pasos con campos se ven seguidos como un formulario normal (envío
+//     nativo) y un <noscript> ofrece el teléfono y WhatsApp.
+// Eventos (docs/cookies.md): calc_start, calc_step, generate_lead; click_call y
+// click_whatsapp los lanza el listener global de src/scripts/analytics.ts.
+import { SITE_ENV, PUBLIC_FORM_ATTACHMENTS, PUBLIC_FORM_ENDPOINT } from 'astro:env/server';
+import FileDrop from '../file-drop.astro';
+import { AMOUNT, TRACKING_PARAMS } from '../../config/calculator';
+import { PRE_STUDY_ID } from '../../config/home';
+import { pages, type Locale } from '../../config/pages';
+import { phone } from '../../config/site';
+import { useTranslations } from '../../i18n/ui';
+import type { PowerKey, ProfileKey, ReviewKey, SupplyKey } from '../../lib/pre-study';
+import type { PreStudyContent } from './types';
+
+interface Props {
+  lang: Locale;
+  content: PreStudyContent;
+  /**
+   * Perfil ya resuelto (p. ej. "empresa" en Empreses i pimes): el paso 1 sale marcado y el
+   * asistente arranca en el paso 2; el visitante puede volver atrás para cambiarlo.
+   */
+  presetProfile?: ProfileKey;
+  /** Página desde la que se envía (campo oculto pagina_origen). Sin valor, no se envía. */
+  origin?: string;
+  /**
+   * false -> sin la casilla de plaques solars, sin su fila del resumen y sin el punto de autoconsum
+   * de "Què revisarem" (Comunitats mientras COMUNITATS_FV = false). Por defecto, true.
+   */
+  solar?: boolean;
+  /** true -> la casilla de plaques solars sale ya marcada (Autoconsum fotovoltaic). Por defecto, sin marcar. */
+  solarChecked?: boolean;
+}
+
+const { lang, content: c, presetProfile, origin, solar = true, solarChecked = false } = Astro.props;
+const startStep = presetProfile ? 2 : 1;
+const t = useTranslations(lang);
+const isStaging = SITE_ENV === 'staging';
+const endpoint = PUBLIC_FORM_ENDPOINT.trim();
+const enabled = /^https:\/\/\S+$/.test(endpoint);
+const withFile = PUBLIC_FORM_ATTACHMENTS;
+const TOTAL = 5;
+
+const profiles: ProfileKey[] = ['empresa', 'comunitat', 'llar'];
+const supplies: SupplyKey[] = ['llum', 'gas', 'llum-gas'];
+const powers: PowerKey[] = ['fins-15', 'mes-15', 'no-ho-se'];
+const reviews: ReviewKey[] = ['contracte', 'ofertes', 'potencia', 'zones-comunes', ...(solar ? (['solar'] as const) : [])];
+
+// Iconos de línea (24 × 24, trazo). Cadenas fijas del propio código.
+const icons: Record<ProfileKey | SupplyKey, string> = {
+  empresa: '<path d="M3 21h18M5 21V5l8-3v19M13 8h6v13M8 8h2M8 12h2M8 16h2M16 12h1M16 16h1"/>',
+  comunitat: '<path d="M3 21h18M4 21V7h7v14M13 21V3h7v18M7 11h1M7 15h1M16 7h1M16 11h1M16 15h1"/>',
+  llar: '<path d="m3 11 9-8 9 8M5 9.5V21h14V9.5M10 21v-6h4v6"/>',
+  llum: '<path d="M13 2 4 14h7l-1 8 9-12h-7Z"/>',
+  gas: '<path d="M12 22c4 0 7-2.7 7-6.6 0-3.1-2-5.4-3.6-7.2-.3 1.9-1.3 3.2-2.6 3.8.4-3.7-1.4-6.8-4.3-9C8.6 6 5 9 5 15.4 5 19.3 8 22 12 22Z"/>',
+  'llum-gas':
+    '<path d="M8 21c2.8 0 5-1.9 5-4.6 0-2.2-1.4-3.8-2.5-5-.2 1.3-.9 2.2-1.8 2.6.3-2.6-1-4.8-3-6.3C5.4 10 3 12 3 16.4 3 19.1 5.2 21 8 21Z"/><path d="m18 2-4 7h3.5l-1 6L21 7h-3.5l.5-5Z"/>',
+};
+const check = '<path d="m5 12 5 5 9-10"/>';
+
+// "{x}" y "{nom}" se sustituyen en el navegador: el texto fijo va en el HTML.
+const [annualBefore, annualAfter] = c.summary.annual.split('{x}');
+const [thanksBefore, thanksAfter] = c.success.title.split('{nom}');
+const stepLabel = (n: number) => c.controls.step.replace('{n}', String(n)).replace('{total}', String(TOTAL));
+
+// Textos que necesita el script (sin datos personales).
+const i18n = {
+  step: c.controls.step,
+  next: c.controls.next,
+  submit: c.controls.submit,
+  sending: c.controls.sending,
+  sliderValue: c.amount.sliderValue,
+  monthly: c.summary.monthly,
+  yes: c.summary.yes,
+  no: c.summary.no,
+  errors: c.errors,
+};
+const id = (name: string) => `ps-${name}`;
+---
+
+<section class="pre-study" id={PRE_STUDY_ID[lang]} aria-labelledby={id('title')} data-section="calculadora">
+  <div class="container pre-study__grid">
+    <!-- Columna de argumentos: en escritorio, fija y alineada arriba (no se estira); en móvil se
+         "deshace" (display: contents): cabecera, tarjeta y, debajo, los puntos de confianza. -->
+    <div class="pre-study__side">
+    <div class="pre-study__head">
+      <p class="tag pre-study__tag">{c.tag}</p>
+      <h2 id={id('title')}>{c.title}</h2>
+      <p class="pre-study__lead">{c.lead}</p>
+      <p class="pre-study__note">{c.note}</p>
+    </div>
+
+    <!-- En móvil va después de la tarjeta; en escritorio, en la columna izquierda. -->
+    <div class="pre-study__trust">
+      <ul class="pre-study__points">
+        {
+          c.points.map((point) => (
+            <li>
+              <span class="pre-study__check" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" set:html={check} />
+              </span>
+              {point}
+            </li>
+          ))
+        }
+      </ul>
+      <ul class="pre-study__proof">
+        {c.proof.split(' · ').map((part) => <li>{part}</li>)}
+      </ul>
+    </div>
+    </div>
+
+    <div
+      class="ps-card"
+      data-pre-study
+      data-preset={presetProfile}
+      data-lang={lang}
+      data-total={TOTAL}
+      data-enabled={enabled ? 'true' : 'false'}
+      data-endpoint={enabled ? endpoint : undefined}
+      data-i18n={JSON.stringify(i18n)}
+    >
+      <noscript>
+        <p class="ps-noscript">
+          {c.noscript}
+          <a href={phone.tel}>{t('cta.callAt')} {phone.display}</a>
+          <a href={phone.whatsapp} rel="noopener">{t('cta.whatsappLong')}</a>
+        </p>
+      </noscript>
+
+      <div class="ps-stage">
+        <form
+          class="ps-form"
+          action={enabled ? endpoint : undefined}
+          method="POST"
+          enctype="multipart/form-data"
+          data-ps-form
+          data-contact-form
+          data-enabled={enabled ? 'true' : 'false'}
+          data-active
+        >
+          <input type="hidden" name="origen" value="calculadora" />
+          {origin && <input type="hidden" name="pagina_origen" value={origin} />}
+          <input type="hidden" name="idioma" value={lang} />
+          <input type="hidden" name="_subject" value={`Web Logik Solutions: pre-estudi (${lang})`} />
+          <input type="hidden" name="franja_import" value="" data-band />
+          {TRACKING_PARAMS.map((key) => <input type="hidden" name={key} value="" data-track={key} />)}
+
+          <div class="ps-progress ps-js">
+            <p class="ps-progress__label" data-step-label>{stepLabel(startStep)}</p>
+            <div class="ps-progress__track" aria-hidden="true">
+              <span class="ps-progress__bar" data-progress></span>
+            </div>
+            <p class="sr-only" aria-live="polite" data-live></p>
+          </div>
+
+          <div class="ps-steps">
+            <!-- Paso 1: perfil -->
+            <fieldset class="ps-step" data-step="1" data-active={startStep === 1 ? '' : undefined} aria-labelledby={id('s1-title')}>
+              <h3 class="ps-step__title" id={id('s1-title')} tabindex="-1">{c.profile.title}</h3>
+              <div class="ps-options">
+                {
+                  profiles.map((key) => (
+                    <label class="ps-option">
+                      <input class="ps-option__input" type="radio" name="perfil" value={c.profile.options[key].label} data-code={key} data-auto required checked={key === presetProfile} />
+                      <span class="ps-option__box">
+                        <span class="ps-option__icon" aria-hidden="true">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={icons[key]} />
+                        </span>
+                        <span class="ps-option__text">
+                          <span class="ps-option__label">{c.profile.options[key].label}</span>
+                          <span class="ps-option__desc">{c.profile.options[key].desc}</span>
+                        </span>
+                        <span class="ps-option__mark" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" set:html={check} />
+                        </span>
+                      </span>
+                    </label>
+                  ))
+                }
+              </div>
+              <p class="field__error" id={id('perfil-error')} data-error-for="perfil" hidden>{c.errors.profile}</p>
+            </fieldset>
+
+            <!-- Paso 2: suministro (+ actividad, solo empresas) -->
+            <fieldset class="ps-step" data-step="2" data-active={startStep === 2 ? '' : undefined} aria-labelledby={id('s2-title')}>
+              <h3 class="ps-step__title" id={id('s2-title')} tabindex="-1">{c.supply.title}</h3>
+              <div class="ps-options">
+                {
+                  supplies.map((key) => (
+                    <label class="ps-option">
+                      <input class="ps-option__input" type="radio" name="subministrament" value={c.supply.options[key].label} data-code={key} data-auto required />
+                      <span class="ps-option__box">
+                        <span class="ps-option__icon" aria-hidden="true">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={icons[key]} />
+                        </span>
+                        <span class="ps-option__text">
+                          <span class="ps-option__label">{c.supply.options[key].label}</span>
+                          <span class="ps-option__desc">{c.supply.options[key].desc}</span>
+                        </span>
+                        <span class="ps-option__mark" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" set:html={check} />
+                        </span>
+                      </span>
+                    </label>
+                  ))
+                }
+              </div>
+              <p class="field__error" id={id('subministrament-error')} data-error-for="subministrament" hidden>{c.errors.supply}</p>
+              <div class="ps-field ps-activity" data-activity>
+                <label for={id('activitat')}>{c.supply.activity.label}</label>
+                <select id={id('activitat')} name="activitat">
+                  <option value="">{c.supply.activity.none}</option>
+                  {c.supply.activity.options.map((option) => <option value={option}>{option}</option>)}
+                </select>
+              </div>
+            </fieldset>
+
+            {/* Paso 3: importe (campo + deslizador), potencia e interés solar (opcional: prop solar) */}
+            <fieldset class="ps-step" data-step="3" aria-labelledby={id('s3-title')}>
+              <h3 class="ps-step__title" id={id('s3-title')} tabindex="-1">{c.amount.title}</h3>
+              <p class="ps-help" id={id('amount-help')}>{c.amount.help}</p>
+              <div class="ps-field">
+                <label for={id('import')}>{c.amount.label}</label>
+                <div class="ps-amount">
+                  <input
+                    id={id('import')}
+                    name="import_mensual"
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    enterkeyhint="next"
+                    required
+                    maxlength="12"
+                    pattern="[0-9 .,€]*[1-9][0-9 .,€]*"
+                    aria-describedby={id('amount-help')}
+                    data-amount
+                  />
+                  <span class="ps-amount__unit" aria-hidden="true">€/mes</span>
+                </div>
+                <p class="field__error" id={id('import_mensual-error')} data-error-for="import_mensual" hidden></p>
+              </div>
+              <div class="ps-range-wrap ps-js">
+                <input
+                  class="ps-range"
+                  type="range"
+                  min={AMOUNT.min}
+                  max={AMOUNT.max}
+                  step={AMOUNT.step}
+                  value={AMOUNT.min}
+                  aria-label={c.amount.slider}
+                  data-range
+                />
+                <div class="ps-range__scale" aria-hidden="true">
+                  <span>0 €</span><span>5.000 €</span>
+                </div>
+              </div>
+              <div class="ps-meter ps-js">
+                <span class="ps-meter__label">{c.amount.annual}</span>
+                <span class="ps-meter__value"><span data-annual-live>—</span> €</span>
+                <span class="ps-meter__note">{c.amount.simple}</span>
+              </div>
+              <fieldset class="ps-chips">
+                <legend>{c.amount.power.legend}</legend>
+                <div class="ps-chips__list">
+                  {
+                    powers.map((key) => (
+                      <label class="ps-chip">
+                        <input type="radio" name="potencia" value={c.amount.power.options[key]} data-code={key} checked={key === 'no-ho-se'} />
+                        <span>{c.amount.power.options[key]}</span>
+                      </label>
+                    ))
+                  }
+                </div>
+              </fieldset>
+              {solar && (
+                <div class="ps-check">
+                  <input id={id('solar')} type="checkbox" name="interes_solar" value={c.summary.yes} data-solar checked={solarChecked} />
+                  <label for={id('solar')}>{c.amount.solar}</label>
+                </div>
+              )}
+            </fieldset>
+
+            <!-- Paso 4: resumen y valor antes de pedir los datos (solo con JS) -->
+            <div class="ps-step ps-js" data-step="4" role="group" aria-labelledby={id('s4-title')}>
+              <h3 class="ps-step__title" id={id('s4-title')} tabindex="-1">{c.summary.title}</h3>
+              <dl class="ps-summary">
+                <div><dt>{c.summary.rows.profile}</dt><dd data-sum="perfil"></dd></div>
+                <div><dt>{c.summary.rows.supply}</dt><dd data-sum="subministrament"></dd></div>
+                <div data-sum-row="activitat"><dt>{c.summary.rows.activity}</dt><dd data-sum="activitat"></dd></div>
+                <div><dt>{c.summary.rows.amount}</dt><dd data-sum="import"></dd></div>
+                <div><dt>{c.summary.rows.power}</dt><dd data-sum="potencia"></dd></div>
+                {solar && <div><dt>{c.summary.rows.solar}</dt><dd data-sum="solar"></dd></div>}
+              </dl>
+              <div class="ps-annual">
+                <p class="ps-annual__text">
+                  {annualBefore}<strong class="ps-annual__value" data-annual></strong>{annualAfter}
+                </p>
+                <p class="ps-annual__note">{c.summary.simple}</p>
+              </div>
+              <h4 class="ps-review__title">{c.summary.reviewTitle}</h4>
+              <ul class="ps-review">
+                {
+                  reviews.map((key) => (
+                    <li data-review={key}>
+                      <span class="pre-study__check" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" set:html={check} />
+                      </span>
+                      {c.summary.review[key]}
+                    </li>
+                  ))
+                }
+              </ul>
+              <p class="ps-outro">{c.summary.outro}</p>
+            </div>
+
+            <!-- Paso 5: datos de contacto -->
+            <fieldset class="ps-step" data-step="5" aria-labelledby={id('s5-title')}>
+              <h3 class="ps-step__title" id={id('s5-title')} tabindex="-1">{c.contact.title}</h3>
+              <div class="ps-field">
+                <label for={id('nom')}>{c.contact.firstName}</label>
+                <input id={id('nom')} name="nom" type="text" autocomplete="given-name" enterkeyhint="next" required maxlength="80" />
+                <p class="field__error" id={id('nom-error')} data-error-for="nom" hidden>{c.errors.firstName}</p>
+              </div>
+              <div class="ps-field">
+                <label for={id('cognoms')}>{c.contact.lastName}</label>
+                <input id={id('cognoms')} name="cognoms" type="text" autocomplete="family-name" enterkeyhint="next" required maxlength="120" />
+                <p class="field__error" id={id('cognoms-error')} data-error-for="cognoms" hidden>{c.errors.lastName}</p>
+              </div>
+              <div class="ps-field">
+                <label for={id('email')}>{c.contact.email}</label>
+                <input id={id('email')} name="email" type="email" inputmode="email" autocomplete="email" enterkeyhint="next" required maxlength="120" />
+                <p class="field__error" id={id('email-error')} data-error-for="email" hidden></p>
+              </div>
+              <div class="ps-field">
+                <label for={id('telefon')}>{c.contact.phone}</label>
+                <input
+                  id={id('telefon')}
+                  name="telefon"
+                  type="tel"
+                  pattern="[0-9 +\(\)\.\-]{9,20}"
+                  inputmode="tel"
+                  autocomplete="tel"
+                  enterkeyhint="send"
+                  required
+                  maxlength="20"
+                  aria-describedby={id('telefon-note')}
+                />
+                <p class="ps-help ps-help--tight" id={id('telefon-note')}>{c.contact.phoneNote}</p>
+                <p class="field__error" id={id('telefon-error')} data-error-for="telefon" hidden>{c.errors.phone}</p>
+              </div>
+
+              {withFile ? <FileDrop lang={lang} idPrefix="ps" /> : <p class="ps-attach-off">{t('form.attachOff')}</p>}
+
+              <div class="ps-check ps-consent">
+                <input id={id('consent')} name="consentiment" type="checkbox" value="acceptat" required />
+                <label for={id('consent')}>
+                  {
+                    t('form.consent')
+                      .split(t('form.consentLink'))
+                      .map((part, i, all) => (
+                        <>
+                          {part}
+                          {i < all.length - 1 && (
+                            <a href={pages.privacitat[lang]} target="_blank" rel="noopener">
+                              {t('form.consentLink')}
+                            </a>
+                          )}
+                        </>
+                      ))
+                  }
+                </label>
+                <p class="field__error" id={id('consentiment-error')} data-error-for="consentiment" hidden>{c.errors.consent}</p>
+              </div>
+              {/* Primera capa de información (LOPDGDD, art. 11): responsable, finalidad, derechos y enlace. */}
+              <p class="form-privacy" id={id('privacy-info')}>
+                {t('form.privacyInfo').split(t('form.consentLink'))[0]}<a href={pages.privacitat[lang]} target="_blank" rel="noopener">{t('form.consentLink')}</a>{t('form.privacyInfo').split(t('form.consentLink'))[1]}
+              </p>
+
+              <!-- Honeypot antispam: fuera de la vista; las personas no lo ven ni lo enfocan. -->
+              <div class="ps-trap" aria-hidden="true">
+                <label for={id('website')}>Website</label>
+                <input id={id('website')} type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" />
+              </div>
+
+              {
+                !enabled && isStaging && (
+                  <p class="staging-marker" data-staging-only>
+                    {lang === 'ca' ? "Enviament desactivat: falta PUBLIC_FORM_ENDPOINT a .env" : 'Envío desactivado: falta PUBLIC_FORM_ENDPOINT en .env'}
+                  </p>
+                )
+              }
+
+              <!-- Confianza junto al botón; el error de envío ocupa el mismo hueco (sin saltos). -->
+              <div class="ps-status">
+                <div class="ps-trust" data-trust>
+                  <ul class="ps-trust__proof">{c.proofShort.split(' · ').map((part) => <li>{part}</li>)}</ul>
+                  {c.costNote && <p class="ps-trust__cost">{c.costNote}</p>}
+                </div>
+                <div class="ps-error" role="alert" data-send-error hidden>
+                  <p>{t('form.error')}</p>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+
+          <div class="ps-actions" data-actions>
+            <button class="btn ps-back ps-js" type="button" data-back>
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"></path></svg>
+              <span class="ps-back__label">{c.controls.back}</span>
+            </button>
+            <button class="btn btn-primary btn-lg ps-next" type="submit" disabled={!enabled ? true : undefined} data-next>
+              <span class="ps-spinner" aria-hidden="true"></span>
+              <span class="ps-label-js" data-next-label>{c.controls.next}</span>
+              <span class="ps-label-nojs">{c.controls.submit}</span>
+              <svg class="ps-next__arrow" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+            </button>
+          </div>
+        </form>
+
+        <!-- Pantalla de éxito: sustituye al asistente sin recargar -->
+        <div class="ps-success ps-js" data-success inert>
+          <svg class="ps-success__check" aria-hidden="true" width="64" height="64" viewBox="0 0 52 52">
+            <circle cx="26" cy="26" r="24" fill="none" stroke-width="3"></circle>
+            <path d="m15 27 7 7 15-16" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <h3 class="ps-step__title" tabindex="-1" data-success-title>
+            {thanksBefore}<span data-success-name></span>{thanksAfter}
+          </h3>
+          <p class="ps-success__text" role="status">{c.success.text}</p>
+          <h4 class="ps-review__title">{c.success.nextTitle}</h4>
+          <ol class="ps-next-steps">
+            {c.success.next.map((item, i) => <li><span class="ps-next-steps__n" aria-hidden="true">{i + 1}</span>{item}</li>)}
+          </ol>
+          <a class="btn btn-secondary ps-success__wa" href={phone.whatsapp} rel="noopener">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.7-5A8.5 8.5 0 1 1 8 19.4Z"></path><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 1a4 4 0 0 1-2-2l1-1-1-2Z"></path></svg>
+            {c.success.whatsapp}
+          </a>
+          <a class="ps-success__call" href={phone.tel}>{c.success.call} {phone.display}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { initPreStudy } from '../../scripts/pre-study';
+
+  document.querySelectorAll<HTMLElement>('[data-pre-study]').forEach(initPreStudy);
+</script>
+
+<style is:global>
+  /* Global a propósito: todas las clases llevan el prefijo ps- / pre-study y así el HTML
+     y el CSS no cargan atributos de ámbito (menos bytes en la ruta crítica del móvil). */
+  /* ---- Sección: fondo claro propio (teal suave -> crema), distinto del cierre oscuro ---- */
+  .pre-study {
+    position: relative;
+    isolation: isolate;
+    overflow: clip;
+    padding-block: 3rem;
+    background:
+      radial-gradient(36rem 24rem at 85% 30%, color-mix(in srgb, var(--orange-500) 10%, transparent), transparent 70%),
+      linear-gradient(180deg, var(--teal-100), var(--cream));
+    scroll-margin-top: var(--header-h, 64px);
+  }
+
+  .pre-study__grid {
+    display: grid;
+    gap: 1.75rem;
+  }
+
+  .pre-study__head,
+  .pre-study__trust {
+    min-width: 0;
+  }
+
+  /* Móvil: la columna lateral se deshace y queda cabecera -> tarjeta -> puntos de confianza. */
+  .pre-study__side {
+    display: contents;
+  }
+
+  .pre-study__head {
+    order: 1;
+  }
+
+  .ps-card {
+    order: 2;
+  }
+
+  .pre-study__trust {
+    order: 3;
+  }
+
+  .pre-study__tag {
+    margin-bottom: 0.75rem;
+  }
+
+  .pre-study__head h2 {
+    max-width: 18ch;
+  }
+
+  .pre-study__lead {
+    max-width: 34rem;
+    font-size: 1.125rem;
+  }
+
+  .pre-study__note {
+    max-width: 34rem;
+    color: var(--text-muted);
+  }
+
+  .pre-study__points {
+    display: grid;
+    gap: 0.625rem;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pre-study__points li {
+    display: flex;
+    gap: 0.625rem;
+    align-items: flex-start;
+    font-weight: 700;
+  }
+
+  .pre-study__check {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: 0.05rem;
+    border-radius: 50%;
+    background: var(--orange-500);
+    color: var(--teal-900);
+  }
+
+  /* Prueba social en píldoras (flex-wrap): sin separadores que queden colgando al partirse. */
+  .pre-study__proof,
+  .ps-trust__proof {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pre-study__proof li,
+  .ps-trust__proof li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--teal-900) 14%, transparent);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--teal-900);
+    font-weight: 700;
+  }
+
+  .pre-study__proof li::before,
+  .ps-trust__proof li::before {
+    content: '';
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--orange-500);
+  }
+
+  .pre-study__note {
+    margin-bottom: 0;
+  }
+
+  @media (min-width: 48rem) {
+    .pre-study {
+      padding-block: 5rem;
+    }
+  }
+
+  /* Escritorio: dos columnas (texto a la izquierda, tarjeta a la derecha). */
+  /* La columna de argumentos no se estira: alineada arriba y fija al hacer scroll. */
+  @media (min-width: 60rem) {
+    .pre-study__grid {
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+      align-items: start;
+      gap: 3rem;
+    }
+
+    .pre-study__side {
+      position: sticky;
+      top: calc(var(--header-h, 64px) + 1.5rem);
+      display: grid;
+      gap: 1.75rem;
+      padding-top: 1rem;
+    }
+  }
+
+  /* ---- Tarjeta del asistente ---- */
+  .ps-card {
+    position: relative;
+    min-width: 0;
+    padding: 1.25rem 1rem;
+    border: 1px solid var(--teal-100);
+    border-radius: 1.5rem;
+    background: var(--white);
+    box-shadow:
+      0 1.5rem 3rem -1.5rem color-mix(in srgb, var(--teal-900) 40%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--white) 60%, transparent);
+  }
+
+  /* Destello naranja sutil en el borde superior. */
+  .ps-card::before {
+    content: '';
+    position: absolute;
+    inset: -1px 12% auto;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: linear-gradient(90deg, transparent, var(--orange-500), transparent);
+  }
+
+  .ps-card::after {
+    content: '';
+    position: absolute;
+    top: -3rem;
+    right: -2rem;
+    z-index: -1;
+    width: 12rem;
+    height: 12rem;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-500) 22%, transparent), transparent);
+    pointer-events: none;
+  }
+
+  @media (min-width: 22.5rem) {
+    .ps-card {
+      padding-inline: 1.25rem;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .ps-card {
+      padding: 2rem;
+    }
+  }
+
+  .ps-noscript {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0 0 1.25rem;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    background: var(--orange-100);
+    color: var(--teal-900);
+  }
+
+  .ps-noscript a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--teal-900);
+    font-weight: 700;
+  }
+
+  /* Sin JS: fuera lo que solo funciona con JS (deslizador, medidor, resumen, éxito, progreso). */
+  html:not(.js) .ps-js {
+    display: none !important;
+  }
+
+  /*
+   * ---- Escenario ----
+   * Se muestra solo el paso activo (o la pantalla de éxito): la tarjeta mide lo que mide su
+   * contenido. Al cambiar de paso, el script anima la altura medida del escenario
+   * (src/scripts/pre-study.ts, animateHeight); con movimiento reducido el cambio es directo.
+   */
+  .ps-stage {
+    min-width: 0;
+  }
+
+  .ps-stage.is-resizing {
+    overflow: visible clip;
+    transition: height 0.22s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .ps-form {
+    display: grid;
+    min-width: 0;
+  }
+
+  .js .ps-form:not([data-active]),
+  .js .ps-success:not([data-active]) {
+    display: none;
+  }
+
+  /* ---- Progreso ---- */
+  .ps-progress {
+    margin-bottom: 1.25rem;
+  }
+
+  .ps-progress__label {
+    margin: 0 0 0.5rem;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+
+  .ps-progress__track {
+    overflow: hidden;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--teal-100);
+  }
+
+  .ps-progress__bar {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--orange-700), var(--orange-500));
+    transform: scaleX(var(--p, 0.2));
+    transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  /* ---- Pasos: sin JS se ven seguidos; con JS, solo el activo (sin alturas heredadas) ---- */
+  .ps-steps {
+    display: grid;
+    gap: 2rem;
+    min-width: 0;
+  }
+
+  .ps-step {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .js .ps-step:not([data-active]) {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .js .ps-step[data-active].is-entering,
+    .js .ps-success[data-active] {
+      animation: ps-in 0.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+
+    .js .ps-step[data-active].is-entering-back {
+      animation: ps-in-back 0.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+  }
+
+  @keyframes ps-in {
+    from {
+      opacity: 0;
+      transform: translateX(1rem);
+    }
+  }
+
+  @keyframes ps-in-back {
+    from {
+      opacity: 0;
+      transform: translateX(-1rem);
+    }
+  }
+
+  .ps-step__title {
+    margin-bottom: 1rem;
+    font-size: clamp(1.3125rem, 2vw + 0.875rem, 1.625rem);
+  }
+
+  .ps-step__title {
+    scroll-margin-top: calc(var(--header-h, 64px) + 1rem);
+  }
+
+  .ps-step__title:focus {
+    outline: none;
+  }
+
+  .ps-help {
+    margin: -0.5rem 0 1rem;
+    color: var(--text-muted);
+  }
+
+  .ps-help--tight {
+    margin: 0.375rem 0 0;
+  }
+
+  /* ---- Opciones como tarjetas (radio accesible) ---- */
+  .ps-options {
+    display: grid;
+    gap: 0.625rem;
+  }
+
+  .ps-option {
+    position: relative;
+    display: block;
+    margin: 0;
+    font-weight: 400;
+    cursor: pointer;
+  }
+
+  .ps-option__input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .ps-option__box {
+    display: flex;
+    gap: 0.875rem;
+    align-items: center;
+    min-height: 3.5rem; /* 56 px */
+    padding: 0.75rem 0.875rem;
+    border: 1.5px solid var(--teal-100);
+    border-radius: 1rem;
+    background: var(--white);
+    transition:
+      border-color 0.15s,
+      background-color 0.15s,
+      box-shadow 0.15s;
+  }
+
+  .ps-option__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.75rem;
+    background: var(--teal-100);
+    color: var(--teal-900);
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+  }
+
+  .ps-option__text {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ps-option__label {
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .ps-option__desc {
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  .ps-option__mark {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 1.5px solid var(--teal-100);
+    border-radius: 50%;
+    color: transparent;
+    transition:
+      background-color 0.15s,
+      border-color 0.15s;
+  }
+
+  .ps-option__input:checked + .ps-option__box {
+    border-color: var(--teal-900);
+    background: var(--orange-100);
+    box-shadow: 0 0 0 1px var(--teal-900);
+  }
+
+  .ps-option__input:checked + .ps-option__box .ps-option__icon {
+    background: var(--teal-900);
+    color: var(--orange-500);
+  }
+
+  .ps-option__input:checked + .ps-option__box .ps-option__mark {
+    border-color: var(--orange-500);
+    background: var(--orange-500);
+    color: var(--teal-900);
+  }
+
+  .ps-option__input:focus-visible + .ps-option__box {
+    outline: 3px solid var(--orange-700);
+    outline-offset: 2px;
+  }
+
+  @media (hover: hover) {
+    .ps-option:hover .ps-option__box {
+      border-color: var(--teal-900);
+    }
+  }
+
+  .ps-step.is-invalid .ps-option__box {
+    border-color: var(--orange-700);
+  }
+
+  /* ---- Campos ---- */
+  .ps-field {
+    margin: 0 0 1rem;
+  }
+
+  .ps-activity {
+    margin: 1.25rem 0 0;
+  }
+
+  .ps-activity[hidden] {
+    display: none;
+  }
+
+  .ps-card input:not([type='checkbox'], [type='radio'], [type='range'], [type='file']),
+  .ps-card select {
+    min-height: 52px;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+  }
+
+  /* El teclado en pantalla y la barra de acciones no tapan el campo activo. */
+  .ps-card input,
+  .ps-card select {
+    scroll-margin-block: calc(var(--header-h, 64px) + 1rem) calc(var(--bar-h) + 6rem);
+  }
+
+  .ps-card input:focus-visible,
+  .ps-card select:focus-visible {
+    border-color: var(--orange-700);
+    outline: 3px solid var(--orange-500);
+    outline-offset: 1px;
+  }
+
+  .ps-amount {
+    position: relative;
+  }
+
+  .ps-amount input {
+    padding-right: 4.75rem;
+    font-size: 1.25rem !important;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+  }
+
+  .ps-amount__unit {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  /* ---- Deslizador: pulgar grande para el dedo ---- */
+  .ps-range-wrap {
+    margin: -0.25rem 0 1rem;
+  }
+
+  .ps-range {
+    --fill: 0%;
+    width: 100%;
+    height: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    touch-action: pan-y;
+  }
+
+  .ps-range::-webkit-slider-runnable-track {
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--orange-500) var(--fill), var(--teal-100) var(--fill));
+  }
+
+  .ps-range::-webkit-slider-thumb {
+    width: 32px;
+    height: 32px;
+    margin-top: -11px;
+    border: 3px solid var(--teal-900);
+    border-radius: 50%;
+    background: var(--white);
+    box-shadow: 0 0.25rem 0.75rem color-mix(in srgb, var(--teal-900) 30%, transparent);
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .ps-range::-moz-range-track {
+    height: 10px;
+    border-radius: 999px;
+    background: var(--teal-100);
+  }
+
+  .ps-range::-moz-range-progress {
+    height: 10px;
+    border-radius: 999px;
+    background: var(--orange-500);
+  }
+
+  .ps-range::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    border: 3px solid var(--teal-900);
+    border-radius: 50%;
+    background: var(--white);
+  }
+
+  .ps-range:focus-visible {
+    outline: 3px solid var(--orange-700);
+    outline-offset: 2px;
+    border-radius: 999px;
+  }
+
+  .ps-range__scale {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-muted);
+  }
+
+  /* ---- Medidor en vivo ---- */
+  .ps-meter {
+    display: grid;
+    gap: 0.125rem;
+    margin: 0 0 1.25rem;
+    padding: 0.875rem 1rem;
+    border-radius: 1rem;
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .ps-meter__label {
+    font-weight: 700;
+  }
+
+  .ps-meter__value {
+    color: var(--orange-500);
+    font-family: var(--font-heading);
+    font-size: clamp(1.75rem, 4vw + 1rem, 2.25rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  .ps-meter__note {
+    color: var(--teal-100);
+  }
+
+  /* ---- Chips de potencia ---- */
+  .ps-chips {
+    margin: 0 0 1rem;
+    padding: 0;
+    border: 0;
+  }
+
+  .ps-chips legend {
+    margin-bottom: 0.5rem;
+    padding: 0;
+    font-weight: 700;
+  }
+
+  .ps-chips__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .ps-chip {
+    position: relative;
+    display: inline-flex;
+    margin: 0;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .ps-chip input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .ps-chip span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    border: 1.5px solid var(--teal-100);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--teal-900);
+    transition:
+      background-color 0.15s,
+      border-color 0.15s;
+  }
+
+  .ps-chip input:checked + span {
+    border-color: var(--teal-900);
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .ps-chip input:focus-visible + span {
+    outline: 3px solid var(--orange-700);
+    outline-offset: 2px;
+  }
+
+  @media (hover: hover) {
+    .ps-chip:hover span {
+      border-color: var(--teal-900);
+    }
+  }
+
+  /* ---- Casillas ---- */
+  .ps-check {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 0.75rem;
+    align-items: start;
+    margin: 0 0 1rem;
+  }
+
+  .ps-check input[type='checkbox'] {
+    margin-top: 0.875rem;
+  }
+
+  .ps-check label {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    margin: 0;
+    padding-block: 0.625rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .ps-consent label {
+    display: block;
+    font-weight: 400;
+  }
+
+  .ps-check .field__error {
+    grid-column: 1 / -1;
+  }
+
+  .ps-attach-off {
+    margin: 0 0 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: var(--teal-100);
+    color: var(--teal-900);
+  }
+
+  .ps-step .drop.field {
+    margin-bottom: 1rem;
+  }
+
+  /* ---- Resumen ---- */
+  .ps-summary {
+    display: grid;
+    margin: 0 0 1rem;
+    border: 1px solid var(--teal-100);
+    border-radius: 1rem;
+  }
+
+  /* Móvil: etiqueta encima del valor; desde 30rem, en dos columnas. */
+  .ps-summary > div {
+    display: grid;
+    gap: 0 0.75rem;
+    padding: 0.5rem 0.875rem;
+  }
+
+  @media (min-width: 30rem) {
+    .ps-summary > div {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    }
+  }
+
+  .ps-summary > div + div {
+    border-top: 1px solid var(--teal-100);
+  }
+
+  .ps-summary > div[hidden] {
+    display: none;
+  }
+
+  .ps-summary dt {
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+  }
+
+  .ps-summary dd {
+    margin: 0;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .ps-annual {
+    margin: 0 0 1.25rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .ps-annual__text {
+    margin: 0 0 0.25rem;
+    font-size: 1.125rem;
+  }
+
+  .ps-annual__value {
+    color: var(--orange-500);
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ps-annual__note {
+    margin: 0;
+    color: var(--teal-100);
+  }
+
+  .ps-review__title {
+    margin: 0 0 0.75rem;
+    font-family: var(--font-heading);
+    font-size: 1.125rem;
+  }
+
+  .ps-review {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ps-review li {
+    display: flex;
+    gap: 0.625rem;
+    align-items: flex-start;
+  }
+
+  .ps-review li[hidden] {
+    display: none;
+  }
+
+  .ps-outro {
+    margin: 0 0 1rem;
+    font-weight: 700;
+  }
+
+  /* ---- Confianza / error junto al botón: misma celda ---- */
+  .ps-status {
+    display: grid;
+    margin-bottom: 0.25rem;
+  }
+
+  .ps-trust,
+  .ps-error {
+    grid-area: 1 / 1;
+  }
+
+  .ps-trust.is-hidden {
+    visibility: hidden;
+  }
+
+  .ps-trust p {
+    margin: 0;
+  }
+
+  .ps-trust {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .ps-trust__cost {
+    color: var(--text-muted);
+  }
+
+  .ps-error {
+    align-self: start;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: var(--orange-100);
+    color: var(--teal-900);
+    font-weight: 700;
+  }
+
+  .ps-error[hidden] {
+    display: none;
+  }
+
+  .ps-error p {
+    margin: 0;
+  }
+
+  /* ---- Honeypot (fuera de la vista; no display:none) ---- */
+  .ps-trap {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  /*
+   * ---- Acciones: justo debajo del contenido del paso (24 px) ----
+   * Móvil: "Continua" a todo el ancho y "Enrere" debajo. Desde 30rem, en fila.
+   */
+  .ps-actions {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .ps-actions .ps-next {
+    width: 100%;
+  }
+
+  @media (min-width: 30rem) {
+    .ps-actions {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .ps-actions .ps-next {
+      width: auto;
+    }
+  }
+
+  .ps-actions .ps-back {
+    flex: none;
+    padding-inline: 0.875rem;
+    border-color: var(--teal-100);
+    background: var(--white);
+    color: var(--teal-900);
+  }
+
+  /* Paso 1: sin "Enrere". En móvil no ocupa sitio; en fila, conserva su hueco para que
+     "Continua" no cambie de posición entre pasos. */
+  .ps-actions .ps-back.is-hidden {
+    display: none;
+  }
+
+  @media (min-width: 30rem) {
+    .ps-actions .ps-back.is-hidden {
+      display: inline-flex;
+      visibility: hidden;
+    }
+  }
+
+  @media (hover: hover) {
+    .ps-actions .ps-back:hover {
+      border-color: var(--teal-900);
+      color: var(--teal-900);
+    }
+  }
+
+  .ps-actions .ps-next {
+    flex: 1;
+    min-width: 0;
+    min-height: 56px;
+  }
+
+  html:not(.js) .ps-next__arrow,
+  html:not(.js) .ps-label-js,
+  .js .ps-label-nojs {
+    display: none;
+  }
+
+  .ps-spinner {
+    display: none;
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 2.5px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: ps-spin 0.7s linear infinite;
+  }
+
+  .ps-next[aria-busy='true'] .ps-spinner {
+    display: inline-block;
+  }
+
+  .ps-next[aria-busy='true'] .ps-next__arrow {
+    display: none;
+  }
+
+  @keyframes ps-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* ---- Éxito ---- */
+  .ps-success {
+    display: grid;
+    align-content: start;
+    justify-items: center;
+    padding-block: 0.5rem 1.5rem;
+    text-align: center;
+  }
+
+  .ps-success .ps-step__title {
+    margin: 1rem 0 0.5rem;
+    overflow-wrap: anywhere;
+  }
+
+  .ps-success__text {
+    max-width: 30rem;
+    font-size: 1.125rem;
+  }
+
+  .ps-success .ps-review__title {
+    margin-top: 0.5rem;
+  }
+
+  .ps-next-steps {
+    display: grid;
+    gap: 0.75rem;
+    max-width: 30rem;
+    margin: 0 0 1.5rem;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+  }
+
+  .ps-next-steps li {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .ps-next-steps__n {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background: var(--teal-900);
+    color: var(--orange-500);
+    font-family: var(--font-heading);
+    font-weight: 700;
+  }
+
+  .ps-success .ps-success__wa {
+    width: 100%;
+    max-width: 22rem;
+    min-height: 52px;
+  }
+
+  .ps-success__call {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-top: 0.5rem;
+    font-weight: 700;
+  }
+
+  .ps-success__check {
+    stroke: var(--orange-700);
+  }
+
+  .ps-success[data-active] .ps-success__check circle {
+    stroke-dasharray: 151;
+    stroke-dashoffset: 151;
+    animation: ps-draw 0.6s ease-out forwards;
+  }
+
+  .ps-success[data-active] .ps-success__check path {
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+    animation: ps-draw 0.4s 0.45s ease-out forwards;
+  }
+
+  @keyframes ps-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ps-progress__bar {
+      transition: none;
+    }
+
+    .ps-success[data-active] .ps-success__check circle,
+    .ps-success[data-active] .ps-success__check path {
+      stroke-dashoffset: 0;
+      animation: none;
+    }
+  }
+</style>

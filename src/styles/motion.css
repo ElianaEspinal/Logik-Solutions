@@ -1,0 +1,130 @@
+/*
+ * Movimiento y superficies de la home (lo importa HomePage). Solo transform y opacity.
+ * - [data-reveal]: revelado al hacer scroll. --i escalona los elementos de un grupo.
+ *   Todo es visible por defecto: src/scripts/motion.ts solo oculta (.reveal-pending)
+ *   lo que está por debajo de la pantalla y lo revela al llegar. Sin JS no se oculta nada.
+ * - [data-anim]: animaciones decorativas en bucle; solo corren mientras se ven.
+ * - prefers-reduced-motion: sin desplazamientos ni bucles (además de la regla global).
+ */
+
+@media (prefers-reduced-motion: no-preference) {
+  .js .reveal-pending {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .js [data-reveal].is-in {
+    animation: reveal-up 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(var(--i, 0) * 90ms);
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+[data-anim] * {
+  animation-play-state: paused;
+}
+
+[data-anim].is-playing * {
+  animation-play-state: running;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-anim] *,
+  [data-anim] *::before,
+  [data-anim] *::after {
+    animation: none !important;
+  }
+}
+
+/* ---- Superficies (paleta de Logik) ---- */
+
+.surface-white {
+  background: var(--white);
+}
+
+/* Cuadrícula tenue como la del hero, sobre fondo claro. */
+.surface-grid {
+  position: relative;
+  isolation: isolate;
+}
+
+.surface-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(color-mix(in srgb, var(--teal-900) 5%, transparent) 1px, transparent 1px) 0 0 / 2.5rem 2.5rem,
+    linear-gradient(90deg, color-mix(in srgb, var(--teal-900) 5%, transparent) 1px, transparent 1px) 0 0 / 2.5rem 2.5rem;
+  mask-image: radial-gradient(ellipse at 50% 0%, var(--white) 20%, transparent 75%);
+  pointer-events: none;
+}
+
+/* Destello naranja muy sutil en una esquina. */
+.surface-glow {
+  background-image: radial-gradient(40rem 22rem at 100% 0%, color-mix(in srgb, var(--orange-500) 8%, transparent), transparent 70%);
+}
+
+/* Bandas oscuras inclinadas: el hueco de las esquinas deja ver el crema del cuerpo. */
+.slant {
+  --slant: 1.5rem;
+  clip-path: polygon(0 var(--slant), 100% 0, 100% calc(100% - var(--slant)), 0 100%);
+  padding-block: calc(3rem + var(--slant));
+}
+
+@media (min-width: 48rem) {
+  .slant {
+    --slant: 3rem;
+    padding-block: calc(5rem + var(--slant));
+  }
+}
+
+/* ---- Cabecera de sección: etiqueta (eyebrow) + H2 + entrada ---- */
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  color: var(--teal-900);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.eyebrow::before {
+  content: '';
+  width: 1.5rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--orange-500);
+}
+
+.tech-bg .eyebrow,
+.band-dark .eyebrow {
+  color: var(--orange-100);
+}
+
+.section-head {
+  max-width: 44rem;
+  margin-bottom: 2rem;
+}
+
+.section-head h2 {
+  margin-bottom: 0.75rem;
+}
+
+.section-head__intro {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1.125rem;
+}
+
+.tech-bg .section-head__intro {
+  color: var(--teal-100);
+}

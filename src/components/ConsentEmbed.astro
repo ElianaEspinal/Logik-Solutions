@@ -1,0 +1,25 @@
+---
+// Mapa o vídeo externo que solo se carga tras el consentimiento de contenido externo.
+// Uso: <ConsentEmbed lang="ca" src="https://www.google.com/maps/embed?pb=..." title="Mapa de l'oficina" />
+import type { Locale } from '../config/pages';
+import { useTranslations } from '../i18n/ui';
+
+interface Props {
+  lang: Locale;
+  src: string;
+  title: string;
+  /** Proporción ancho / alto, p. ej. '16 / 9'. */
+  ratio?: string;
+}
+
+const { lang, src, title, ratio = '16 / 9' } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<div class="consent-embed" data-consent-embed data-src={src} data-title={title} style={`aspect-ratio: ${ratio}`}>
+  <div class="consent-embed__placeholder" data-embed-placeholder>
+    <p><strong>{title}</strong></p>
+    <p>{t('embed.text')}</p>
+    <button class="btn btn-secondary" type="button" data-embed-load>{t('embed.load')}</button>
+  </div>
+</div>

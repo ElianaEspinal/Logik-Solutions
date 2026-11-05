@@ -1,0 +1,147 @@
+---
+// Gestió i tràmits (català). Textos de Eliana (encargo del 4/11/2026), con apòstrof recte.
+// Los marcados [Claude] no estaban en el encargo.
+// Enfoque confirmado: las gestiones van incluidas en el servicio anual; no se contratan sueltas.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GestionsPage from '../components/gestions/gestions-page.astro';
+import { gestionsSchema } from '../components/gestions/schema';
+import type { GestionsContent } from '../components/gestions/types';
+import { pages } from '../config/pages';
+import logo from '../assets/images/logo-web.webp';
+import { safeJsonLd } from '../lib/json-ld';
+
+const title = 'Canvi de titularitat i potència de llum | Logik Solutions';
+const description =
+  'Els canvis de titularitat, de potència i les altes de llum van inclosos al servei anual de Logik. Consultoria energètica a Girona.';
+
+const content: GestionsContent = {
+  hero: {
+    tag: 'Gestió i tràmits',
+    title: 'Canvi de titularitat, potència i alta de llum a Girona, inclosos al servei',
+    lead: "Gestoria energètica per a llars, negocis i comunitats. Quan treballem junts, les gestions van incloses durant tot l'any, amb tracte directe amb les companyies.",
+    cta: 'Comença el pre-estudi →',
+    note: 'Les gestions estan incloses al servei anual de Logik.',
+    call: 'Truca al',
+    nodes: ['Tu', 'Logik', 'Companyia'],
+  },
+  // Las mismas cifras confirmadas y rótulos que en el resto de páginas.
+  stats: [
+    { value: '+2.000', label: 'clients' },
+    { value: '+10', label: 'anys al sector' },
+    { value: '12 mesos', label: 'de seguiment' },
+  ],
+  tramits: {
+    eyebrow: 'Incloses al servei',
+    title: 'Canvi de titularitat, potència o alta nova: què gestionem per tu',
+    intro: "Tria el teu cas i t'ho expliquem en dues línies.",
+    label: 'Gestions incloses al servei', // [Claude]: nombre accesible de las pestañas
+    items: [
+      {
+        key: 'titularitat',
+        title: 'Canvi de titularitat',
+        text: "El canvi de titular de la llum passa el contracte a nom d'una altra persona o empresa. Passa, per exemple, amb una mudança, un lloguer o el traspàs d'un negoci.",
+      },
+      {
+        key: 'potencia',
+        title: 'Pujar o baixar potència',
+        text: 'La potència contractada és el màxim que pots fer servir alhora. Si et queda curta o et sobra, es pot pujar o baixar.',
+      },
+      {
+        key: 'alta',
+        title: 'Alta nova',
+        text: "Per donar d'alta la llum en un habitatge nou, un local o una activitat que comença.",
+      },
+      {
+        key: 'incidencies',
+        title: 'Incidències',
+        text: "Si durant l'any hi ha una incidència, la resolem nosaltres com a part del servei.",
+      },
+    ],
+    included: 'Inclòs al servei anual de Logik, amb tracte directe amb la companyia.',
+    cta: "Vull-ho inclòs →",
+  },
+  service: {
+    eyebrow: "Durant tot l'any",
+    title: 'Què inclou el servei anual de Logik',
+    items: [
+      {
+        icon: 'gestions',
+        title: 'Gestions',
+        text: 'Canvis de titularitat, pujades i baixades de potència i altes noves, amb tracte directe amb les companyies.',
+      },
+      { icon: 'incidencies', title: 'Incidències', text: "Si n'hi ha, les resolem nosaltres." },
+      { icon: 'seguiment', title: 'Seguiment', text: "Seguiment mensual i anual. La renovació s'agenda al mes 11." },
+    ],
+    link: "Veure com és l'any amb Logik →",
+  },
+  audience: {
+    title: 'Gestions per a llars, negocis i comunitats',
+    items: [
+      { page: 'llars', title: 'Llars', text: 'Mudances, lloguers i altes de casa.', link: 'Llars →' },
+      { page: 'empreses', title: 'Negocis i pimes', text: 'Locals nous, traspassos i activitats que comencen.', link: 'Empreses i pimes →' },
+      { page: 'comunitats', title: 'Comunitats de veïns', text: 'Gestions amb un sol interlocutor.', link: 'Comunitats de veïns →' },
+    ],
+  },
+  blogTitle: 'Per aprofundir', // [Claude]: mismo título que en las otras páginas
+  faq: {
+    eyebrow: 'Dubtes?',
+    title: 'Preguntes freqüents sobre canvis de titularitat, potència i altes de llum',
+    items: [
+      {
+        q: 'Quines gestions estan incloses?',
+        a: 'Canvis de titularitat, pujades i baixades de potència i altes noves, amb tracte directe amb les companyies.',
+      },
+      {
+        q: 'Puc demanar només una gestió?',
+        a: 'Les gestions formen part del servei anual de Logik i no les oferim com a servei independent. Si vols treballar amb nosaltres, comences pel pre-estudi.',
+      },
+      {
+        q: 'Què és un canvi de titularitat?',
+        a: "Passar el contracte de la llum a nom d'una altra persona o empresa, per exemple per una mudança, un lloguer o el traspàs d'un negoci.",
+      },
+      {
+        q: 'Què és la potència contractada?',
+        a: "És el màxim que pots fer servir alhora. Si et queda curta o et sobra, es pot pujar o baixar, i quan treballem junts ens n'ocupem nosaltres.",
+      },
+      {
+        q: 'Quant triga un tràmit?',
+        a: 'Depèn del tràmit i de la companyia, i no donem terminis genèrics. El que fem és tractar directament amb les companyies per agilitzar-lo.',
+      },
+      { q: 'Què passa si hi ha una incidència?', a: 'La resolem nosaltres com a part del servei.' },
+      {
+        q: 'Per a qui i on treballeu?',
+        a: 'Per a llars, negocis i comunitats de veïns. La nostra base és a Girona i fem visites presencials a localitats properes.',
+      },
+    ],
+  },
+  study: {
+    title: 'Comença el pre-estudi',
+    lead: 'Ens expliques el teu consum en uns quants passos i, quan treballem junts, les gestions van incloses.',
+    callLead: 'Prefereixes trucar?',
+  },
+  serviceType:
+    "Gestions de canvi de titularitat, potència i altes de subministrament elèctric incloses al servei anual de consultoria energètica",
+  serviceAudience: ['Llars', 'Pimes', 'Comunitats de veïns'],
+  breadcrumbHome: 'Inici',
+};
+
+const pageUrl = new URL(pages.gestio.ca, Astro.site).href;
+const logoUrl = new URL(logo.src, Astro.site).href;
+const schema = gestionsSchema({
+  lang: 'ca',
+  pageUrl,
+  homeUrl: new URL(pages.home.ca, Astro.site).href,
+  title,
+  description,
+  homeName: content.breadcrumbHome,
+  pageName: pages.gestio.name.ca,
+  serviceType: content.serviceType,
+  audience: content.serviceAudience,
+  faq: content.faq.items,
+});
+---
+
+<BaseLayout lang="ca" pageKey="gestio" title={title} description={description} og={{ image: logoUrl, imageAlt: 'Logik Solutions' }}>
+  <Fragment slot="head" set:html={`<script type="application/ld+json">${safeJsonLd(schema)}</script>`} />
+  <GestionsPage lang="ca" content={content} />
+</BaseLayout>

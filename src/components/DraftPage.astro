@@ -1,0 +1,80 @@
+---
+// Plantilla de página "en preparació" (borrador). Noindex y fuera del sitemap por
+// draft: true en src/config/pages.ts. check-build avisa de que bloquea la publicación.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { pages, type Locale, type PageKey } from '../config/pages';
+import { phone } from '../config/site';
+import { useTranslations } from '../i18n/ui';
+
+interface Props {
+  lang: Locale;
+  pageKey: PageKey;
+}
+
+const { lang, pageKey } = Astro.props;
+const t = useTranslations(lang);
+const name = pages[pageKey].name[lang];
+---
+
+<BaseLayout
+  lang={lang}
+  pageKey={pageKey}
+  title={`${name} · ${t('draft.text').replace(/.$/, '')} | Logik Solutions`}
+  description={`${name}: ${t('draft.text').toLowerCase()}`}
+>
+  <section class="draft tech-bg" data-draft data-section="borrador">
+    <div class="container draft__inner">
+      <h1>{name}</h1>
+      <p class="draft__text">{t('draft.text')}</p>
+      <div class="draft__actions">
+        <a class="btn btn-primary btn-lg" href={phone.tel}>{t('cta.callAt')} {phone.display}</a>
+        {pageKey !== 'contacte' && <a class="btn btn-ghost btn-lg" href={pages.contacte[lang]}>{pages.contacte.name[lang]}</a>}
+        <a class="btn btn-ghost btn-lg" href={pages.home[lang]}>{t('draft.home')}</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .draft {
+    padding-block: 4rem;
+    color: var(--white);
+  }
+
+  .draft__inner {
+    max-width: 48rem;
+  }
+
+  .draft h1 {
+    color: var(--white);
+  }
+
+  .draft__text {
+    color: var(--teal-100);
+    font-size: 1.25rem;
+  }
+
+  .draft__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .draft__actions .btn {
+    flex: 1 1 15rem;
+  }
+
+  .draft .btn-ghost {
+    color: var(--white);
+  }
+
+  @media (min-width: 48rem) {
+    .draft {
+      padding-block: 7rem;
+    }
+
+    .draft__actions .btn {
+      flex: none;
+    }
+  }
+</style>

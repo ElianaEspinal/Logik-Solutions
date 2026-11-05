@@ -1,0 +1,130 @@
+---
+// Com treballem (català). Textos de Eliana (encargo del 3/11/2026), con apòstrof recte.
+// Los marcados [Claude] no estaban en el encargo.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HowPage from '../components/how/how-page.astro';
+import { howSchema } from '../components/how/schema';
+import type { HowContent } from '../components/how/types';
+import { pages } from '../config/pages';
+import logo from '../assets/images/logo-web.webp';
+import { safeJsonLd } from '../lib/json-ld';
+
+const title = 'Com treballem | Assessorament energètic | Logik Solutions';
+const description =
+  "Així treballem a Logik Solutions: revisem la teva factura, comparem ofertes, fem els tràmits i et fem el seguiment tot l'any, fins a la renovació.";
+
+const content: HowContent = {
+  hero: {
+    tag: 'Com treballem',
+    title: "Assessorament energètic, pas a pas i tot l'any",
+    lead: 'Del primer contacte a la renovació: això és el que passa quan ens deixes la teva factura.',
+    cta: 'Revisa la meva factura →',
+    call: 'Truca al',
+  },
+  route: {
+    eyebrow: 'El recorregut',
+    title: 'Del primer contacte a la renovació, pas a pas',
+    lead: "Tu decideixes. Nosaltres ens n'ocupem.",
+    who: { tu: 'Tu', logik: 'Logik' },
+    steps: [
+      { who: 'tu', icon: 'chat', title: 'Ens expliques el teu cas', text: "Per telèfon, per WhatsApp o amb el formulari. Si vols, venim a veure't." },
+      { who: 'logik', icon: 'invoice', title: 'Revisem la teva factura i el teu contracte', text: 'Mirem la potència, el consum i les condicions.' },
+      {
+        who: 'logik',
+        icon: 'compare',
+        title: 'Comparem ofertes',
+        text: "Posem les ofertes de diverses comercialitzadores una al costat de l'altra i et diem què té sentit.",
+      },
+      { who: 'tu', icon: 'decide', title: 'Tu decideixes què canvia', text: 'Tu tries, amb tota la informació sobre la taula.' },
+      {
+        who: 'logik',
+        icon: 'stamp',
+        title: 'Fem els tràmits',
+        text: 'Canvis de titularitat, pujades i baixades de potència i altes noves, amb tracte directe amb els administradors de cada companyia.',
+      },
+      { who: 'logik', icon: 'calendar', title: 'Seguiment mensual i anual', text: 'Cada mes revisem la teva factura i resolem les incidències.' },
+      { who: 'logik', icon: 'bell', title: 'Mes 11: renovació', text: "T'avisem per renovar i no se't passi la data." },
+    ],
+  },
+  start: {
+    title: 'Per començar, una factura recent',
+    text: "Pots enviar-la pel formulari i la farem servir per preparar el teu estudi, d'acord amb la nostra política de privacitat.",
+    note: 'Sense cost per a tu: ens remunera la comercialitzadora.',
+    cta: 'Començar el pre-estudi →',
+  },
+  solar: {
+    eyebrow: 'Autoconsum',
+    title: 'I si vols plaques solars?',
+    lead: "Aquí el camí és una mica diferent: primer estudiem, i només després es parla d'instal·lar.",
+    steps: [
+      { icon: 'consumption', title: 'Estudiem el teu consum', text: "Mirem com consumeixes per saber si l'autoconsum té sentit." },
+      { icon: 'install', title: 'Si té sentit, la instal·lació', text: 'La fan enginyers i especialistes en instal·lació.' },
+      { icon: 'surplus', title: 'Què passa amb els excedents', text: "T'expliquem què passa amb l'energia que no consumeixes." },
+    ],
+    callout: "La instal·lació té un cost; abans t'expliquem si té sentit pel teu consum.",
+    link: 'Autoconsum fotovoltaic →',
+  },
+  scenarios: {
+    eyebrow: 'Situacions concretes',
+    title: 'Què passa si…?',
+    label: 'Situacions concretes', // [Claude]: etiqueta accesible de las pestañas
+    items: [
+      {
+        icon: 'incident',
+        chip: '…hi ha una incidència?',
+        q: 'Què passa si hi ha una incidència amb la meva factura?',
+        a: 'La resolem nosaltres. Les incidències estan incloses al servei.',
+      },
+      {
+        icon: 'renewal',
+        chip: "…s'acaba el contracte?",
+        q: "Què passa quan s'acaba el contracte?",
+        a: "T'avisem al mes 11 per renovar i que no se't passi la data.",
+      },
+      {
+        icon: 'change',
+        chip: '…vull canviar la titularitat o la potència?',
+        q: 'Què passa si vull canviar la titularitat o la potència?',
+        a: 'Ens en ocupem nosaltres, amb tracte directe amb els administradors de cada companyia.',
+      },
+      {
+        icon: 'location',
+        chip: '…no soc de Girona?',
+        q: 'Què passa si no soc de Girona?',
+        a: 'Treballem a tot Catalunya i a tot Espanya. A Girona i a localitats properes, a més, fem visites presencials.',
+      },
+      {
+        icon: 'privacy',
+        chip: '…envio la meva factura?',
+        q: 'Què passa amb la meva factura i les meves dades?',
+        a: "La teva factura i les teves dades les fem servir per preparar el teu estudi, d'acord amb la nostra política de privacitat.",
+      },
+    ],
+  },
+  closing: {
+    title: 'Comencem?',
+    text: "Explica'ns el teu cas i et diem què mirem i com ho fem.",
+    cta: 'Revisa la meva factura →',
+    call: 'Truca al',
+  },
+  breadcrumbHome: 'Inici',
+};
+
+const pageUrl = new URL(pages.comTreballem.ca, Astro.site).href;
+const logoUrl = new URL(logo.src, Astro.site).href;
+const schema = howSchema({
+  lang: 'ca',
+  pageUrl,
+  homeUrl: new URL(pages.home.ca, Astro.site).href,
+  title,
+  description,
+  homeName: content.breadcrumbHome,
+  pageName: pages.comTreballem.name.ca,
+  faq: content.scenarios.items,
+});
+---
+
+<BaseLayout lang="ca" pageKey="comTreballem" title={title} description={description} og={{ image: logoUrl, imageAlt: 'Logik Solutions' }}>
+  <Fragment slot="head" set:html={`<script type="application/ld+json">${safeJsonLd(schema)}</script>`} />
+  <HowPage lang="ca" content={content} />
+</BaseLayout>

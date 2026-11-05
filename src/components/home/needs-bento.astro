@@ -1,0 +1,448 @@
+---
+// "Què necessites?": cuatro perfiles. Toda la tarjeta enlaza a su página (enlace con flecha
+// dentro y su área ampliada a la tarjeta). Rejilla: < 768 px apiladas; 768–1199 px 2 × 2;
+// ≥ 1200 px cuatro iguales en una fila. Empresa se distingue por estilo, no por tamaño.
+// La lista "Què mirem":
+//   - con ratón y ≥ 768 px: se abre al pasar el cursor, al enfocar o con el botón, como capa
+//     elevada: la celda conserva su altura cerrada y nada de la página se mueve;
+//   - táctil y móvil: acordeón dentro del flujo, abierta la primera.
+// Sin JS, todas las listas se ven abiertas.
+import { pages, type Locale } from '../../config/pages';
+import type { HomeContent, NeedKey } from './types';
+
+interface Props {
+  lang: Locale;
+  content: HomeContent['needs'];
+}
+
+const { lang, content: c } = Astro.props;
+const keys: NeedKey[] = ['empreses', 'comunitats', 'llars', 'autoconsum'];
+const check = '<path d="m5 12 5 5 9-10"/>';
+---
+
+<section class="section surface-white surface-grid bento-section" aria-labelledby="needs-title" data-section="tarjetas">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.eyebrow}</p>
+      <h2 id="needs-title">{c.title}</h2>
+      <p class="section-head__intro">{c.intro}</p>
+    </div>
+
+    <ul class="bento">
+      {
+        keys.map((key, i) => (
+          <li class:list={['bento__cell', `bento__cell--${key}`]} data-reveal data-bento style={`--i:${i}`} data-open={i === 0 ? '' : undefined}>
+            <div class:list={['bento__card', 'card', 'card-lift', `bento__card--${key}`]}>
+              <span class="bento__icon" aria-hidden="true">
+                {key === 'empreses' && (
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 21h18M5 21V5l8-3v19M13 8h6v13" />
+                    <path class="bento__icon-part" d="M8 8h2M8 12h2M8 16h2M16 12h1M16 16h1" />
+                  </svg>
+                )}
+                {key === 'comunitats' && (
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 21h18M4 21V7h7v14M13 21V3h7v18" />
+                    <path class="bento__icon-part" d="M7 11h1M7 15h1M16 7h1M16 11h1M16 15h1" />
+                  </svg>
+                )}
+                {key === 'llars' && (
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+                    <path d="M14 3v5h5" />
+                    <path class="bento__icon-part" d="M9 13h6M9 17h4" />
+                  </svg>
+                )}
+                {key === 'autoconsum' && (
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <g class="bento__icon-sun">
+                      <circle cx="17" cy="5" r="2.5" />
+                      <path d="M17 .5v1M21.5 5h-1M13.5 5h-1" />
+                    </g>
+                    <path d="M3 20l3-9h11l3 9ZM8 11l-1 9M12 11v9M16 11l1 9M4.5 15.5h15" />
+                  </svg>
+                )}
+              </span>
+              <h3>{c.items[key].title}</h3>
+              <p class="bento__text">{c.items[key].text}</p>
+
+              <div class="bento__more">
+                <button class="bento__toggle" type="button" aria-expanded={i === 0 ? 'true' : 'false'} aria-controls={`bento-look-${key}`} data-bento-toggle>
+                  {c.lookLabel}
+                  <svg class="bento__chev" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                </button>
+                <div class="bento__panel" id={`bento-look-${key}`}>
+                  <ul class="bento__list">
+                    {c.items[key].look.map((item) => (
+                      <li>
+                        <span class="bento__check" aria-hidden="true">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" set:html={check} />
+                        </span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <a class="bento__link" href={pages[key][lang]} data-cta>
+                {c.items[key].link} <span aria-hidden="true">→</span>
+              </a>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<script>
+  // "Què mirem": un estado por celda (data-open), con dos modos.
+  // - Capa (ratón y ≥ 768 px): se abre al pasar el cursor, al enfocar o con el botón; solo una
+  //   abierta a la vez; Esc la cierra. La celda guarda su altura cerrada (medida) y la tarjeta
+  //   abierta flota por encima (position: absolute): la página no se mueve.
+  // - Acordeón (táctil o < 768 px): el botón abre y cierra dentro del flujo; la primera abierta.
+  const grid = document.querySelector<HTMLElement>('.bento');
+  const cells = [...document.querySelectorAll<HTMLElement>('[data-bento]')];
+  const overlayMq = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 48rem)');
+
+  if (grid && cells.length) {
+    const overlay = () => grid.classList.contains('is-overlay');
+    const button = (cell: HTMLElement) => cell.querySelector<HTMLButtonElement>('[data-bento-toggle]')!;
+    const card = (cell: HTMLElement) => cell.querySelector<HTMLElement>('.bento__card')!;
+    const setOpen = (cell: HTMLElement, open: boolean) => {
+      if (open && overlay()) cells.forEach((other) => other !== cell && setOpen(other, false));
+      cell.toggleAttribute('data-open', open);
+      button(cell).setAttribute('aria-expanded', String(open));
+    };
+
+    // Altura cerrada de cada celda (solo en modo capa): se mide mientras la tarjeta está cerrada.
+    const sizer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const el = entry.target as HTMLElement;
+        const cell = el.closest<HTMLElement>('[data-bento]')!;
+        if (overlay() && !cell.hasAttribute('data-open')) cell.style.height = `${el.offsetHeight}px`;
+      }
+    });
+
+    const applyMode = () => {
+      const on = overlayMq.matches;
+      grid.classList.toggle('is-overlay', on);
+      cells.forEach((cell, i) => {
+        if (on) {
+          setOpen(cell, false); // en capa, todas cerradas al empezar
+          cell.style.height = `${card(cell).offsetHeight}px`;
+          sizer.observe(card(cell));
+        } else {
+          sizer.unobserve(card(cell));
+          cell.style.removeProperty('height');
+          setOpen(cell, i === 0); // acordeón: la primera abierta
+        }
+      });
+    };
+    applyMode();
+    overlayMq.addEventListener('change', applyMode);
+
+    cells.forEach((cell) => {
+      button(cell).addEventListener('click', () => setOpen(cell, !cell.hasAttribute('data-open')));
+      cell.addEventListener('pointerenter', (e) => {
+        if (overlay() && e.pointerType === 'mouse') setOpen(cell, true);
+      });
+      cell.addEventListener('pointerleave', (e) => {
+        if (overlay() && e.pointerType === 'mouse' && !cell.contains(document.activeElement)) setOpen(cell, false);
+      });
+      cell.addEventListener('focusin', () => {
+        if (overlay()) setOpen(cell, true);
+      });
+      cell.addEventListener('focusout', (e) => {
+        if (overlay() && !cell.contains(e.relatedTarget as Node | null)) setOpen(cell, false);
+      });
+      cell.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape' || !cell.hasAttribute('data-open')) return;
+        setOpen(cell, false);
+        button(cell).focus();
+        e.stopPropagation();
+      });
+    });
+  }
+</script>
+
+<style>
+  /* Espacio reservado bajo la rejilla para que la tarjeta abierta (capa) no tape otras secciones. */
+  .bento-section {
+    --bento-reserve: 0px;
+    padding-bottom: calc(3rem + var(--bento-reserve));
+  }
+
+  @media (min-width: 48rem) {
+    .bento-section {
+      padding-bottom: calc(5rem + var(--bento-reserve));
+    }
+  }
+
+  .bento {
+    display: grid;
+    gap: 1rem;
+    align-items: start; /* ninguna tarjeta estira a las demás */
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .bento__cell {
+    position: relative;
+    min-width: 0;
+  }
+
+  .bento__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    overflow: hidden;
+  }
+
+  /* Destello naranja muy sutil en la esquina de cada tarjeta. */
+  .bento__card::before {
+    content: '';
+    position: absolute;
+    top: -6rem;
+    right: -6rem;
+    width: 14rem;
+    height: 14rem;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-500) 12%, transparent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  .bento__cell:is(:hover, :focus-within, [data-open]) .bento__card::before,
+  .bento__card:active::before {
+    opacity: 1;
+  }
+
+  .bento__card:focus-within {
+    border-color: var(--orange-700);
+  }
+
+  /* Empresa: se distingue por estilo (teal oscuro, borde y degradado naranja), no por tamaño. */
+  .bento__card--empreses {
+    --focus-ring: var(--orange-100);
+    border-color: color-mix(in srgb, var(--orange-500) 55%, transparent);
+    background:
+      radial-gradient(22rem 14rem at 100% 0%, color-mix(in srgb, var(--orange-500) 28%, transparent), transparent 70%),
+      var(--teal-900);
+    color: var(--white);
+  }
+
+  .bento__card--empreses:focus-within {
+    border-color: var(--orange-500);
+  }
+
+  .bento__icon {
+    display: inline-grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    margin-bottom: 1rem;
+    border-radius: 0.875rem;
+    background: var(--teal-900);
+    color: var(--orange-500);
+  }
+
+  .bento__card--empreses .bento__icon {
+    background: var(--orange-500);
+    color: var(--teal-900);
+  }
+
+  /* Iconos animados al pasar el cursor, enfocar o tocar la tarjeta. */
+  .bento__icon svg,
+  .bento__icon-part,
+  .bento__icon-sun {
+    transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .bento__icon-sun {
+    transform-origin: 17px 5px;
+  }
+
+  .bento__cell:is(:hover, :focus-within) .bento__icon svg,
+  .bento__card:active .bento__icon svg {
+    transform: translateY(-2px) scale(1.06);
+  }
+
+  .bento__cell:is(:hover, :focus-within) .bento__icon-part,
+  .bento__card:active .bento__icon-part {
+    transform: translateY(-1.5px);
+  }
+
+  .bento__cell:is(:hover, :focus-within) .bento__icon-sun,
+  .bento__card:active .bento__icon-sun {
+    transform: rotate(90deg);
+  }
+
+  .bento__card h3 {
+    font-size: 1.25rem;
+  }
+
+  .bento__card--empreses h3 {
+    color: var(--white);
+  }
+
+  .bento__text {
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
+  }
+
+  .bento__card--empreses .bento__text {
+    color: var(--teal-100);
+  }
+
+  /* ---- "Què mirem" ---- */
+  .bento__more {
+    position: relative;
+    z-index: 1; /* por encima del área ampliada del enlace */
+    margin-bottom: 1rem; /* el enlace queda 16 px por debajo */
+  }
+
+  .bento__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--teal-900);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .bento__card--empreses .bento__toggle {
+    color: var(--white);
+  }
+
+  .bento__chev {
+    flex: none;
+    color: var(--orange-700);
+    transition: transform 0.25s ease;
+  }
+
+  .bento__card--empreses .bento__chev {
+    color: var(--orange-500);
+  }
+
+  .bento__cell[data-open] .bento__chev {
+    transform: rotate(180deg);
+  }
+
+  .bento__list {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.25rem 0 0;
+    list-style: none;
+  }
+
+  .bento__list li {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .bento__check {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.15rem;
+    border-radius: 50%;
+    background: var(--orange-500);
+    color: var(--teal-900);
+  }
+
+  /* Sin JS no hay acordeón: botón oculto y listas abiertas. */
+  html:not(.js) .bento__toggle {
+    display: none;
+  }
+
+  /* Con JS: la lista se pliega (grid-template-rows 0fr/1fr). */
+  .js .bento__panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.28s ease;
+  }
+
+  .js .bento__cell[data-open] .bento__panel {
+    grid-template-rows: 1fr;
+  }
+
+  .js .bento__list {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .bento__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 44px;
+    color: var(--orange-700);
+    font-weight: 700;
+  }
+
+  /* Naranja de marca sobre teal oscuro (4,6:1). */
+  .bento__card--empreses .bento__link {
+    color: var(--orange-500);
+  }
+
+  /* Toda la tarjeta es clicable a través del enlace. */
+  .bento__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  /* ---- Rejilla: 2 × 2 desde 768 px; cuatro iguales desde 1200 px ---- */
+  @media (min-width: 48rem) {
+    .bento {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+  }
+
+  @media (min-width: 75rem) {
+    .bento {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* ---- Modo capa (ratón, ≥ 768 px): la celda guarda su altura cerrada; la tarjeta abierta flota ---- */
+  .bento-section:has(.bento.is-overlay) {
+    --bento-reserve: 11rem;
+  }
+
+  .bento.is-overlay .bento__cell[data-open] {
+    z-index: 5;
+  }
+
+  .bento.is-overlay .bento__cell[data-open] .bento__card {
+    position: absolute;
+    inset: 0 0 auto;
+    box-shadow: 0 1.75rem 3.5rem -1.5rem color-mix(in srgb, var(--teal-900) 45%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bento__panel,
+    .bento__chev,
+    .bento__icon svg,
+    .bento__icon-part,
+    .bento__icon-sun {
+      transition: none !important;
+    }
+  }
+</style>

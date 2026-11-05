@@ -1,0 +1,14 @@
+---
+// Páginas 2, 3… del índice (ca). Solo se generan con más de POSTS_PER_PAGE artículos.
+import BlogIndex from '../../../components/blog/blog-index.astro';
+import { getPosts, pageCount } from '../../../lib/blog';
+
+export async function getStaticPaths() {
+  const total = pageCount((await getPosts('ca')).length);
+  return Array.from({ length: total - 1 }, (_, i) => ({ params: { page: String(i + 2) }, props: { page: i + 2 } }));
+}
+
+const { page } = Astro.props as { page: number };
+---
+
+<BlogIndex lang="ca" page={page} />

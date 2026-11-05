@@ -1,0 +1,548 @@
+---
+// Formulario de captación (cierre "Parlem?" de la home; reutilizable en otras páginas).
+// Adjunto de factura si PUBLIC_FORM_ATTACHMENTS=true; si no, nota de WhatsApp.
+// Destino: PUBLIC_FORM_ENDPOINT (URL genérica). Vacío -> se ve pero no envía (aviso solo en staging).
+// Sin JS: envío nativo (multipart). Con JS: validación accesible, fetch con FormData,
+// sin doble envío y mensaje de éxito en la misma página. generate_lead solo si el envío es correcto.
+import { SITE_ENV, PUBLIC_FORM_ATTACHMENTS, PUBLIC_FORM_ENDPOINT } from 'astro:env/server';
+import { pages, type Locale } from '../config/pages';
+import { phone } from '../config/site';
+import { useTranslations } from '../i18n/ui';
+import FileDrop from './file-drop.astro';
+
+interface Props {
+  lang: Locale;
+  /** Prefijo de los id (para poder tener más de un formulario en una página). */
+  variant?: 'closing';
+  /** Texto del botón (por defecto, el del formulario de cierre). */
+  submitLabel?: string;
+}
+
+const { lang, variant = 'closing', submitLabel } = Astro.props;
+const t = useTranslations(lang);
+const isStaging = SITE_ENV === 'staging';
+const endpoint = PUBLIC_FORM_ENDPOINT.trim();
+const enabled = /^https:\/\/\S+$/.test(endpoint);
+const withFile = PUBLIC_FORM_ATTACHMENTS;
+const id = (name: string) => `${variant}-${name}`;
+const profiles = ['empresa', 'comunitat', 'llar'] as const;
+---
+
+<div class="lead-form" data-form-root>
+  <form
+    class="lead-form__form"
+    action={enabled ? endpoint : undefined}
+    method="POST"
+    enctype="multipart/form-data"
+    data-contact-form
+    data-variant={variant}
+    data-section="cierre"
+    data-enabled={enabled ? 'true' : 'false'}
+    data-sending={t('form.sending')}
+  >
+    <input type="hidden" name="idioma" value={lang} />
+    <input type="hidden" name="origen" value="home-cierre" />
+    <input type="hidden" name="_subject" value={`Web Logik Solutions: sol·licitud d'estudi (${lang})`} />
+
+    <fieldset class="chips" aria-describedby={id('profile-error')}>
+      <legend class="chips__legend">{t('form.profile')}</legend>
+      <div class="chips__list">
+        {
+          profiles.map((p) => (
+            <label class="chip">
+              <input type="radio" name="perfil" value={t(`form.profile.${p}`)} required />
+              <span>{t(`form.profile.${p}`)}</span>
+            </label>
+          ))
+        }
+      </div>
+      <p class="field__error" id={id('profile-error')} data-error-for="perfil" hidden>{t('form.errProfile')}</p>
+    </fieldset>
+
+    <div class="field">
+      <label for={id('name')}>{t('form.name')}</label>
+      <input id={id('name')} name="nom" type="text" autocomplete="name" required maxlength="100" />
+      <p class="field__error" id={id('name-error')} data-error-for="nom" hidden>{t('form.errName')}</p>
+    </div>
+
+    <div class="field">
+      <label for={id('phone')}>{t('form.phone')}</label>
+      <input id={id('phone')} name="telefon" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" pattern="[0-9 +\(\)\.\-]{9,20}" />
+      <p class="field__error" id={id('phone-error')} data-error-for="telefon" hidden>{t('form.errPhone')}</p>
+    </div>
+
+    <div class="field">
+      <label for={id('email')}>{t('form.email')}</label>
+      <input id={id('email')} name="email" type="email" inputmode="email" autocomplete="email" maxlength="120" />
+      <p class="field__error" id={id('email-error')} data-error-for="email" hidden>{t('form.errEmail')}</p>
+    </div>
+
+    {withFile && <FileDrop lang={lang} idPrefix={variant} />}
+    {!withFile && <p class="lead-form__note">{t('form.attachOff')}</p>}
+
+    <div class="field consent">
+      <input id={id('consent')} name="consentiment" type="checkbox" value="acceptat" required />
+      <label for={id('consent')}>
+        {
+          t('form.consent')
+            .split(t('form.consentLink'))
+            .map((part, i, all) => (
+              <>
+                {part}
+                {i < all.length - 1 && (
+                  <a href={pages.privacitat[lang]} target="_blank" rel="noopener">
+                    {t('form.consentLink')}
+                  </a>
+                )}
+              </>
+            ))
+        }
+      </label>
+      <p class="field__error" id={id('consent-error')} data-error-for="consentiment" hidden>{t('form.errConsent')}</p>
+    </div>
+    {/* Primera capa de información (LOPDGDD, art. 11): responsable, finalidad, derechos y enlace. */}
+    <p class="form-privacy" id={id('privacy-info')}>
+      {t('form.privacyInfo').split(t('form.consentLink'))[0]}<a href={pages.privacitat[lang]} target="_blank" rel="noopener">{t('form.consentLink')}</a>{t('form.privacyInfo').split(t('form.consentLink'))[1]}
+    </p>
+
+    <!-- Honeypot antispam: fuera de la vista; las personas no lo ven ni lo enfocan. -->
+    <div class="lead-form__trap" aria-hidden="true">
+      <label for={id('website')}>Website</label>
+      <input id={id('website')} type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" />
+    </div>
+
+    <p class="sr-only" aria-live="polite" data-form-live></p>
+    <div class="lead-form__error" role="alert" data-form-error hidden>
+      <p>{t('form.error')}</p>
+      <a class="btn btn-secondary" href={phone.tel}>{t('cta.callAt')} {phone.display}</a>
+    </div>
+
+    {
+      !enabled && isStaging && (
+        <p class="staging-marker" data-staging-only>
+          {lang === 'ca' ? "Enviament desactivat: falta PUBLIC_FORM_ENDPOINT a .env" : 'Envío desactivado: falta PUBLIC_FORM_ENDPOINT en .env'}
+        </p>
+      )
+    }
+
+    <button class="btn btn-primary btn-lg lead-form__submit" type="submit" disabled={!enabled} data-submit>
+      <span class="lead-form__spinner" aria-hidden="true"></span>
+      <span data-submit-label>{submitLabel ?? t('form.submit')}</span>
+    </button>
+  </form>
+
+  <div class="lead-form__success" tabindex="-1" data-form-success hidden>
+    <svg class="lead-form__check" aria-hidden="true" width="64" height="64" viewBox="0 0 52 52">
+      <circle cx="26" cy="26" r="24" fill="none" stroke-width="3"></circle>
+      <path d="m15 27 7 7 15-16" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg>
+    <p role="status">{t('form.success')}</p>
+    <a class="btn btn-secondary" href={phone.whatsapp} rel="noopener">{t('cta.whatsappLong')}</a>
+  </div>
+</div>
+
+<script>
+  import { sectionOf, trackThen } from '../scripts/analytics';
+  import { guardCheck, hideGuardMessage, markSent, showGuardMessage } from '../scripts/form-guard';
+
+  const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const MAX_FILE = 10 * 1024 * 1024;
+  const formatSize = (bytes: number) =>
+    bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
+
+  document.querySelectorAll<HTMLElement>('[data-form-root]').forEach((root) => {
+    const form = root.querySelector<HTMLFormElement>('form[data-contact-form]')!;
+    const success = root.querySelector<HTMLElement>('[data-form-success]')!;
+    const live = form.querySelector<HTMLElement>('[data-form-live]')!;
+    const errorBox = form.querySelector<HTMLElement>('[data-form-error]')!;
+    const submit = form.querySelector<HTMLButtonElement>('[data-submit]')!;
+    const submitLabel = submit.querySelector<HTMLElement>('[data-submit-label]')!;
+    const fileInput = form.querySelector<HTMLInputElement>('input[type="file"]');
+
+    // --- Adjunto: elegir, arrastrar, mostrar nombre y tamaño, quitar ------------
+    const drop = form.querySelector<HTMLElement>('[data-drop]');
+    const fileBox = form.querySelector<HTMLElement>('[data-drop-file]');
+    const fileName = form.querySelector<HTMLElement>('[data-drop-name]');
+    const fileValid = () => {
+      const file = fileInput?.files?.[0];
+      if (!file) return true;
+      return file.size <= MAX_FILE && (file.type === 'application/pdf' || file.type.startsWith('image/'));
+    };
+    const showFile = () => {
+      const file = fileInput?.files?.[0];
+      if (!fileBox || !fileName || !drop) return;
+      fileBox.hidden = !file;
+      drop.classList.toggle('has-file', !!file);
+      fileName.textContent = file ? `${file.name} · ${formatSize(file.size)}` : '';
+      if (file) live.textContent = fileName.textContent;
+      setError('factura', !fileValid());
+    };
+    fileInput?.addEventListener('change', showFile);
+    form.querySelector('[data-drop-remove]')?.addEventListener('click', () => {
+      if (!fileInput) return;
+      fileInput.value = '';
+      showFile();
+      fileInput.focus();
+    });
+    if (drop && fileInput) {
+      ['dragenter', 'dragover'].forEach((type) =>
+        drop.addEventListener(type, (e) => {
+          e.preventDefault();
+          drop.classList.add('is-over');
+        }),
+      );
+      ['dragleave', 'drop'].forEach((type) => drop.addEventListener(type, () => drop.classList.remove('is-over')));
+      drop.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const files = (e as DragEvent).dataTransfer?.files;
+        if (files?.length) {
+          const dt = new DataTransfer();
+          dt.items.add(files[0]);
+          fileInput.files = dt.files;
+          showFile();
+        }
+      });
+    }
+
+    if (form.dataset.enabled !== 'true') return;
+    form.noValidate = true; // con JS validamos nosotros, con mensajes accesibles
+
+    // --- Validación -----------------------------------------------------------
+    const errorEl = (name: string) => form.querySelector<HTMLElement>(`[data-error-for="${name}"]`);
+    function setError(name: string, invalid: boolean) {
+      const error = errorEl(name);
+      if (!error) return;
+      error.hidden = !invalid;
+      form.querySelectorAll<HTMLInputElement>(`[name="${name}"]`).forEach((input) => {
+        if (input.type === 'radio') return; // el grupo ya está descrito por el fieldset
+        if (invalid) {
+          input.setAttribute('aria-invalid', 'true');
+          input.setAttribute('aria-describedby', [error.id, input.getAttribute('aria-describedby')].filter(Boolean).join(' '));
+        } else {
+          input.removeAttribute('aria-invalid');
+          const rest = (input.getAttribute('aria-describedby') ?? '').split(' ').filter((x) => x && x !== error.id);
+          if (rest.length) input.setAttribute('aria-describedby', rest.join(' '));
+          else input.removeAttribute('aria-describedby');
+        }
+      });
+      form.querySelector(`fieldset:has([name="${name}"])`)?.classList.toggle('is-invalid', invalid);
+    }
+
+    const value = (name: string) => ((form.elements.namedItem(name) as HTMLInputElement | null)?.value ?? '').trim();
+    const rules: [string, () => boolean][] = [
+      ['perfil', () => !form.querySelector('[name="perfil"]:checked')],
+      ['nom', () => !value('nom')],
+      ['telefon', () => value('telefon').replace(/\D/g, '').length < 9],
+      ['email', () => !!value('email') && !EMAIL.test(value('email'))],
+      ['factura', () => !fileValid()],
+      ['consentiment', () => !(form.elements.namedItem('consentiment') as HTMLInputElement).checked],
+    ];
+
+    const validate = (only?: string) => {
+      let first: string | null = null;
+      for (const [name, invalid] of rules) {
+        if (only && only !== name) continue;
+        const bad = invalid();
+        setError(name, bad);
+        if (bad && !first) first = name;
+      }
+      return first;
+    };
+
+    // Validación en línea: al salir de cada campo y, tras un intento, en cada cambio.
+    let tried = false;
+    form.addEventListener('focusout', (e) => {
+      // Si el foco va al botón de envío, valida el envío (evita mover el botón bajo el cursor).
+      if ((e as FocusEvent).relatedTarget === submit) return;
+      const name = (e.target as HTMLInputElement).name;
+      if (name && (tried || value(name))) validate(name);
+    });
+    form.addEventListener('change', (e) => {
+      const name = (e.target as HTMLInputElement).name;
+      if (tried && name) validate(name);
+    });
+    // Mientras se escribe, un error ya visible se quita en cuanto el valor es válido.
+    // Así el formulario no cambia de altura justo al pulsar "Enviar" (el clic no se pierde).
+    form.addEventListener('input', (e) => {
+      const name = (e.target as HTMLInputElement).name;
+      if (name && errorEl(name) && !errorEl(name)!.hidden) validate(name);
+    });
+
+    // --- Envío ----------------------------------------------------------------
+    let sending = false;
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (sending) return; // sin doble envío
+      tried = true;
+      errorBox.hidden = true;
+      const firstInvalid = validate();
+      if (firstInvalid) {
+        const message = errorEl(firstInvalid)?.textContent ?? '';
+        live.textContent = message;
+        form.querySelector<HTMLInputElement>(`[name="${firstInvalid}"]`)?.focus();
+        return;
+      }
+
+      // Capas 2 a 4 (tiempo mínimo, enlaces, enfriamiento): src/scripts/form-guard.ts.
+      const blocked = guardCheck(form);
+      if (blocked) return showGuardMessage(form, blocked, submit);
+      hideGuardMessage(form);
+
+      sending = true;
+      const label = submitLabel.textContent ?? '';
+      submit.disabled = true;
+      submit.setAttribute('aria-busy', 'true');
+      submitLabel.textContent = form.dataset.sending ?? label;
+      live.textContent = form.dataset.sending ?? '';
+      try {
+        const body = new FormData(form);
+        if (fileInput && !fileInput.files?.length) body.delete('factura');
+        const response = await fetch(form.action, { method: 'POST', body, headers: { Accept: 'application/json' } });
+        markSent();
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        trackThen('generate_lead', { form_location: sectionOf(form) }, () => {
+          form.hidden = true;
+          success.hidden = false;
+          success.focus();
+        });
+      } catch {
+        sending = false;
+        errorBox.hidden = false;
+        submit.disabled = false;
+        submit.removeAttribute('aria-busy');
+        submitLabel.textContent = label;
+        markSent(submit); // enfriamiento de 30 s también tras un error
+      }
+    });
+  });
+</script>
+
+<style>
+  .lead-form__form {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .lead-form__form[hidden] {
+    display: none;
+  }
+
+  .lead-form .field {
+    margin: 0;
+  }
+
+  .lead-form input:not([type='checkbox'], [type='radio'], [type='file']) {
+    min-height: 52px;
+    border-radius: 0.75rem;
+  }
+
+  .lead-form input:focus-visible {
+    border-color: var(--orange-700);
+    outline: 3px solid var(--orange-500);
+    outline-offset: 1px;
+  }
+
+  /* --- Chips de perfil (radio accesible) --- */
+  .chips {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .chips__legend {
+    margin-bottom: 0.5rem;
+    padding: 0;
+    font-weight: 700;
+  }
+
+  .chips__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .chip {
+    position: relative;
+    display: inline-flex;
+    margin: 0;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .chip input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .chip span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    border: 1.5px solid var(--teal-100);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--teal-900);
+    transition:
+      background-color 0.15s,
+      border-color 0.15s;
+  }
+
+  .chip input:checked + span {
+    border-color: var(--teal-900);
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .chip input:checked + span::before {
+    content: '✓';
+    margin-right: 0.375rem;
+    color: var(--orange-500);
+  }
+
+  .chip input:focus-visible + span {
+    outline: 3px solid var(--orange-500);
+    outline-offset: 2px;
+  }
+
+  @media (hover: hover) {
+    .chip:hover span {
+      border-color: var(--teal-900);
+    }
+  }
+
+  .chips.is-invalid .chip span {
+    border-color: var(--orange-700);
+  }
+
+  /* --- Consentimiento --- */
+  .consent {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 0.75rem;
+    align-items: start;
+  }
+
+  .consent label {
+    font-weight: 400;
+  }
+
+  .consent .field__error {
+    grid-column: 1 / -1;
+  }
+
+  .lead-form__note {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: var(--teal-100);
+    color: var(--teal-900);
+  }
+
+  /* --- Honeypot (fuera de la vista; no display:none) --- */
+  .lead-form__trap {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  /* --- Estados --- */
+  .lead-form__error {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    background: var(--orange-100);
+    color: var(--teal-900);
+    font-weight: 700;
+  }
+
+  .lead-form__error[hidden] {
+    display: none;
+  }
+
+  .lead-form__error p {
+    margin: 0;
+  }
+
+  .lead-form__submit {
+    width: 100%;
+    min-height: 56px;
+  }
+
+  .lead-form__spinner {
+    display: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 2.5px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin-btn 0.7s linear infinite;
+  }
+
+  .lead-form__submit[aria-busy='true'] .lead-form__spinner {
+    display: inline-block;
+  }
+
+  @keyframes spin-btn {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .lead-form__success {
+    display: grid;
+    justify-items: center;
+    gap: 1rem;
+    padding: 1.5rem 0.5rem;
+    color: var(--teal-900);
+    font-size: 1.125rem;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .lead-form__success[hidden] {
+    display: none;
+  }
+
+  .lead-form__success p {
+    margin: 0;
+  }
+
+  .lead-form__check {
+    stroke: var(--orange-700);
+  }
+
+  .lead-form__check circle {
+    stroke-dasharray: 151;
+    stroke-dashoffset: 151;
+    animation: draw 0.6s ease-out forwards;
+  }
+
+  .lead-form__check path {
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+    animation: draw 0.4s 0.45s ease-out forwards;
+  }
+
+  @keyframes draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lead-form__check circle,
+    .lead-form__check path {
+      stroke-dashoffset: 0;
+      animation: none;
+    }
+  }
+</style>

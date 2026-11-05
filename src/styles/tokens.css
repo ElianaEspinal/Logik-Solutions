@@ -1,0 +1,25 @@
+/*
+ * Paleta de Logik Solutions. Único sitio con códigos de color: el resto de
+ * la web usa estas variables (nada de colores sueltos).
+ *
+ * Contraste comprobado (WCAG AA, texto normal >= 4,5):
+ *   teal-900 sobre cream 12,9 · sobre white 13,8 · sobre orange-500 4,6
+ *   orange-700 sobre cream 4,6 · sobre white 4,9
+ *   orange-500 sobre teal-900 4,6 · white sobre teal-900 13,8
+ *   text-muted sobre cream 5,8 · sobre teal-100 5,2
+ * No llegan a 4,5 (no usar para texto normal):
+ *   white sobre orange-500 3,0 -> el texto del botón naranja va en teal-900
+ *   orange-500 sobre cream 2,8 -> texto naranja sobre claro: orange-700
+ *   orange-700 sobre teal-100 4,1 y sobre orange-100 4,3 -> ahí, enlaces en teal-900
+ */
+:root {
+  --teal-900: #01323a; /* texto, cabecera, bandas oscuras, botón secundario */
+  --teal-700: #0b4a54; /* hover, degradados */
+  --teal-100: #e4eeef; /* fondos alternos, bordes */
+  --orange-500: #fd6200; /* botón principal, acentos, cifras grandes, iconos */
+  --orange-700: #c24b00; /* enlaces y texto naranja sobre fondo claro */
+  --orange-100: #ffede0; /* etiquetas, avisos */
+  --cream: #fbf7f0; /* fondo general */
+  --white: #ffffff; /* tarjetas */
+  --text-muted: #4a666c; /* textos de apoyo */
+}

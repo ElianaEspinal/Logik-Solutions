@@ -1,0 +1,1112 @@
+---
+// Plantilla de artículo (/blog/{slug}/ y /es/blog/{slug}/).
+// Migas · cabecera (categoría, H1, metadatos, entradilla, portada) · índice de contenidos
+// (lateral sticky en escritorio, plegable en móvil) · cuerpo · FAQ opcional · CTA único ·
+// autor · "Segueix llegint" · volver. Barra de progreso solo con scroll-driven animations.
+import { getImage, Image } from 'astro:assets';
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BlogCta from './blog-cta.astro';
+import PreStudy from '../home/pre-study.astro';
+import { preStudyTexts } from '../home/pre-study-texts';
+import BrandCover from './brand-cover.astro';
+import PostCard from './post-card.astro';
+import { blogPostSchema } from './schema';
+import { CATEGORIES, blogText } from '../../config/blog';
+import { pages } from '../../config/pages';
+import { phone, site } from '../../config/site';
+import {
+  formatDate,
+  getPostAlternates,
+  isoDate,
+  postAuthor,
+  postLang,
+  postPath,
+  readingMinutes,
+  relatedPosts,
+  type Post,
+} from '../../lib/blog';
+import logo from '../../assets/images/logo-web.webp';
+import '../../styles/motion.css';
+import { safeJsonLd } from '../../lib/json-ld';
+
+interface Props {
+  post: Post;
+  all: Post[];
+}
+
+const { post, all } = Astro.props;
+const lang = postLang(post);
+const t = blogText[lang];
+const { Content, headings } = await render(post);
+const { title, description, cover, coverAlt, coverPosition, pubDate, updatedDate, category, draft, faq, cta } = post.data;
+// H1 visible (y headline del JSON-LD): el `h1` del frontmatter o, si no hay, el title.
+const heading = post.data.h1 ?? title;
+// Si la actualización es del mismo día que la publicación, solo se muestra "Actualitzat el…".
+const sameDay = !!updatedDate && isoDate(updatedDate) === isoDate(pubDate);
+const toc = headings.filter((h) => h.depth === 2);
+const author = postAuthor(post);
+const related = relatedPosts(post, all);
+const minutes = readingMinutes(post);
+const pageUrl = new URL(postPath(post), Astro.site).href;
+const blogUrl = new URL(pages.blog[lang], Astro.site).href;
+const logoUrl = new URL(logo.src, Astro.site).href;
+// og:image, twitter:image y JSON-LD: la portada recortada a 1200 × 630 (cover, con el mismo encuadre)
+// en JPG, el formato que aceptan todas las redes; sin portada, el logo de la marca.
+// sharp no admite porcentajes en `position`: el encuadre "X% Y%" se traduce a top / center / bottom.
+const sharePosition = (() => {
+  const y = Number(coverPosition?.split(' ')[1]?.replace('%', '') ?? 50);
+  return y <= 25 ? 'top' : y >= 75 ? 'bottom' : 'center';
+})();
+const shareImage = cover
+  ? await getImage({ src: cover, width: 1200, height: 630, fit: 'cover', position: sharePosition, format: 'jpg', quality: 80 })
+  : null;
+const imageUrl = shareImage ? new URL(shareImage.src, Astro.site).href : logoUrl;
+const modified = updatedDate ?? pubDate;
+
+const schema = blogPostSchema({
+  lang,
+  pageUrl,
+  homeUrl: new URL(pages.home[lang], Astro.site).href,
+  blogUrl,
+  homeName: t.home,
+  title: heading,
+  description,
+  imageUrl,
+  logoUrl,
+  published: pubDate,
+  modified,
+  author: author ? { name: author.name, jobTitle: author.role[lang], url: author.url } : null,
+  faq,
+});
+---
+
+<BaseLayout
+  lang={lang}
+  title={`${title} | Logik Solutions`}
+  description={description}
+  alternates={getPostAlternates(post, all)}
+  switcherFallback="blog"
+  noindex={draft}
+  og={{
+    type: 'article',
+    image: imageUrl,
+    imageAlt: coverAlt,
+    imageWidth: shareImage ? 1200 : undefined,
+    imageHeight: shareImage ? 630 : undefined,
+    publishedTime: pubDate.toISOString(),
+    modifiedTime: modified.toISOString(),
+  }}
+>
+  <Fragment slot="head">
+    <link rel="alternate" type="application/rss+xml" title={t.rssTitle} href={`${pages.blog[lang]}rss.xml`} />
+    <Fragment set:html={`<script type="application/ld+json">${safeJsonLd(schema)}</script>`} />
+  </Fragment>
+
+  <div class="read-progress" aria-hidden="true"></div>
+
+  <article class="post" data-section="blog" data-post-draft={draft ? '' : undefined}>
+    <header class="post-head surface-grid">
+      <div class="container post-head__inner">
+        <nav class="crumbs" aria-label={t.breadcrumb}>
+          <ol>
+            <li><a href={pages.home[lang]}>{t.home}</a></li>
+            <li><a href={pages.blog[lang]}>Blog</a></li>
+            <li><span aria-current="page">{heading}</span></li>
+          </ol>
+        </nav>
+        <p class="post-head__cat">{CATEGORIES[category][lang]}</p>
+        <h1>{heading}</h1>
+        <p class="post-head__meta">
+          <span>{t.by} {author?.name ?? t.orgByline}</span>
+          {
+            !sameDay && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>
+                  {t.published} <time datetime={isoDate(pubDate)}>{formatDate(pubDate, lang)}</time>
+                </span>
+              </>
+            )
+          }
+          {
+            updatedDate && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>
+                  {t.updated} <time datetime={isoDate(updatedDate)}>{formatDate(updatedDate, lang)}</time>
+                </span>
+              </>
+            )
+          }
+          <span aria-hidden="true">·</span>
+          <span>{t.readingTime.replace('{n}', String(minutes))}</span>
+        </p>
+        {/* Portada justo debajo del H1 y la firma, antes de la entradilla y de "Resposta ràpida". Sin pie. */}
+        <figure class="post-cover">
+          {
+            cover ? (
+              <Image
+                src={cover}
+                alt={coverAlt ?? ''}
+                widths={[480, 768, 1200]}
+                sizes="(min-width: 64rem) 832px, calc(100vw - 2rem)"
+                format="webp"
+                quality={78}
+                loading="eager"
+                decoding="async"
+                fetchpriority="high"
+                style={coverPosition ? `object-position: ${coverPosition}` : undefined}
+              />
+            ) : (
+              <BrandCover category={category} size="hero" />
+            )
+          }
+        </figure>
+        <p class="post-head__lead">{description}</p>
+      </div>
+    </header>
+
+    <div class:list={['container', 'post-layout', { 'post-layout--toc': toc.length > 0 }]}>
+      {
+        toc.length > 0 && (
+          <div class="toc-side">
+            <nav class="toc-side__nav" data-toc-desktop aria-label={t.toc}>
+              <p class="toc-side__title">{t.toc}</p>
+              <ol>
+                {toc.map((h) => (
+                  <li>
+                    <a href={`#${h.slug}`}>{h.text}</a>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+          </div>
+        )
+      }
+
+      <div class="post-main">
+        {
+          toc.length > 0 && (
+            <details class="toc-mobile">
+              <summary>{t.toc}</summary>
+              <nav aria-label={t.toc}>
+                <ol>
+                  {toc.map((h) => (
+                    <li>
+                      <a href={`#${h.slug}`}>{h.text}</a>
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+            </details>
+          )
+        }
+
+        <div class="prose post-body">
+          <Content />
+        </div>
+
+        {
+          faq && faq.length > 0 && (
+            <section class="post-faq" aria-labelledby="post-faq-title">
+              <h2 id="post-faq-title">{t.faqTitle}</h2>
+              {faq.map((item, i) => (
+                <details class="post-faq__item" name="post-faq" open={i === 0}>
+                  <summary>{item.q}</summary>
+                  <p>{item.a}</p>
+                </details>
+              ))}
+            </section>
+          )
+        }
+
+        {
+          !cta?.study && (
+            <section class="post-cta">
+              <BlogCta lang={lang} variant="post" custom={cta?.button ? { title: cta.title, button: cta.button, section: cta.section } : undefined} />
+            </section>
+          )
+        }
+
+        <section class="post-author card" aria-labelledby="post-author-title">
+          <h2 class="post-author__title" id="post-author-title">{t.authorTitle}</h2>
+          {
+            author ? (
+              <>
+                <p class="post-author__name">
+                  {author.url ? (
+                    <a href={author.url} rel="author">
+                      {author.name}
+                    </a>
+                  ) : (
+                    author.name
+                  )}
+                </p>
+                <p class="post-author__role">{author.role[lang]}</p>
+                <p class="post-author__bio">{author.bio[lang]}</p>
+              </>
+            ) : (
+              <>
+                <p class="post-author__name">{site.name}</p>
+                <p class="post-author__bio">{t.orgBio}</p>
+                <a class="post-author__link" href={pages.nosaltres[lang]}>
+                  {t.orgLink} <span aria-hidden="true">→</span>
+                </a>
+              </>
+            )
+          }
+        </section>
+      </div>
+    </div>
+
+    {/* CTA de cierre con el pre-estudi embebido (frontmatter cta.study): mismo componente que las
+        páginas de servicio, a todo el ancho; el teléfono de debajo lanza cta_click (cta.section) y click_call. */}
+    {
+      cta?.study && (
+        <>
+          <PreStudy lang={lang} content={{ ...preStudyTexts[lang], title: cta.title }} origin={cta.origin} />
+          <div class="post-study-call" data-section="blog">
+            <p class="container">
+              {t.studyCall}{' '}
+              <a href={phone.tel} data-cta={cta.section}>
+                {phone.display}
+              </a>
+            </p>
+          </div>
+        </>
+      )
+    }
+
+    {
+      related.length > 0 && (
+        <section class="container post-related" aria-labelledby="post-related-title">
+          <h2 id="post-related-title">{t.related}</h2>
+          <div class="post-related__grid">
+            {related.map((p, i) => (
+              <PostCard post={p} lang={lang} position={i + 1} heading="h3" />
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    <p class="container post-back">
+      <a href={pages.blog[lang]}>{t.back}</a>
+    </p>
+  </article>
+</BaseLayout>
+
+<script>
+  import '../../scripts/blog';
+</script>
+
+<style>
+  /* ---- Barra de progreso: solo con scroll-driven animations y movimiento permitido ---- */
+  .read-progress {
+    display: none;
+  }
+
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .read-progress {
+        position: fixed;
+        inset: 0 0 auto;
+        z-index: 80;
+        display: block;
+        height: 3px;
+        background: linear-gradient(90deg, var(--orange-700), var(--orange-500));
+        transform: scaleX(0);
+        transform-origin: left;
+        animation: read-progress linear both;
+        animation-timeline: scroll(root block);
+        pointer-events: none;
+      }
+    }
+  }
+
+  @keyframes read-progress {
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  /* ---- Cabecera ---- */
+  .post-head {
+    padding-block: 1.25rem 0;
+  }
+
+  .post-head__inner {
+    display: grid;
+    justify-items: start;
+  }
+
+  .crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+    color: var(--text-muted);
+  }
+
+  .crumbs li {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .crumbs li + li::before {
+    content: '›';
+    margin-inline: 0.5rem;
+    color: var(--text-muted);
+  }
+
+  .crumbs a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--teal-900);
+    font-weight: 600;
+  }
+
+  .crumbs [aria-current] {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+
+  .post-head__cat {
+    margin: 0 0 0.75rem;
+    padding: 0.125rem 0.75rem;
+    border-radius: 999px;
+    background: var(--orange-100);
+    color: var(--teal-900);
+    font-weight: 700;
+  }
+
+  .post-head h1 {
+    max-width: 26ch;
+    margin-bottom: 0.75rem;
+    font-size: clamp(1.75rem, 4vw + 0.75rem, 3rem);
+  }
+
+  .post-head__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.125rem 0.5rem;
+    margin: 0 0 1rem;
+    color: var(--text-muted);
+  }
+
+  .post-head__lead {
+    max-width: 44rem;
+    margin: 0 0 1.5rem;
+    font-size: 1.1875rem;
+    line-height: 1.6;
+  }
+
+  /* Portada. Móvil: ancho completo (dentro del margen de 16 px), 16/9 y altura limitada para que
+     titular, firma y el inicio del artículo quepan en la primera pantalla. Escritorio: centrada,
+     1,2 veces la columna de lectura (44rem), 2/1 y como mucho 420 px. Radio y borde de las tarjetas. */
+  .post-cover {
+    width: 100%;
+    max-height: clamp(180px, 32svh, 260px);
+    margin: 0 0 1.25rem;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--teal-100);
+    border-radius: 1.25rem;
+    background: var(--teal-100);
+  }
+
+  @media (min-width: 64rem) {
+    .post-cover {
+      justify-self: center;
+      width: min(100%, 52rem);
+      max-height: 420px;
+      aspect-ratio: 2 / 1;
+      margin-bottom: 1.5rem;
+    }
+  }
+
+  .post-cover :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* ---- Maquetación: una columna; con índice lateral desde 64rem ---- */
+  .post-layout {
+    display: grid;
+    gap: 2rem;
+    padding-block: 2rem 1rem;
+  }
+
+  .post-main {
+    min-width: 0;
+    max-width: 44rem; /* ≈ 68 caracteres a 17-18 px */
+  }
+
+  .toc-side {
+    display: none;
+  }
+
+  @media (min-width: 64rem) {
+    .post-layout--toc {
+      grid-template-columns: 15rem minmax(0, 44rem);
+      gap: 3rem;
+      justify-content: start;
+    }
+
+    .post-layout:not(.post-layout--toc) .post-main {
+      margin-inline: auto;
+    }
+
+    .toc-side {
+      display: block;
+    }
+
+    .toc-mobile {
+      display: none;
+    }
+  }
+
+  @media (min-width: 80rem) {
+    .post-layout--toc {
+      grid-template-columns: 16rem minmax(0, 44rem);
+      gap: 4rem;
+    }
+  }
+
+  .toc-side__nav {
+    position: sticky;
+    top: calc(var(--header-h, 64px) + 1.5rem);
+    max-height: calc(100vh - var(--header-h, 64px) - 3rem);
+    overflow-y: auto;
+    padding-left: 1rem;
+    border-left: 2px solid var(--teal-100);
+  }
+
+  .toc-side__title {
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+
+  .toc-side ol,
+  .toc-mobile ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .toc-side a,
+  .toc-mobile a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding-block: 0.375rem;
+    color: var(--teal-900);
+    line-height: 1.35;
+  }
+
+  .toc-side a {
+    position: relative;
+    color: var(--text-muted);
+    transition: color 0.2s;
+  }
+
+  .toc-side a[aria-current='location'] {
+    color: var(--teal-900);
+    font-weight: 700;
+  }
+
+  .toc-side a[aria-current='location']::before {
+    content: '';
+    position: absolute;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    left: calc(-1rem - 2px);
+    width: 2px;
+    background: var(--orange-500);
+  }
+
+  .toc-mobile {
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--teal-100);
+    border-radius: 1rem;
+    background: var(--white);
+  }
+
+  .toc-mobile summary {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 0.5rem 1rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .toc-mobile nav {
+    padding: 0 1rem 0.75rem;
+  }
+
+  /* ---- Cuerpo de lectura ---- */
+  .post-body {
+    font-size: 1.0625rem; /* 17 px */
+    line-height: 1.7;
+  }
+
+  @media (min-width: 48rem) {
+    .post-body {
+      font-size: 1.125rem; /* 18 px */
+      line-height: 1.72;
+    }
+  }
+
+  .post-body :global(h2) {
+    margin: 2.5rem 0 0.75rem;
+    font-size: clamp(1.4375rem, 1.5vw + 1rem, 1.875rem);
+    scroll-margin-top: calc(var(--header-h, 64px) + 1rem);
+  }
+
+  .post-body :global(h3) {
+    margin: 2rem 0 0.5rem;
+    font-size: clamp(1.1875rem, 1vw + 0.9rem, 1.375rem);
+    scroll-margin-top: calc(var(--header-h, 64px) + 1rem);
+  }
+
+  .post-body > :global(:first-child) {
+    margin-top: 0;
+  }
+
+  .post-body :global(p),
+  .post-body :global(ul),
+  .post-body :global(ol) {
+    margin: 0 0 1.25rem;
+  }
+
+  .post-body :global(li + li) {
+    margin-top: 0.375rem;
+  }
+
+  .post-body :global(img) {
+    height: auto;
+    margin-block: 1.5rem;
+    border-radius: 1rem;
+  }
+
+  .post-body :global(blockquote) {
+    margin: 1.75rem 0;
+    padding: 0.25rem 0 0.25rem 1.25rem;
+    border-left: 3px solid var(--orange-500);
+    color: var(--teal-900);
+    font-size: 1.125em;
+    font-style: italic;
+  }
+
+  /* Tablas: la caja hace scroll, la página no. */
+  .post-body :global(.table-wrap) {
+    max-width: 100%;
+    margin: 1.75rem 0;
+    overflow-x: auto;
+    border: 1px solid var(--teal-100);
+    border-radius: 1rem;
+    background: var(--white);
+  }
+
+  /* Tablas de 2 o 3 columnas: caben en móvil (el texto se parte). Solo las anchas (4+ columnas)
+     piden un mínimo y hacen scroll dentro de su caja. */
+  .post-body :global(table) {
+    width: 100%;
+    min-width: 0;
+    border-collapse: collapse;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .post-body :global(th),
+  .post-body :global(td) {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--teal-100);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .post-body :global(th) {
+    background: var(--teal-100);
+    font-weight: 700;
+  }
+
+  .post-body :global(tr:last-child td) {
+    border-bottom: 0;
+  }
+
+  .post-body :global(table:has(th:nth-child(4))) {
+    min-width: 32rem;
+  }
+
+  /* Resposta ràpida / Respuesta rápida: caja destacada al inicio del artículo. */
+  .post-body :global(.quick-answer) {
+    margin: 0 0 2rem;
+    padding: 1.25rem 1.25rem 1.25rem 1.5rem;
+    border: 1px solid color-mix(in srgb, var(--orange-500) 35%, transparent);
+    border-left: 5px solid var(--orange-500);
+    border-radius: 1rem;
+    background: var(--orange-100);
+    color: var(--teal-900);
+  }
+
+  .post-body :global(.quick-answer p) {
+    margin: 0;
+  }
+
+  .post-body :global(.quick-answer strong:first-child) {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-family: var(--font-heading);
+    font-size: 1.125rem;
+  }
+
+  /* Listas numeradas: pasos con número en círculo. */
+  .post-body :global(ol.steps) {
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+  }
+
+  .post-body :global(ol.steps > li) {
+    position: relative;
+    min-height: 2.25rem;
+    padding: 0.125rem 0 0 3rem;
+    counter-increment: step;
+  }
+
+  .post-body :global(ol.steps > li + li) {
+    margin-top: 1rem;
+  }
+
+  .post-body :global(ol.steps > li::before) {
+    content: counter(step);
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--teal-900);
+    color: var(--orange-500);
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  /* Línea que une los pasos. */
+  .post-body :global(ol.steps > li:not(:last-child)::after) {
+    content: '';
+    position: absolute;
+    top: 2.5rem;
+    bottom: -0.875rem;
+    left: calc(1.125rem - 1px);
+    width: 2px;
+    background: var(--teal-100);
+  }
+
+  /* Esquema de 24 h (diagram: periodes-24h). Textos de 16 px o más; sin JS, completo. */
+  .post-body :global(.periods) {
+    margin: 1.75rem 0 2rem;
+    padding: 1.25rem 1rem 1rem;
+    border: 1px solid var(--teal-100);
+    border-radius: 1rem;
+    background: var(--white);
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  .post-body :global(.periods__row + .periods__row) {
+    margin-top: 1rem;
+  }
+
+  .post-body :global(.periods__label) {
+    margin: 0 0 0.375rem;
+    color: var(--teal-900);
+    font-weight: 700;
+  }
+
+  .post-body :global(.periods__bar) {
+    position: relative;
+    height: 2.75rem;
+    overflow: hidden;
+    border-radius: 0.625rem;
+    background: var(--teal-100);
+  }
+
+  .post-body :global(.periods__bar svg) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .post-body :global(.periods__seg--valley) {
+    fill: var(--teal-900);
+  }
+
+  .post-body :global(.periods__seg--peak) {
+    fill: var(--orange-500);
+  }
+
+  .post-body :global(.periods__tag) {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .post-body :global(.periods__tag--valley) {
+    color: var(--white);
+  }
+
+  .post-body :global(.periods__tag--peak) {
+    color: var(--teal-900);
+  }
+
+  .post-body :global(.periods__axis) {
+    position: relative;
+    height: 1.5rem;
+    margin-top: 0.375rem;
+    color: var(--text-muted);
+  }
+
+  .post-body :global(.periods__axis span) {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  .post-body :global(.periods__axis span:first-child) {
+    transform: none;
+  }
+
+  .post-body :global(.periods__axis span:last-child) {
+    transform: translateX(-100%);
+  }
+
+  .post-body :global(.periods__legend) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .post-body :global(.periods__legend li) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+  }
+
+  .post-body :global(.periods__swatch) {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.25rem;
+  }
+
+  .post-body :global(.periods__swatch--valley) {
+    background: var(--teal-900);
+  }
+
+  .post-body :global(.periods__swatch--peak) {
+    background: var(--orange-500);
+  }
+
+  /* Animación: solo si el script marca el esquema como pendiente (con JS y movimiento permitido). */
+  @media (prefers-reduced-motion: no-preference) {
+    .post-body :global(.periods__seg) {
+      transform-box: fill-box;
+      transform-origin: left center;
+      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+      transition-delay: calc(var(--d, 0) * 0.45s);
+    }
+
+    .post-body :global(.periods__tag) {
+      transition: opacity 0.35s ease;
+      transition-delay: calc(var(--d, 0) * 0.45s + 0.45s);
+    }
+
+    .post-body :global(.periods.is-pending .periods__seg) {
+      transform: scaleX(0);
+    }
+
+    .post-body :global(.periods.is-pending .periods__tag) {
+      opacity: 0;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .post-body :global(.periods) {
+      padding: 1.5rem 1.5rem 1.25rem;
+    }
+
+    .post-body :global(.periods__row) {
+      display: grid;
+      grid-template-columns: 13rem minmax(0, 1fr);
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .post-body :global(.periods__label) {
+      margin: 0;
+    }
+
+    .post-body :global(.periods__axis),
+    .post-body :global(.periods__legend) {
+      margin-left: 14rem;
+    }
+  }
+
+  /* Aviso final ("Aquest article és informatiu…"): más pequeño que el cuerpo, nunca por debajo de 16 px. */
+  .post-body :global(.post-disclaimer) {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--teal-100);
+    color: var(--text-muted);
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  /* Teléfono bajo el pre-estudi embebido (CTA de cierre con study: true). */
+  .post-study-call {
+    padding-block: 0 3rem;
+    background: var(--cream);
+  }
+
+  .post-study-call p {
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .post-study-call a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--orange-700);
+  }
+
+  /* Callouts: Nota / Atenció. */
+  .post-body :global(.callout) {
+    margin: 1.75rem 0;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    border-left: 4px solid var(--teal-900);
+    background: var(--teal-100);
+  }
+
+  .post-body :global(.callout--warning) {
+    border-left-color: var(--orange-700);
+    background: var(--orange-100);
+  }
+
+  .post-body :global(.callout > :last-child) {
+    margin-bottom: 0;
+  }
+
+  .post-body :global(.callout__label) {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.375rem;
+    font-weight: 700;
+  }
+
+  /* orange-700 no llega a 4,5 sobre teal-100 ni orange-100: enlaces en teal dentro de callouts. */
+  .post-body :global(.callout a) {
+    color: var(--teal-900);
+  }
+
+  /* CTA discreto a mitad de artículo (solo en artículos largos; lo inserta rehype-blog). */
+  .post-body :global(.mid-cta) {
+    margin: 2rem 0;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--teal-100);
+    border-radius: 1rem;
+    background: var(--white);
+  }
+
+  .post-body :global(.mid-cta p) {
+    margin: 0;
+  }
+
+  .post-body :global(.mid-cta__text) {
+    font-weight: 700;
+  }
+
+  .post-body :global(.mid-cta__actions) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1.5rem;
+  }
+
+  .post-body :global(.mid-cta a) {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .post-body :global(.mid-cta__call) {
+    color: var(--teal-900);
+  }
+
+  /* ---- FAQ ---- */
+  .post-faq {
+    margin-top: 2.5rem;
+  }
+
+  .post-faq__item {
+    border-bottom: 1px solid var(--teal-100);
+  }
+
+  .post-faq__item summary {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 56px;
+    padding-block: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .post-faq__item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .post-faq__item summary::after {
+    content: '+';
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--teal-100);
+    color: var(--teal-900);
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: transform 0.2s;
+  }
+
+  .post-faq__item[open] summary::after {
+    transform: rotate(45deg);
+  }
+
+  .post-faq__item p {
+    margin: 0 0 1rem;
+    color: var(--text-muted);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .post-faq__item summary::after {
+      transition: none;
+    }
+  }
+
+  /* ---- CTA, autor, relacionados ---- */
+  .post-cta {
+    margin-top: 3rem;
+  }
+
+  .post-author {
+    display: grid;
+    gap: 0.25rem;
+    justify-items: start;
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+  }
+
+  .post-author__title {
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .post-author p {
+    margin: 0;
+  }
+
+  .post-author__name {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .post-author__role,
+  .post-author__bio {
+    color: var(--text-muted);
+  }
+
+  .post-author__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 44px;
+    margin-top: 0.25rem;
+    font-weight: 700;
+  }
+
+  .post-related {
+    padding-block: 3rem 1rem;
+  }
+
+  .post-related__grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 40rem) {
+    .post-related__grid {
+      grid-template-columns: repeat(2, minmax(0, 22rem));
+    }
+  }
+
+  .post-back {
+    padding-block: 1rem 3rem;
+  }
+
+  .post-back a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 700;
+  }
+
+  @media (min-width: 48rem) {
+    .post-head {
+      padding-top: 2rem;
+    }
+
+    .post-layout {
+      padding-top: 3rem;
+    }
+  }
+</style>

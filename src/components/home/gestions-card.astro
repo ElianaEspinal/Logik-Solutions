@@ -1,0 +1,233 @@
+---
+// Tarjeta izquierda de gestiones (la derecha, de autoconsumo, vive en HomePage y no cambia).
+// Mini interfaz de tres trámites con una píldora de estado que cambia en bucle
+// (Sol·licitat → En tràmit → Fet), desfasadas entre sí. Solo CSS (opacity/transform).
+// Las píldoras son decorativas (aria-hidden); con movimiento reducido se quedan en "Fet".
+// Sin fechas ni plazos. Misma estructura que la tarjeta derecha: título, texto, visual y botón.
+import { pages, type Locale } from '../../config/pages';
+import type { HomeContent } from './types';
+
+interface Props {
+  lang: Locale;
+  content: HomeContent['gestions'];
+}
+
+const { lang, content: c } = Astro.props;
+---
+
+<div class="gest card" data-section="gestions" data-reveal>
+  <h2>{c.title}</h2>
+  <p class="gest__text">{c.text}</p>
+
+  <ul class="gest__ui" data-anim>
+    {
+      c.rows.map((row, i) => (
+        <li class="gest__row" style={`--d:${i}`}>
+          <span class="gest__dot" aria-hidden="true" />
+          <span class="gest__label">{row}</span>
+          <span class="gest__pill" aria-hidden="true">
+            {c.states.map((state, s) => (
+              <span class:list={['gest__state', `gest__state--${s}`]}>{state}</span>
+            ))}
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+
+  <a class="btn btn-secondary" href={pages.gestio[lang]} data-cta>
+    {c.link} <span aria-hidden="true">→</span>
+  </a>
+</div>
+
+<style>
+  /* Mismo armazón que .feature de la tarjeta derecha (HomePage). */
+  .gest {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.5rem;
+  }
+
+  .gest h2 {
+    font-size: clamp(1.375rem, 2.5vw + 0.75rem, 1.875rem);
+  }
+
+  .gest__text {
+    color: var(--text-muted);
+  }
+
+  @media (min-width: 48rem) {
+    .gest {
+      padding: 2rem;
+    }
+  }
+
+  /* ---- Mini interfaz: ocupa el hueco entre el texto y el botón (sin vacíos) ---- */
+  .gest__ui {
+    display: grid;
+    flex: 1;
+    align-content: center;
+    gap: 0.625rem;
+    width: 100%;
+    margin: 0 0 1.5rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    background:
+      radial-gradient(20rem 10rem at 100% 0%, color-mix(in srgb, var(--orange-500) 18%, transparent), transparent 70%),
+      var(--teal-900);
+    list-style: none;
+  }
+
+  .gest__row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    min-height: 3.25rem;
+    padding: 0.5rem 0.625rem 0.5rem 0.875rem;
+    border: 1px solid color-mix(in srgb, var(--white) 12%, transparent);
+    border-radius: 0.875rem;
+    background: color-mix(in srgb, var(--teal-700) 70%, transparent);
+    color: var(--white);
+  }
+
+  .gest__dot {
+    flex: none;
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    background: var(--orange-500);
+  }
+
+  .gest__row {
+    flex-wrap: wrap;
+  }
+
+  .gest__label {
+    flex: 1 1 8rem;
+    min-width: 0;
+    font-weight: 700;
+  }
+
+  /* Píldora: los tres estados apilados en la misma celda (ancho del más largo, sin saltos).
+     En pantallas estrechas baja de línea, alineada a la derecha. */
+  .gest__pill {
+    display: grid;
+    flex: none;
+    margin-left: auto;
+  }
+
+  .gest__state {
+    grid-area: 1 / 1;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-weight: 700;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .gest__state--0 {
+    background: var(--teal-100);
+    color: var(--teal-900);
+  }
+
+  .gest__state--1 {
+    background: var(--orange-100);
+    color: var(--teal-900);
+  }
+
+  .gest__state--2 {
+    background: var(--orange-500);
+    color: var(--teal-900);
+  }
+
+  /* Por defecto (y con movimiento reducido): fijo en "Fet". */
+  .gest__state--0,
+  .gest__state--1 {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .gest__state {
+      animation: gest-cycle 7.5s infinite;
+      animation-delay: calc(var(--d) * -2.5s);
+    }
+
+    .gest__state--0 {
+      animation-name: gest-s0;
+    }
+
+    .gest__state--1 {
+      animation-name: gest-s1;
+    }
+
+    .gest__state--2 {
+      animation-name: gest-s2;
+    }
+
+    .gest__row {
+      animation: gest-row 7.5s infinite;
+      animation-delay: calc(var(--d) * -2.5s);
+    }
+  }
+
+  @keyframes gest-s0 {
+    0%,
+    30% {
+      opacity: 1;
+      transform: none;
+    }
+    34%,
+    100% {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
+
+  @keyframes gest-s1 {
+    0%,
+    30% {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    34%,
+    63% {
+      opacity: 1;
+      transform: none;
+    }
+    67%,
+    100% {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
+
+  @keyframes gest-s2 {
+    0%,
+    63% {
+      opacity: 0;
+      transform: translateY(6px) scale(0.9);
+    }
+    67%,
+    96% {
+      opacity: 1;
+      transform: none;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  /* Pequeño "latido" de la fila al llegar a "Fet". */
+  @keyframes gest-row {
+    0%,
+    64%,
+    74%,
+    100% {
+      transform: none;
+    }
+    68% {
+      transform: translateX(3px);
+    }
+  }
+</style>

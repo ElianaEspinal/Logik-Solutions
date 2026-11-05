@@ -1,0 +1,191 @@
+---
+// Política de privacidad (RGPD y LOPDGDD). Datos y marcadores pendientes en src/config/legal.ts.
+// La finalidad y la base jurídica van por canal, no con una base genérica.
+import LegalPage from '../../components/LegalPage.astro';
+import { INVOICE_UPLOAD, legal, thirdPartyPolicies as tp } from '../../config/legal';
+import { pages } from '../../config/pages';
+---
+
+<LegalPage
+  lang="es"
+  pageKey="privacitat"
+  title="Política de privacidad | Logik Solutions"
+  description="Qué datos personales trata Logik Solutions cuando nos escribes, nos llamas o nos mandas un mensaje, para qué los usamos y qué derechos tienes."
+  heading="Política de privacidad"
+  ownerTitle="Responsable del tratamiento"
+>
+  <p>
+    Te contamos qué datos personales tratamos, para qué, con qué base legal, a quién se los comunicamos y cómo puedes
+    ejercer tus derechos. Aplicamos el Reglamento general de protección de datos (RGPD) y la Ley Orgánica 3/2018 de
+    protección de datos personales y garantía de los derechos digitales (LOPDGDD).
+  </p>
+
+  <h2 id="datos">Qué datos tratamos, para qué y con qué base</h2>
+
+  <h3>Formulario de contacto y pre-estudio</h3>
+  <p>
+    <strong>Datos:</strong> nombre y apellidos, correo electrónico, teléfono y lo que nos cuentes de tu caso: perfil
+    (empresa, comunidad u hogar), tipo de suministro, importe aproximado de la factura, potencia, sector, localidad, qué
+    necesitas, cómo prefieres que te contactemos y el mensaje. También registramos la página desde la que lo envías, el
+    idioma y, si llegas desde un enlace de campaña, los parámetros del enlace (origen, medio y campaña, y el
+    identificador de clic de Google).
+  </p>
+  <p><strong>Para qué:</strong> responder a tu consulta y preparar el estudio o la propuesta que nos pides.</p>
+  <p>
+    <strong>Base legal:</strong> la aplicación de medidas precontractuales a petición tuya (artículo 6.1.b del RGPD).
+    Los parámetros de campaña los tratamos por interés legítimo (artículo 6.1.f): saber qué anuncios o enlaces nos traen
+    consultas. Puedes oponerte cuando quieras.
+  </p>
+
+  <h3>Llamadas</h3>
+  <p>
+    <strong>Datos:</strong> tu número de teléfono y lo que nos cuentes en la llamada.
+    <strong>Para qué:</strong> atenderte y, si nos lo pides, prepararte un estudio.
+    <strong>Base legal:</strong> medidas precontractuales a petición tuya (artículo 6.1.b del RGPD).
+  </p>
+
+  <h3>WhatsApp</h3>
+  <p>
+    Si pulsas un botón de WhatsApp, se abre la aplicación o la web de WhatsApp, un servicio de Meta con sus propias
+    condiciones. Hasta que lo pulsas, nuestra web no envía ningún dato a WhatsApp.
+  </p>
+  <p>
+    <strong>Datos:</strong> tu número, el nombre de tu perfil y los mensajes y archivos que nos mandes (por ejemplo, una
+    factura). <strong>Para qué:</strong> responderte y preparar el estudio.
+    <strong>Base legal:</strong> medidas precontractuales a petición tuya (artículo 6.1.b del RGPD).
+  </p>
+
+  <h3>Correo electrónico</h3>
+  <p>
+    <strong>Datos:</strong> tu dirección y lo que nos escribas, con los adjuntos. <strong>Para qué:</strong>
+    responderte. <strong>Base legal:</strong> medidas precontractuales a petición tuya (artículo 6.1.b del RGPD).
+  </p>
+
+  <h3>Si te haces cliente</h3>
+  <p>
+    <strong>Datos:</strong> los necesarios para prestar el servicio: datos de contacto, datos de los suministros
+    (titular, CUPS, potencia, facturas) y datos de facturación. <strong>Para qué:</strong> hacer las gestiones que nos
+    encargas, el seguimiento del contrato y la facturación. <strong>Base legal:</strong> la ejecución del contrato
+    (artículo 6.1.b del RGPD) y el cumplimiento de obligaciones legales, como las fiscales y contables (artículo 6.1.c).
+  </p>
+
+  <h3>Analítica de la web</h3>
+  <p>
+    Solo si lo aceptas en el banner de cookies, usamos Google Analytics 4, a través de Google Tag Manager, para saber
+    cómo se usa la web: páginas visitadas, tipo de dispositivo, ubicación aproximada y acciones como pulsar el botón de
+    llamar, el de WhatsApp o enviar un formulario. Según Google, Google Analytics 4 no registra ni almacena las
+    direcciones IP.
+  </p>
+  <p>
+    <strong>Base legal:</strong> tu consentimiento (artículo 6.1.a del RGPD). Puedes retirarlo cuando quieras en
+    "Configurar cookies", en el pie de todas las páginas. Más detalles en la
+    <a href={pages.cookies.es}>política de cookies</a>.
+  </p>
+
+  {
+    INVOICE_UPLOAD && (
+      <>
+        <h3>Factura adjunta en el formulario</h3>
+        <p>
+          Si adjuntas una factura, ten en cuenta que contiene datos personales: el nombre del titular, la dirección de
+          suministro, el CUPS, el consumo y, a veces, la cuenta bancaria. Solo la usamos para preparar tu estudio, con la
+          misma base legal que el resto del formulario (medidas precontractuales a petición tuya), y la recibe el mismo
+          proveedor del formulario. Si prefieres no adjuntarla, basta con que nos indiques el importe aproximado.
+        </p>
+      </>
+    )
+  }
+
+  <h2 id="conservacion">Cuánto tiempo guardamos los datos</h2>
+  <ul>
+    <li>
+      Consultas y pre-estudios que no terminan en contrato: el tiempo necesario para atender tu solicitud y, como máximo,
+      un año desde nuestro último contacto. Después los suprimimos o los mantenemos bloqueados solo durante los plazos de
+      prescripción de posibles responsabilidades.
+    </li>
+    <li>
+      Datos de clientes: mientras dure el contrato y, después, durante los plazos que exige la ley: 6 años para la
+      documentación mercantil y contable (artículo 30 del Código de Comercio) y 4 años para las obligaciones fiscales (Ley
+      General Tributaria).
+    </li>
+    <li>Datos de analítica en Google Analytics: hasta 14 meses, y solo si aceptas las cookies de analítica.</li>
+  </ul>
+  <p>
+    Mientras están bloqueados, no los usamos para nada más: solo los conservamos por si los piden un juzgado o una
+    administración pública, y los borramos cuando terminan esos plazos.
+  </p>
+
+  <h2 id="destinatarios">A quién comunicamos los datos</h2>
+  <p>
+    No vendemos tus datos ni se los cedemos a otras empresas para que te hagan publicidad. Pueden recibirlos estos
+    proveedores, que los tratan por nuestra cuenta (encargados del tratamiento) o, en el caso de WhatsApp y del mapa de
+    Google, como responsables de su propio servicio:
+  </p>
+  <ul>
+    <li>
+      <strong>Formspree</strong> (encargado del tratamiento): recibe los formularios y nos los hace llegar. Sus
+      servidores están en Estados Unidos, en Amazon Web Services, y se acoge a cláusulas contractuales tipo.
+      <a href={tp.formspree} target="_blank" rel="noopener noreferrer">Política de privacidad de Formspree</a>.
+    </li>
+    <li>
+      <strong>Hostinger</strong> (encargado del tratamiento): alojamiento de la web.
+      <a href={tp.hostinger} target="_blank" rel="noopener noreferrer">Política de privacidad de Hostinger</a>.
+    </li>
+    <li>
+      <strong>Google</strong>: Google Analytics, solo si aceptas la analítica, y el mapa de Google Maps, solo si lo
+      cargas. En Google Analytics, Google trata los datos por nuestra cuenta, como encargado del tratamiento.
+      <a href={tp.google} target="_blank" rel="noopener noreferrer">Política de privacidad de Google</a>.
+    </li>
+    <li>
+      <strong>WhatsApp (Meta)</strong>: solo si nos escribes por WhatsApp.
+      <a href={tp.whatsapp} target="_blank" rel="noopener noreferrer">Política de privacidad de WhatsApp</a>.
+    </li>
+  </ul>
+  <p>
+    Si nos encargas una gestión (un cambio de titular, de potencia, un alta o un cambio de comercializadora),
+    comunicaremos a la comercializadora o a la distribuidora los datos imprescindibles para hacerla. También podemos
+    tener que comunicar datos a las administraciones públicas o a los juzgados cuando la ley lo exija.
+  </p>
+
+  <h2 id="transferencias">Transferencias internacionales</h2>
+  <p>
+    Formspree trata los datos en Estados Unidos y se acoge a las cláusulas contractuales tipo aprobadas por la Comisión
+    Europea. Google y Meta también pueden tratar datos fuera del Espacio Económico Europeo, con las garantías que
+    explican en sus políticas de privacidad.
+  </p>
+
+  <h2 id="derechos">Tus derechos</h2>
+  <p>Puedes pedirnos en cualquier momento:</p>
+  <ul>
+    <li><strong>acceso</strong>: saber qué datos tuyos tenemos;</li>
+    <li><strong>rectificación</strong>: corregirlos si no son correctos;</li>
+    <li><strong>supresión</strong>: que los borremos;</li>
+    <li><strong>oposición</strong>: que dejemos de tratarlos para una finalidad concreta;</li>
+    <li><strong>limitación</strong>: que los conservemos sin usarlos mientras se resuelve una petición;</li>
+    <li><strong>portabilidad</strong>: recibirlos en un formato habitual para llevarlos a otra empresa.</li>
+  </ul>
+  <p>
+    Escríbenos a <a href={`mailto:${legal.email}`}>{legal.email}</a> e indica qué derecho quieres ejercer. Si hace
+    falta, te pediremos que acredites tu identidad. Te responderemos en el plazo de un mes. Si diste tu consentimiento
+    para algo, puedes retirarlo cuando quieras, sin que afecte a lo que se hubiera hecho antes.
+  </p>
+  <p>
+    Si crees que no hemos tratado bien tus datos, puedes presentar una reclamación ante la Agencia Española de
+    Protección de Datos (<a href={tp.aepd} target="_blank" rel="noopener noreferrer">aepd.es</a>).
+  </p>
+
+  <h2 id="menores">Menores de edad</h2>
+  <p>
+    La web no se dirige a menores de edad. Si tienes menos de 14 años, no nos envíes datos personales: pide a una
+    persona adulta que se ponga en contacto con nosotros.
+  </p>
+
+  <h2 id="decisiones">Decisiones automatizadas</h2>
+  <p>
+    No tomamos decisiones automatizadas ni hacemos perfiles con efectos sobre ti. El pre-estudio solo calcula el gasto
+    anual aproximado a partir del importe que indicas; el estudio lo hace una persona de nuestro equipo.
+  </p>
+
+  <h2 id="cambios">Cambios en esta política</h2>
+  <p>Si cambiamos esta política, actualizaremos la fecha de revisión que aparece arriba.</p>
+</LegalPage>

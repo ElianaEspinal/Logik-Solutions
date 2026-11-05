@@ -1,0 +1,143 @@
+---
+// Política de cookies. La tabla recoge solo lo que se carga de verdad (código y GTM):
+// - logik_consent (localStorage) y logik_consent_closed (sessionStorage): src/scripts/consent.ts.
+// - _ga y _ga_QCSEZ3YWK2: Google Analytics 4 (G-QCSEZ3YWK2) vía GTM, solo con consentimiento.
+//   Duraciones por defecto de Google: https://developers.google.com/tag-platform/security/concepts/cookies
+// Si se añade una etiqueta en GTM o un contenido externo, actualizar esta tabla y docs/cookies.md.
+import LegalPage from '../../components/LegalPage.astro';
+import { ADS_CONSENT, legal, pending, thirdPartyPolicies as tp } from '../../config/legal';
+import { pages } from '../../config/pages';
+---
+
+<LegalPage
+  lang="es"
+  pageKey="cookies"
+  title="Política de cookies de la web | Logik Solutions"
+  description="Qué cookies y qué almacenamiento usa la web de Logik Solutions, para qué sirven, cuánto duran y cómo puedes cambiar tu elección."
+  heading="Política de cookies"
+  ownerTitle="Responsable"
+>
+  <h2 id="que-son">Qué son las cookies</h2>
+  <p>
+    Las cookies son pequeños archivos que una web guarda en tu navegador. Algunos son imprescindibles para que la web
+    funcione o para recordar una decisión tuya; otros sirven para contar visitas y saber qué páginas se consultan. Aquí
+    también explicamos el almacenamiento local del navegador (localStorage y sessionStorage), que funciona de forma
+    parecida.
+  </p>
+
+  <h2 id="para-que">Para qué las usamos</h2>
+  <ul>
+    <li>
+      <strong>Técnicas:</strong> recuerdan si aceptas o rechazas las cookies, para no preguntártelo en cada página. Son
+      necesarias y están siempre activas.
+    </li>
+    <li>
+      <strong>Analítica:</strong> Google Analytics cuenta las visitas y nos dice qué páginas se usan y qué botones se
+      pulsan. Solo se activan si las aceptas.
+    </li>
+    <li>
+      <strong>Contenido externo:</strong> el mapa de Google Maps solo se carga si lo aceptas o si pulsas "Cargar el
+      contenido". Hasta entonces no hay conexión con Google.
+    </li>
+  </ul>
+  {!ADS_CONSENT && <p>No usamos cookies de publicidad.</p>}
+
+  <h2 id="tabla">Cookies y almacenamiento que usamos</h2>
+  <table class="legal-table">
+    <caption>Lista completa</caption>
+    <thead>
+      <tr>
+        <th scope="col">Nombre</th>
+        <th scope="col">Titular</th>
+        <th scope="col">Finalidad</th>
+        <th scope="col">Duración</th>
+        <th scope="col">Categoría</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td data-label="Nombre"><code>logik_consent</code> (localStorage)</td>
+        <td data-label="Titular">Propia ({legal.tradeName})</td>
+        <td data-label="Finalidad">Guardar tu elección sobre las cookies y la fecha en que la hiciste.</td>
+        <td data-label="Duración">12 meses; después te la volvemos a preguntar</td>
+        <td data-label="Categoría">Técnica</td>
+      </tr>
+      <tr>
+        <td data-label="Nombre"><code>logik_consent_closed</code> (sessionStorage)</td>
+        <td data-label="Titular">Propia ({legal.tradeName})</td>
+        <td data-label="Finalidad">Recordar que has cerrado el banner sin elegir, para que no vuelva a salir durante la visita. No activa ninguna cookie.</td>
+        <td data-label="Duración">Hasta que cierras la pestaña o el navegador</td>
+        <td data-label="Categoría">Técnica</td>
+      </tr>
+      <tr>
+        <td data-label="Nombre"><code>_ga</code></td>
+        <td data-label="Titular">Tercero (Google)</td>
+        <td data-label="Finalidad">Distinguir visitantes para contar las visitas de forma agregada.</td>
+        <td data-label="Duración">2 años</td>
+        <td data-label="Categoría">Analítica</td>
+      </tr>
+      <tr>
+        <td data-label="Nombre"><code>_ga_QCSEZ3YWK2</code></td>
+        <td data-label="Titular">Tercero (Google)</td>
+        <td data-label="Finalidad">Mantener el estado de la sesión en Google Analytics.</td>
+        <td data-label="Duración">2 años</td>
+        <td data-label="Categoría">Analítica</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Las duraciones de <code>_ga</code> y <code>_ga_QCSEZ3YWK2</code> son las que indica Google por defecto; algunos
+    navegadores las acortan. Google Tag Manager, que solo se carga si aceptas la analítica, no instala cookies propias.
+  </p>
+  <p>
+    Si cargas el mapa, Google puede instalar sus propias cookies desde sus dominios. Las explica en su
+    <a href={tp.googleCookies} target="_blank" rel="noopener noreferrer">página sobre cookies</a>.
+  </p>
+
+  {
+    ADS_CONSENT && (
+      <>
+        <h3>Publicidad</h3>
+        <p>{pending('', 'cookies de publicidad: nombre, titular, finalidad y duración').es}</p>
+      </>
+    )
+  }
+
+  <h2 id="decision">Cómo aceptar, rechazar o cambiar tu decisión</h2>
+  <ul>
+    <li>
+      La primera vez que entras, el banner te deja elegir entre "Aceptar todo", "Rechazar todo" y "Configurar". Los tres
+      botones son iguales: rechazar es tan fácil como aceptar.
+    </li>
+    <li>En "Configurar" puedes activar solo las categorías que quieras. Ninguna viene activada.</li>
+    <li>
+      Si cierras el banner sin elegir, o si sigues navegando, no activamos nada. La web funciona igual si rechazas las
+      cookies.
+    </li>
+    <li>Guardamos tu decisión 12 meses. Después te la volvemos a preguntar.</li>
+    <li>
+      Puedes cambiarla cuando quieras con el enlace "Configurar cookies", en el pie de todas las páginas. Si retiras la
+      analítica, borramos las cookies de Google Analytics y recargamos la página sin cargarlo.
+    </li>
+  </ul>
+  <p>
+    <button class="btn btn-secondary" type="button" data-cookie-open hidden>Configurar cookies</button>
+  </p>
+  <p>
+    También puedes borrar o bloquear las cookies desde la configuración del navegador. Para no enviar datos a Google
+    Analytics en ninguna web, Google ofrece un
+    <a href={tp.googleAnalyticsOptOut} target="_blank" rel="noopener noreferrer">complemento para el navegador</a>.
+  </p>
+
+  <h2 id="terceros">Datos que reciben terceros</h2>
+  <p>
+    Si aceptas la analítica, Google recibe datos de uso de la web: páginas visitadas, dispositivo, ubicación aproximada
+    y acciones como pulsar el botón de llamar. Si cargas el mapa, Google recibe la petición del mapa desde tu navegador.
+    Cómo los trata Google lo explica en su
+    <a href={tp.google} target="_blank" rel="noopener noreferrer">política de privacidad</a>.
+  </p>
+  <p>
+    Cómo tratamos nosotros los datos personales lo tienes en la
+    <a href={pages.privacitat.es}>política de privacidad</a>.
+  </p>
+</LegalPage>

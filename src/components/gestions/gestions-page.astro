@@ -1,0 +1,1122 @@
+---
+// Gestió i tràmits / Gestión y trámites. Un solo objetivo: que el visitante entienda que, al
+// trabajar con Logik, los cambios de titularidad, de potencia y las altas van incluidos todo el año,
+// y empiece el pre-estudi (o llame). Las gestiones NO se piden ni se contratan sueltas.
+// Orden: hero · cifras · què gestionem per tu (pestañas) · què inclou el servei anual ·
+// per a qui · per aprofundir (blog, si hay) · FAQ · pre-estudi.
+// Solo datos confirmados (docs/contexto.md): sin plazos, costes, tasas, documentos, normativa ni
+// ahorro; zona confirmada para gestiones: Girona y localidades cercanas. Sin "sense cost" propio
+// (el pre-estudi conserva sus textos). Sin fotos de personas: visuales SVG de marca.
+// Reutiliza: stats-strip, faq-accordion, post-card y pre-study (perfil elegible,
+// pagina_origen = "gestions"; tramit_interes se añade desde aquí como campo oculto).
+// Medición: cta_click (gestions_hero, gestions_tramit, gestions_cierre), tramit_select { tramit },
+// click_call (location = gestions), blog_card_click (location = gestions) y los del pre-estudi.
+import FaqAccordion from '../home/faq-accordion.astro';
+import PreStudy from '../home/pre-study.astro';
+import { preStudyTexts } from '../home/pre-study-texts';
+import StatsStrip from '../stats-strip.astro';
+import PostCard from '../blog/post-card.astro';
+import { PRE_STUDY_ID } from '../../config/home';
+import { pages, type Locale } from '../../config/pages';
+import { phone } from '../../config/site';
+import { getPublishedPosts } from '../../lib/blog';
+import type { GestionsContent, TramitKey } from './types';
+import '../../styles/motion.css';
+
+interface Props {
+  lang: Locale;
+  content: GestionsContent;
+}
+
+const { lang, content: c } = Astro.props;
+const words = c.hero.title.split(' ');
+const noArrow = (s: string) => s.replace(/\s*→$/, '');
+const studyHref = `#${PRE_STUDY_ID[lang]}`;
+
+// "Per aprofundir": hasta 3 artículos publicados del idioma; primero "Gestions", después "Factura i potència".
+const published = await getPublishedPosts(lang);
+const related = [
+  ...published.filter((p) => p.data.category === 'gestions'),
+  ...published.filter((p) => p.data.category === 'factura'),
+].slice(0, 3);
+
+// Iconos de línea (24 × 24). Cadenas fijas del propio código.
+const tramitIcons: Record<TramitKey, string> = {
+  titularitat: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path class="ic-a" d="M16 7h5l-2-2M21 14h-5l2 2"/>',
+  potencia: '<path d="M4 17a8 8 0 1 1 16 0"/><path class="ic-needle" d="M12 17l4-5"/><circle cx="12" cy="17" r="1.5"/>',
+  alta: '<path d="M12 3 4 14h6l-1 7 8-11h-6l1-7Z"/><path class="ic-a" d="M19 2v5M16.5 4.5h5"/>',
+  incidencies: '<path d="M12 3 2 20h20Z"/><path class="ic-a" d="M12 10v4M12 17v.5"/>',
+};
+const serviceIcons = {
+  gestions: '<path d="M8 3h8l4 4v14H4V3h4"/><path d="M16 3v4h4"/><path class="ic-a" d="m8 14 2.5 2.5L16 11"/>',
+  incidencies: '<path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6Z"/><path class="ic-a" d="m8.5 12 2.5 2.5 4.5-5"/>',
+  seguiment: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path class="ic-a" d="M15 15.5h.01"/><circle class="ic-a" cx="15" cy="15.5" r="2"/>',
+} as const;
+const audienceIcons = {
+  llars: '<path d="m3 11 9-8 9 8M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>',
+  empreses: '<path d="M3 21h18M5 21V6l7-3v18M12 9h7v12"/><path d="M8 9h1M8 13h1M8 17h1M15 13h1M15 17h1"/>',
+  comunitats: '<path d="M3 21h18M4 21V8l5-3 5 3v13M14 21V11h6v10"/><path d="M7 11h1M7 15h1M10 11h1M10 15h1"/>',
+} as const;
+const check = '<path d="m5 12 5 5 9-10"/>';
+const phoneIcon =
+  '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/>';
+const nodeX = [44, 160, 276];
+---
+
+<!-- 1. Hero (5 elementos: etiqueta, H1, subtítulo, botón + microtexto, llamada) -->
+<section class="gs-hero tech-bg" aria-labelledby="gs-title" data-section="gestions">
+  <div class="gs-hero__mesh" aria-hidden="true" data-anim>
+    <span class="gs-hero__blob gs-hero__blob--a"></span>
+    <span class="gs-hero__blob gs-hero__blob--b"></span>
+  </div>
+  <div class="container gs-hero__grid">
+    <div>
+      <p class="gs-hero__tag"><span class="gs-hero__pulse" aria-hidden="true"></span>{c.hero.tag}</p>
+      <h1 id="gs-title">
+        {
+          words.map((word, i) => (
+            <>
+              <span class="gs-hero__word" style={`--w:${i}`}>
+                {word}
+              </span>
+              {i < words.length - 1 && ' '}
+            </>
+          ))
+        }
+      </h1>
+      <p class="gs-hero__lead">{c.hero.lead}</p>
+      <a class="btn btn-primary btn-lg gs-hero__btn" href={studyHref} data-cta="gestions_hero">
+        {noArrow(c.hero.cta)} <span class="arrow" aria-hidden="true">→</span>
+      </a>
+      <p class="gs-hero__note">{c.hero.note}</p>
+      <a class="gs-call" href={phone.tel}>
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={phoneIcon} />
+        <span>{c.hero.call} {phone.display}</span>
+      </a>
+    </div>
+
+    {/* Camino Tú → Logik → Compañía: un pulso naranja lo recorre y el último nodo muestra un check.
+        Decorativo. Arranca tras la carga (data-anim-late) para no competir con el LCP. */}
+    <div class="gs-path" aria-hidden="true" data-anim-late>
+      <svg viewBox="0 0 320 150" width="320" height="150" focusable="false">
+        <path class="gs-path__line" d="M44 66C88 34 116 98 160 66s72-32 116 0" />
+        <path class="gs-path__glow" d="M44 66C88 34 116 98 160 66s72-32 116 0" />
+        {
+          nodeX.map((x, i) => (
+            <g class:list={['gs-path__node', `gs-path__node--${i}`]}>
+              <circle cx={x} cy="66" r="27" />
+              <text x={x} y="124" text-anchor="middle">
+                {c.hero.nodes[i]}
+              </text>
+            </g>
+          ))
+        }
+        <circle class="gs-path__me" cx="44" cy="58" r="6" />
+        <path class="gs-path__me" d="M33 80a11 11 0 0 1 22 0" />
+        <path class="gs-path__bolt" d="M164 48 151 68h9l-3 16 13-20h-9l3-16Z" />
+        <rect class="gs-path__co" x="264" y="54" width="24" height="24" rx="4" />
+        <path class="gs-path__check" d="m265 66 7 7 13-14" />
+        <circle class="gs-path__spark" cx="44" cy="66" r="7" />
+      </svg>
+    </div>
+  </div>
+</section>
+
+<StatsStrip items={c.stats} section="gestions" />
+
+<!-- 2. Què gestionem per tu: pestañas accesibles. Sin JS, los cuatro paneles apilados. -->
+<section class="section surface-white surface-grid" aria-labelledby="gs-tramits-title" data-section="gestions">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.tramits.eyebrow}</p>
+      <h2 id="gs-tramits-title">{c.tramits.title}</h2>
+      <p class="section-head__intro">{c.tramits.intro}</p>
+    </div>
+
+    <div class="gs-tabs" data-tabs>
+      <div class="gs-tabs__list" role="tablist" aria-label={c.tramits.label}>
+        {
+          c.tramits.items.map((item, i) => (
+            <button
+              class="gs-tabs__tab"
+              type="button"
+              role="tab"
+              id={`gs-tab-${item.key}`}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              aria-controls={`gs-panel-${item.key}`}
+              tabindex={i === 0 ? '0' : '-1'}
+              data-tab={item.key}
+            >
+              <span class="gs-tabs__icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={tramitIcons[item.key]} />
+              </span>
+              <span>{item.title}</span>
+            </button>
+          ))
+        }
+      </div>
+
+      <div class="gs-tabs__panels">
+        {
+          c.tramits.items.map((item) => (
+            <div class="gs-panel card" role="tabpanel" id={`gs-panel-${item.key}`} aria-labelledby={`gs-tab-${item.key}`} tabindex="0" data-panel={item.key}>
+              <h3 class="gs-panel__title">
+                <span class="gs-panel__icon" aria-hidden="true">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={tramitIcons[item.key]} />
+                </span>
+                {item.title}
+              </h3>
+              <p class="gs-panel__text">{item.text}</p>
+              <p class="gs-panel__included">
+                <span class="gs-panel__check" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" set:html={check} />
+                </span>
+                {c.tramits.included}
+              </p>
+              <a class="btn btn-primary gs-panel__btn" href={studyHref} data-cta="gestions_tramit" data-tramit-cta={item.key}>
+                {noArrow(c.tramits.cta)} <span class="arrow" aria-hidden="true">→</span>
+              </a>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Què inclou el servei anual: 12 puntos (meses) que se encienden y tres tarjetas -->
+<section class="section" aria-labelledby="gs-service-title" data-section="gestions">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.service.eyebrow}</p>
+      <h2 id="gs-service-title">{c.service.title}</h2>
+    </div>
+    <div class="gs-months" aria-hidden="true" data-months>
+      {Array.from({ length: 12 }, (_, i) => <span class:list={['gs-months__dot', { 'gs-months__dot--renew': i === 10 }]} style={`--m:${i}`} />)}
+    </div>
+    <ul class="gs-service">
+      {
+        c.service.items.map((item, i) => (
+          <li class="gs-service__card card card-lift" data-reveal style={`--i:${i}`}>
+            <span class="gs-service__icon" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={serviceIcons[item.icon]} />
+            </span>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="gs-service__more">
+      <a class="gs-arrow-link" href={pages.comTreballem[lang]}>
+        {noArrow(c.service.link)} <span aria-hidden="true">→</span>
+      </a>
+    </p>
+  </div>
+</section>
+
+<!-- 4. Per a qui: tres tarjetas enlace (stretched link) -->
+<section class="section band-alt" aria-labelledby="gs-audience-title" data-section="gestions">
+  <div class="container">
+    <h2 id="gs-audience-title" class="gs-h2" data-reveal>{c.audience.title}</h2>
+    <ul class="gs-audience">
+      {
+        c.audience.items.map((item, i) => (
+          <li class="gs-aud card card-lift" data-reveal style={`--i:${i}`}>
+            <span class="gs-aud__icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={audienceIcons[item.page]} />
+            </span>
+            <div class="gs-aud__body">
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+              <a class="gs-aud__link" href={pages[item.page][lang]}>
+                {noArrow(item.link)} <span aria-hidden="true">→</span>
+              </a>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<!-- 5. Per aprofundir: solo si hay artículos publicados (si no, ni el título ni el hueco) -->
+{
+  related.length > 0 && (
+    <section class="section surface-white" aria-labelledby="gs-blog-title" data-section="gestions" data-gs-blog>
+      <div class="container">
+        <h2 id="gs-blog-title" class="gs-h2" data-reveal>
+          {c.blogTitle}
+        </h2>
+        <div class="gs-posts">
+          {related.map((post, i) => (
+            <PostCard post={post} lang={lang} position={i + 1} heading="h3" />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<!-- 6. Preguntes freqüents (7, acordeón exclusivo; el JSON-LD FAQPage sale de los mismos textos) -->
+<FaqAccordion lang={lang} content={c.faq} idPrefix="gs-faq" section="gestions" />
+
+<!-- 7. Pre-estudi: perfil elegible; tramit_interes lo añade el script de esta página -->
+<PreStudy lang={lang} content={{ ...preStudyTexts[lang], title: c.study.title, lead: c.study.lead }} origin="gestions" />
+<div class="gs-after" data-section="gestions">
+  <div class="container">
+    <p class="gs-after__call">
+      {c.study.callLead}{' '}
+      <a href={phone.tel} data-cta="gestions_cierre">{phone.display}</a>
+    </p>
+  </div>
+</div>
+
+<script>
+  import { track } from '../../scripts/analytics';
+  import { initDecor, initReveal } from '../../scripts/motion';
+
+  initReveal();
+  initDecor();
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // --- Esquema del hero: animación tras la carga, con el navegador libre.
+  const startLate = () => {
+    document.querySelectorAll('[data-anim-late]').forEach((el) => {
+      el.removeAttribute('data-anim-late');
+      el.setAttribute('data-anim', '');
+    });
+    initDecor();
+  };
+  const whenIdle = (fn: () => void) => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 3000 }) : setTimeout(fn, 1500));
+  if (document.readyState === 'complete') whenIdle(startLate);
+  else window.addEventListener('load', () => whenIdle(startLate), { once: true });
+
+  // --- tramit_interes: campo oculto que se añade al formulario del pre-estudi (sin tocar el
+  // componente: su envío ya serializa todos los campos del formulario). Solo con elección del visitante.
+  const studyForm = document.querySelector<HTMLFormElement>('[data-pre-study] [data-ps-form]');
+  let interest: HTMLInputElement | null = null;
+  const setInterest = (value: string) => {
+    if (!studyForm) return;
+    if (!interest) {
+      interest = document.createElement('input');
+      interest.type = 'hidden';
+      interest.name = 'tramit_interes';
+      studyForm.append(interest);
+    }
+    interest.value = value;
+  };
+
+  // --- Pestañas: activación automática con flechas, Inicio y Fin (patrón APG).
+  document.querySelectorAll<HTMLElement>('[data-tabs]').forEach((root) => {
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const panels = [...root.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
+    const select = (tab: HTMLButtonElement, fromUser: boolean) => {
+      const key = tab.dataset.tab!;
+      tabs.forEach((t) => {
+        const on = t === tab;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+      });
+      panels.forEach((p) => (p.hidden = p.dataset.panel !== key));
+      if (!fromUser) return;
+      track('tramit_select', { tramit: key, location: 'gestions' });
+      setInterest(key);
+    };
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => {
+        if (tab.getAttribute('aria-selected') !== 'true') select(tab, true);
+      });
+      tab.addEventListener('keydown', (event) => {
+        const last = tabs.length - 1;
+        const map: Record<string, number> = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: last };
+        if (!(event.key in map)) return;
+        event.preventDefault();
+        const next = tabs[(map[event.key] + tabs.length) % tabs.length];
+        next.focus();
+        select(next, true);
+      });
+    });
+    root.classList.add('is-enhanced');
+    select(tabs[0], false);
+  });
+  // El botón de un panel también fija el interés (aunque sea la pestaña que venía seleccionada).
+  document.querySelectorAll<HTMLElement>('[data-tramit-cta]').forEach((btn) => {
+    btn.addEventListener('click', () => setInterest(btn.dataset.tramitCta!));
+  });
+
+  // --- 12 puntos del año: se encienden en cascada al entrar en pantalla (una vez).
+  const months = document.querySelector<HTMLElement>('[data-months]');
+  if (months && !reduce && 'IntersectionObserver' in window) {
+    months.classList.add('is-waiting');
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        observer.disconnect();
+        months.classList.remove('is-waiting');
+        months.classList.add('is-lit');
+      },
+      { rootMargin: '0px 0px -15% 0px' },
+    );
+    observer.observe(months);
+  }
+
+  // --- Per aprofundir: blog_card_click con location = gestions.
+  document.querySelector('[data-gs-blog]')?.addEventListener('click', (event) => {
+    const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[data-card-link]');
+    if (!link) return;
+    const { slug, position, lang } = link.dataset;
+    track('blog_card_click', { slug, position: Number(position), lang, location: 'gestions' });
+  });
+</script>
+
+<style>
+  /* ---------------- 1. Hero ---------------- */
+  .gs-hero {
+    padding-block: 1.5rem 3rem;
+    color: var(--white);
+  }
+
+  .gs-hero__mesh {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .gs-hero__blob {
+    position: absolute;
+    width: 34rem;
+    height: 34rem;
+    border-radius: 50%;
+    opacity: 0.55;
+    animation: gs-drift 30s ease-in-out infinite alternate;
+  }
+
+  .gs-hero__blob--a {
+    top: -16rem;
+    right: -10rem;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-500) 42%, transparent), transparent);
+  }
+
+  .gs-hero__blob--b {
+    bottom: -18rem;
+    left: -12rem;
+    background: radial-gradient(closest-side, var(--teal-700), transparent);
+    animation-duration: 36s;
+    animation-direction: alternate-reverse;
+  }
+
+  @keyframes gs-drift {
+    to {
+      transform: translate3d(-5rem, 4rem, 0) scale(1.12);
+    }
+  }
+
+  .gs-hero__grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .gs-hero__tag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: fit-content;
+    margin-bottom: 0.875rem;
+    padding: 0.25rem 0.875rem 0.25rem 0.625rem;
+    border: 1px solid color-mix(in srgb, var(--white) 25%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--white) 8%, transparent);
+    font-weight: 700;
+  }
+
+  .gs-hero__pulse {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    background: var(--orange-500);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--orange-500) 30%, transparent);
+  }
+
+  /* El H1 es largo: en móvil un punto menor que el global para que quepa con el botón en 360 × 640. */
+  .gs-hero h1 {
+    max-width: 22ch;
+    margin-bottom: 1rem;
+    color: var(--white);
+    font-size: clamp(1.75rem, 4.5vw + 0.875rem, 3.5rem);
+  }
+
+  .gs-hero__word {
+    display: inline-block;
+  }
+
+  /* Aparición palabra a palabra desde opacidad 0,15 (nunca 0: no retrasa el LCP). */
+  @media (prefers-reduced-motion: no-preference) {
+    .gs-hero__word {
+      animation: gs-word 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      animation-delay: calc(0.1s + var(--w) * 50ms);
+    }
+  }
+
+  @keyframes gs-word {
+    from {
+      opacity: 0.15;
+      transform: translateY(0.35em);
+    }
+  }
+
+  .gs-hero__lead {
+    max-width: 40rem;
+    margin-bottom: 1.25rem;
+    color: var(--teal-100);
+    font-size: 1.0625rem;
+  }
+
+  .gs-hero__btn {
+    width: 100%;
+  }
+
+  .gs-hero__note {
+    margin: 0.5rem 0 0;
+    color: var(--teal-100);
+  }
+
+  .gs-call {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    margin-top: 0.25rem;
+    color: var(--white);
+    font-weight: 700;
+  }
+
+  .gs-call svg {
+    flex: none;
+    color: var(--orange-500);
+  }
+
+  @media (min-width: 30rem) {
+    .gs-hero__btn {
+      width: auto;
+    }
+
+    .gs-hero__lead {
+      font-size: 1.125rem;
+    }
+  }
+
+  /* Camino Tú → Logik → Compañía (SVG, tamaño por proporción: sin CLS). */
+  .gs-path {
+    justify-self: center;
+    width: min(100%, 20rem);
+  }
+
+  .gs-path svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .gs-path__line,
+  .gs-path__glow {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+  }
+
+  .gs-path__line {
+    stroke: color-mix(in srgb, var(--white) 25%, transparent);
+    stroke-dasharray: 2 10;
+  }
+
+  .gs-path__glow {
+    stroke: var(--orange-500);
+    opacity: 0.35;
+  }
+
+  .gs-path__node circle {
+    fill: var(--teal-700);
+    stroke: color-mix(in srgb, var(--white) 30%, transparent);
+    stroke-width: 2;
+  }
+
+  .gs-path__node--1 circle {
+    fill: var(--orange-500);
+    stroke: var(--orange-100);
+  }
+
+  .gs-path__node text {
+    fill: var(--white);
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .gs-path__me {
+    fill: none;
+    stroke: var(--teal-100);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+  }
+
+  .gs-path__bolt {
+    fill: var(--teal-900);
+  }
+
+  .gs-path__co {
+    fill: none;
+    stroke: var(--teal-100);
+    stroke-width: 2.5;
+  }
+
+  .gs-path__check {
+    fill: none;
+    stroke: var(--orange-500);
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* Estado estático (sin JS, antes de arrancar o con movimiento reducido): check visible, pulso en Logik. */
+  .gs-path__spark {
+    fill: var(--orange-500);
+    transform: translateX(116px);
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .gs-path[data-anim] .gs-path__spark {
+      animation: gs-spark 4.2s ease-in-out infinite;
+    }
+
+    .gs-path[data-anim] .gs-path__check {
+      animation: gs-check 4.2s ease-in-out infinite;
+    }
+
+    .gs-path[data-anim] .gs-path__node--2 circle {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: gs-arrive 4.2s ease-in-out infinite;
+    }
+  }
+
+  /* SVG: px = unidades del viewBox. El pulso va de Tú (x 44) a la Compañía (x 276). */
+  @keyframes gs-spark {
+    0% {
+      opacity: 0;
+      transform: translateX(0);
+    }
+    8% {
+      opacity: 1;
+    }
+    62% {
+      opacity: 1;
+      transform: translateX(232px);
+    }
+    70%,
+    100% {
+      opacity: 0;
+      transform: translateX(232px);
+    }
+  }
+
+  @keyframes gs-check {
+    0%,
+    58% {
+      opacity: 0.25;
+    }
+    68%,
+    92% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.25;
+    }
+  }
+
+  @keyframes gs-arrive {
+    0%,
+    58%,
+    100% {
+      transform: scale(1);
+    }
+    66% {
+      transform: scale(1.1);
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .gs-hero {
+      padding-block: 3.5rem 4.5rem;
+    }
+
+    .gs-hero__grid {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      align-items: center;
+      gap: 2.5rem;
+    }
+
+    .gs-path {
+      width: min(100%, 24rem);
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .gs-hero__lead {
+      font-size: 1.25rem;
+    }
+  }
+
+  /* ---------------- Comunes ---------------- */
+  .gs-h2 {
+    max-width: 44rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .gs-arrow-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 44px;
+    color: var(--orange-700);
+    font-weight: 700;
+  }
+
+  /* ---------------- 2. Pestañas ---------------- */
+  /* minmax(0, 1fr): la columna nunca crece más que la pantalla por el ancho mínimo del contenido. */
+  .gs-tabs {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  /* Sin JS: no hay pestañas, solo los cuatro paneles apilados. */
+  :global(html:not(.js)) .gs-tabs__list {
+    display: none;
+  }
+
+  .gs-tabs__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  /* Móvil: baldosa con el icono arriba y el texto centrado debajo. Así el texto usa todo el ancho de
+     la baldosa (en 320 px, palabras como "titularitat" o "Incidències" no caben al lado del icono). */
+  .gs-tabs__tab {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.375rem;
+    min-width: 0;
+    min-height: 84px;
+    padding: 0.75rem 0.5rem;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    text-align: center;
+    border: 1.5px solid var(--teal-100);
+    border-radius: 1rem;
+    background: var(--white);
+    color: var(--teal-900);
+    font: inherit;
+    font-weight: 700;
+    line-height: 1.25;
+    cursor: pointer;
+    transition:
+      border-color 0.15s,
+      background-color 0.15s,
+      transform 0.2s;
+  }
+
+  .gs-tabs__tab:is(:hover, :focus-visible) {
+    border-color: var(--teal-900);
+  }
+
+  .gs-tabs__tab:active {
+    transform: scale(0.98);
+  }
+
+  .gs-tabs__tab[aria-selected='true'] {
+    border-color: var(--teal-900);
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .gs-tabs__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.625rem;
+    background: var(--orange-100);
+    color: var(--teal-900);
+  }
+
+  .gs-tabs__tab[aria-selected='true'] .gs-tabs__icon {
+    background: var(--orange-500);
+  }
+
+  /* Sin JS: paneles apilados. Con JS: comparten celda (altura del más largo, sin CLS). */
+  .gs-tabs__panels {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .gs-tabs.is-enhanced .gs-tabs__panels {
+    grid-template-areas: 'one';
+    gap: 0;
+  }
+
+  .gs-tabs.is-enhanced .gs-panel {
+    grid-area: one;
+  }
+
+  .gs-tabs.is-enhanced .gs-panel[hidden] {
+    display: flex;
+    visibility: hidden;
+  }
+
+  .gs-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    padding: 1.25rem;
+    overflow-wrap: break-word;
+  }
+
+  .gs-panel:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .gs-tabs.is-enhanced .gs-panel:not([hidden]) {
+      animation: gs-panel-in 0.3s ease both;
+    }
+  }
+
+  @keyframes gs-panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  .gs-panel__title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.375rem;
+  }
+
+  .gs-panel__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.875rem;
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .gs-panel__icon :global(.ic-a),
+  .gs-panel__icon :global(.ic-needle) {
+    stroke: var(--orange-500);
+  }
+
+  .gs-panel__text {
+    max-width: 44rem;
+    color: var(--text-muted);
+    font-size: 1.0625rem;
+  }
+
+  .gs-panel__included {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    margin: 0 0 1.25rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: var(--orange-100);
+    color: var(--teal-900);
+    font-weight: 600;
+  }
+
+  .gs-panel__check {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: var(--teal-900);
+    color: var(--orange-500);
+  }
+
+  .gs-panel__btn {
+    width: 100%;
+    margin-top: auto;
+  }
+
+  @media (min-width: 30rem) {
+    .gs-panel__btn {
+      width: auto;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .gs-tabs__list {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .gs-panel {
+      padding: 2rem;
+    }
+  }
+
+  /* Escritorio ancho: fila con el icono a la izquierda (hay sitio para el texto al lado). */
+  @media (min-width: 64rem) {
+    .gs-tabs__tab {
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: 0.625rem;
+      min-height: 64px;
+      padding: 0.625rem 0.875rem;
+      text-align: left;
+    }
+  }
+
+  /* ---------------- 3. Servei anual ---------------- */
+  .gs-months {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0.375rem;
+    max-width: 36rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .gs-months__dot {
+    aspect-ratio: 1;
+    max-width: 1.5rem;
+    border-radius: 50%;
+    background: var(--orange-500);
+  }
+
+  /* Mes 11: renovación. */
+  .gs-months__dot--renew {
+    background: var(--teal-900);
+    box-shadow: 0 0 0 3px var(--orange-500);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .gs-months:global(.is-waiting) .gs-months__dot {
+      opacity: 0.2;
+      transform: scale(0.6);
+    }
+
+    .gs-months:global(.is-lit) .gs-months__dot {
+      animation: gs-dot 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+      animation-delay: calc(var(--m) * 70ms);
+    }
+  }
+
+  @keyframes gs-dot {
+    from {
+      opacity: 0.2;
+      transform: scale(0.6);
+    }
+  }
+
+  .gs-service {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .gs-service__card {
+    padding: 1.5rem;
+  }
+
+  .gs-service__card:focus {
+    outline: none;
+  }
+
+  .gs-service__icon {
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    margin-bottom: 1rem;
+    border-radius: 0.875rem;
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .gs-service__icon :global(.ic-a) {
+    stroke: var(--orange-500);
+  }
+
+  .gs-service__card p {
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .gs-service__icon svg {
+      transition: transform 0.5s cubic-bezier(0.3, 1.4, 0.5, 1);
+    }
+
+    .gs-service__card:is(:hover, :active, :focus-within) .gs-service__icon svg {
+      transform: rotate(-8deg) scale(1.12);
+    }
+
+    .gs-service__card:is(:hover, :active, :focus-within) .gs-service__icon :global(.ic-a) {
+      animation: gs-blink 0.8s ease-in-out 2;
+    }
+  }
+
+  @keyframes gs-blink {
+    50% {
+      opacity: 0.25;
+    }
+  }
+
+  .gs-service__more {
+    margin: 1.25rem 0 0;
+  }
+
+  @media (min-width: 48rem) {
+    .gs-service {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+  }
+
+  /* ---------------- 4. Per a qui ---------------- */
+  .gs-audience {
+    display: grid;
+    gap: 0.875rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .gs-aud {
+    position: relative;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 1.25rem;
+  }
+
+  .gs-aud:focus-within {
+    border-color: var(--orange-700);
+  }
+
+  .gs-aud__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    background: var(--teal-900);
+    color: var(--orange-500);
+  }
+
+  .gs-aud h3 {
+    margin-bottom: 0.25rem;
+    font-size: 1.1875rem;
+  }
+
+  .gs-aud p {
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  /* Dentro de .band-alt el enlace va en teal (contraste AA); la flecha se mueve al pasar. */
+  .gs-aud__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 44px;
+    font-weight: 700;
+  }
+
+  .gs-aud__link span {
+    transition: transform 0.2s ease;
+  }
+
+  .gs-aud:is(:hover, :focus-within, :active) .gs-aud__link span {
+    transform: translateX(4px);
+  }
+
+  /* Toda la tarjeta es un único enlace (stretched link). */
+  .gs-aud__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  @media (min-width: 48rem) {
+    .gs-audience {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+  }
+
+  /* ---------------- 5. Blog ---------------- */
+  .gs-posts {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  @media (min-width: 48rem) {
+    .gs-posts {
+      grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    }
+  }
+
+  /* ---------------- 7. Bajo el pre-estudi ---------------- */
+  .gs-after {
+    padding-block: 0 3rem;
+    background: var(--cream);
+  }
+
+  .gs-after__call {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.5rem;
+    align-items: center;
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .gs-after__call a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--orange-700);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gs-hero__blob,
+    .gs-tabs__tab,
+    .gs-aud__link span {
+      animation: none;
+      transition: none;
+    }
+  }
+</style>

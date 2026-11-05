@@ -1,0 +1,189 @@
+---
+// Política de privacitat (RGPD y LOPDGDD). Datos y marcadores pendientes en src/config/legal.ts.
+// La finalidad y la base jurídica van por canal, no con una base genérica.
+import LegalPage from '../components/LegalPage.astro';
+import { INVOICE_UPLOAD, legal, thirdPartyPolicies as tp } from '../config/legal';
+import { pages } from '../config/pages';
+---
+
+<LegalPage
+  lang="ca"
+  pageKey="privacitat"
+  title="Política de privacitat | Logik Solutions"
+  description="Quines dades personals tracta Logik Solutions quan ens escrius, ens truques o ens envies un missatge, per a què les fem servir i quins drets tens."
+  heading="Política de privacitat"
+  ownerTitle="Responsable del tractament"
+>
+  <p>
+    Aquí t'expliquem quines dades personals tractem, per a què, amb quina base legal, a qui les comuniquem i com pots
+    exercir els teus drets. Seguim el Reglament general de protecció de dades (RGPD) i la Llei orgànica 3/2018 de
+    protecció de dades i garantia dels drets digitals (LOPDGDD).
+  </p>
+
+  <h2 id="dades">Quines dades tractem, per a què i amb quina base</h2>
+
+  <h3>Formulari de contacte i pre-estudi</h3>
+  <p>
+    <strong>Dades:</strong> nom i cognoms, correu electrònic, telèfon i el que ens expliquis del teu cas: perfil
+    (empresa, comunitat o llar), tipus de subministrament, import aproximat de la factura, potència, sector, localitat,
+    què necessites, com prefereixes que et contactem i el missatge. També registrem la pàgina des d'on l'envies,
+    l'idioma i, si arribes des d'un enllaç de campanya, els paràmetres de l'enllaç (origen, mitjà i campanya, i
+    l'identificador de clic de Google).
+  </p>
+  <p><strong>Per a què:</strong> respondre la teva consulta i preparar l'estudi o la proposta que ens demanes.</p>
+  <p>
+    <strong>Base legal:</strong> l'aplicació de mesures precontractuals a petició teva (article 6.1.b del RGPD). Els
+    paràmetres de campanya els tractem per interès legítim (article 6.1.f): saber quins anuncis o enllaços porten
+    consultes. T'hi pots oposar quan vulguis.
+  </p>
+
+  <h3>Trucades</h3>
+  <p>
+    <strong>Dades:</strong> el teu número de telèfon i el que ens expliquis durant la trucada.
+    <strong>Per a què:</strong> atendre't i, si ho demanes, preparar-te un estudi.
+    <strong>Base legal:</strong> mesures precontractuals a petició teva (article 6.1.b del RGPD).
+  </p>
+
+  <h3>WhatsApp</h3>
+  <p>
+    Si toques un botó de WhatsApp, s'obre l'aplicació o el web de WhatsApp, que és un servei de Meta amb les seves
+    pròpies condicions. Fins que no hi toques, el nostre web no envia cap dada a WhatsApp.
+  </p>
+  <p>
+    <strong>Dades:</strong> el teu número, el nom del teu perfil, els missatges i els arxius que ens enviïs (per
+    exemple, una factura). <strong>Per a què:</strong> respondre't i preparar l'estudi.
+    <strong>Base legal:</strong> mesures precontractuals a petició teva (article 6.1.b del RGPD).
+  </p>
+
+  <h3>Correu electrònic</h3>
+  <p>
+    <strong>Dades:</strong> la teva adreça i el que ens escriguis, amb els adjunts. <strong>Per a què:</strong>
+    respondre't. <strong>Base legal:</strong> mesures precontractuals a petició teva (article 6.1.b del RGPD).
+  </p>
+
+  <h3>Si et fas client</h3>
+  <p>
+    <strong>Dades:</strong> les necessàries per prestar el servei: dades de contacte, dades dels subministraments
+    (titular, CUPS, potència, factures) i dades de facturació. <strong>Per a què:</strong> fer les gestions que ens
+    encarregues, el seguiment del contracte i la facturació. <strong>Base legal:</strong> l'execució del contracte
+    (article 6.1.b del RGPD) i el compliment d'obligacions legals, com les fiscals i comptables (article 6.1.c).
+  </p>
+
+  <h3>Analítica del web</h3>
+  <p>
+    Només si l'acceptes al bàner de cookies, fem servir Google Analytics 4, a través de Google Tag Manager, per saber
+    com es fa servir el web: pàgines visitades, tipus de dispositiu, ubicació aproximada i accions com tocar el botó de
+    trucar, el de WhatsApp o enviar un formulari. Segons Google, Google Analytics 4 no registra ni desa les adreces IP.
+  </p>
+  <p>
+    <strong>Base legal:</strong> el teu consentiment (article 6.1.a del RGPD). El pots retirar quan vulguis a
+    "Configurar cookies", al peu de totes les pàgines. Més detalls a la <a href={pages.cookies.ca}>política de cookies</a>.
+  </p>
+
+  {
+    INVOICE_UPLOAD && (
+      <>
+        <h3>Factura adjunta al formulari</h3>
+        <p>
+          Si adjuntes una factura, tingues en compte que conté dades personals: el nom del titular, l'adreça de
+          subministrament, el CUPS, el consum i, de vegades, el compte bancari. La fem servir només per preparar el teu
+          estudi, amb la mateixa base legal que la resta del formulari (mesures precontractuals a petició teva), i la
+          rep el mateix proveïdor del formulari. Si no vols adjuntar-la, ens pots indicar només l'import aproximat.
+        </p>
+      </>
+    )
+  }
+
+  <h2 id="conservacio">Quant temps guardem les dades</h2>
+  <ul>
+    <li>
+      Consultes i pre-estudis que no acaben en contracte: el temps necessari per atendre la teva sol·licitud i, com a
+      màxim, un any des del nostre últim contacte. Després les suprimim o les mantenim bloquejades només durant els
+      terminis de prescripció de possibles responsabilitats.
+    </li>
+    <li>
+      Dades de clients: mentre duri el contracte i, després, durant els terminis que exigeix la llei: 6 anys per a la
+      documentació mercantil i comptable (article 30 del Codi de comerç) i 4 anys per a les obligacions fiscals (Llei
+      general tributària).
+    </li>
+    <li>Dades d'analítica a Google Analytics: fins a 14 mesos, i només si acceptes les cookies d'analítica.</li>
+  </ul>
+  <p>
+    Mentre estan bloquejades, no les fem servir per a res més: només les conservem per si les demana un jutjat o una
+    administració pública, i les esborrem quan acaben aquests terminis.
+  </p>
+
+  <h2 id="destinataris">A qui comuniquem les dades</h2>
+  <p>
+    No venem les teves dades ni les cedim a altres empreses perquè et facin publicitat. Les poden rebre aquests
+    proveïdors, que les tracten per compte nostre (encarregats del tractament) o, en el cas de WhatsApp i del mapa de
+    Google, com a responsables del seu propi servei:
+  </p>
+  <ul>
+    <li>
+      <strong>Formspree</strong> (encarregat del tractament): rep i ens fa arribar els formularis. Els seus servidors
+      són als Estats Units, a Amazon Web Services, i s'acull a clàusules contractuals tipus.
+      <a href={tp.formspree} target="_blank" rel="noopener noreferrer">Política de privacitat de Formspree</a>.
+    </li>
+    <li>
+      <strong>Hostinger</strong> (encarregat del tractament): allotjament del web.
+      <a href={tp.hostinger} target="_blank" rel="noopener noreferrer">Política de privacitat de Hostinger</a>.
+    </li>
+    <li>
+      <strong>Google</strong>: Google Analytics, només si acceptes l'analítica, i el mapa de Google Maps, només si el
+      carregues. A Google Analytics, Google tracta les dades per compte nostre, com a encarregat del tractament.
+      <a href={tp.google} target="_blank" rel="noopener noreferrer">Política de privacitat de Google</a>.
+    </li>
+    <li>
+      <strong>WhatsApp (Meta)</strong>: només si ens escrius per WhatsApp.
+      <a href={tp.whatsapp} target="_blank" rel="noopener noreferrer">Política de privacitat de WhatsApp</a>.
+    </li>
+  </ul>
+  <p>
+    Si ens encarregues una gestió (un canvi de titular, de potència, una alta o un canvi de comercialitzadora),
+    comunicarem a la comercialitzadora o a la distribuïdora les dades imprescindibles per fer-la. També podem haver de
+    comunicar dades a les administracions públiques o als jutjats quan la llei ho exigeixi.
+  </p>
+
+  <h2 id="transferencies">Transferències internacionals</h2>
+  <p>
+    Formspree tracta les dades als Estats Units i s'acull a les clàusules contractuals tipus aprovades per la Comissió
+    Europea. Google i Meta també poden tractar dades fora de l'Espai Econòmic Europeu, amb les garanties que expliquen a
+    les seves polítiques de privacitat.
+  </p>
+
+  <h2 id="drets">Els teus drets</h2>
+  <p>Pots demanar-nos en qualsevol moment:</p>
+  <ul>
+    <li><strong>accés</strong>: saber quines dades teves tenim;</li>
+    <li><strong>rectificació</strong>: corregir-les si no són correctes;</li>
+    <li><strong>supressió</strong>: que les esborrem;</li>
+    <li><strong>oposició</strong>: que deixem de tractar-les per a una finalitat concreta;</li>
+    <li><strong>limitació</strong>: que les conservem però no les fem servir mentre es resol una petició;</li>
+    <li><strong>portabilitat</strong>: rebre-les en un format habitual per passar-les a una altra empresa.</li>
+  </ul>
+  <p>
+    Escriu-nos a <a href={`mailto:${legal.email}`}>{legal.email}</a> i indica quin dret vols exercir. Si cal, et
+    demanarem que acreditis la teva identitat. Et respondrem en el termini d'un mes. Si vas donar el consentiment per a
+    alguna cosa, el pots retirar quan vulguis, sense que això afecti el que s'hagi fet abans.
+  </p>
+  <p>
+    Si creus que no hem tractat bé les teves dades, pots presentar una reclamació davant l'Agència Espanyola de
+    Protecció de Dades (<a href={tp.aepd} target="_blank" rel="noopener noreferrer">aepd.es</a>).
+  </p>
+
+  <h2 id="menors">Menors d'edat</h2>
+  <p>
+    El web no s'adreça a menors d'edat. Si tens menys de 14 anys, no ens enviïs dades personals: demana a una persona
+    adulta que es posi en contacte amb nosaltres.
+  </p>
+
+  <h2 id="decisions">Decisions automatitzades</h2>
+  <p>
+    No prenem decisions automatitzades ni fem perfils que tinguin efectes sobre tu. El pre-estudi només calcula la
+    despesa anual aproximada a partir de l'import que hi indiques; l'estudi el fa una persona del nostre equip.
+  </p>
+
+  <h2 id="canvis">Canvis en aquesta política</h2>
+  <p>Si canviem aquesta política, actualitzarem la data de revisió que hi ha a dalt de tot.</p>
+</LegalPage>

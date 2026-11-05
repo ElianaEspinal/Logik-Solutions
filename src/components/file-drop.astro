@@ -1,0 +1,154 @@
+---
+// Zona para adjuntar la factura (arrastrar o tocar). La comparten el formulario de
+// cierre (ContactForm) y el pre-estudi de la home. PDF o imagen, máx. 10 MB.
+// El comportamiento (nombre y tamaño, quitar, arrastrar) lo pone el script de cada
+// formulario; src/scripts/file-drop.ts tiene la versión reutilizable.
+import type { Locale } from '../config/pages';
+import { useTranslations } from '../i18n/ui';
+
+interface Props {
+  lang: Locale;
+  /** Prefijo de los id, único en la página. */
+  idPrefix: string;
+  /** Textos propios (p. ej. la página de contacto); por defecto, los de src/i18n/ui.ts. */
+  label?: string;
+  hint?: string;
+  privacy?: string;
+}
+
+const { lang, idPrefix, label, hint, privacy } = Astro.props;
+const t = useTranslations(lang);
+const id = (name: string) => `${idPrefix}-${name}`;
+---
+
+<div class="field drop" data-drop>
+  <input
+    class="drop__input"
+    id={id('file')}
+    name="factura"
+    type="file"
+    accept="application/pdf,image/*"
+    aria-describedby={`${id('file-hint')} ${id('file-privacy')}`}
+  />
+  <label class="drop__zone" for={id('file')}>
+    <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"></path>
+      <path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3"></path>
+    </svg>
+    <strong>{label ?? t('form.attach')}</strong>
+    <span>{t('form.attachDrop')}</span>
+    <span class="drop__hint" id={id('file-hint')}>{hint ?? t('form.attachHint')}</span>
+  </label>
+  <div class="drop__file" data-drop-file hidden>
+    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"></path>
+      <path d="M14 3v5h5"></path>
+    </svg>
+    <span class="drop__name" data-drop-name></span>
+    <button class="drop__remove" type="button" data-drop-remove>
+      {t('form.attachRemove')}
+    </button>
+  </div>
+  <p class="field__error" id={id('file-error')} data-error-for="factura" hidden>{t('form.errFile')}</p>
+  <p class="drop__privacy" id={id('file-privacy')}>{privacy ?? t('form.attachPrivacy')}</p>
+</div>
+
+<style>
+  .drop {
+    position: relative;
+    margin: 0;
+  }
+
+  .drop__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  .drop__zone {
+    display: grid;
+    justify-items: center;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 1.25rem 1rem;
+    border: 2px dashed var(--teal-100);
+    border-radius: 1rem;
+    background: var(--cream);
+    color: var(--teal-900);
+    font-weight: 400;
+    text-align: center;
+    cursor: pointer;
+    transition:
+      border-color 0.15s,
+      background-color 0.15s;
+  }
+
+  .drop__zone svg {
+    color: var(--orange-700);
+  }
+
+  .drop__hint {
+    color: var(--text-muted);
+  }
+
+  .drop:global(.is-over) .drop__zone,
+  .drop__input:focus-visible + .drop__zone {
+    border-color: var(--orange-700);
+    background: var(--orange-100);
+  }
+
+  .drop__input:focus-visible + .drop__zone {
+    outline: 3px solid var(--orange-500);
+    outline-offset: 2px;
+  }
+
+  .drop:global(.has-file) .drop__zone {
+    display: none;
+  }
+
+  .drop__file {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.5rem 0.5rem 0.5rem 0.875rem;
+    border: 1.5px solid var(--teal-900);
+    border-radius: 0.75rem;
+    background: var(--white);
+  }
+
+  .drop__file[hidden] {
+    display: none;
+  }
+
+  .drop__file svg {
+    flex: none;
+    color: var(--orange-700);
+  }
+
+  .drop__name {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-weight: 700;
+  }
+
+  .drop__remove {
+    flex: none;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 0.875rem;
+    border: 1px solid var(--teal-100);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--teal-900);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .drop__privacy {
+    margin: 0.5rem 0 0;
+    color: var(--text-muted);
+  }
+</style>

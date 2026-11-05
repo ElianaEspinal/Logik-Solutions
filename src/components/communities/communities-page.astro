@@ -1,0 +1,1624 @@
+---
+// Comunitats de veïns / Comunidades de vecinos. Un solo objetivo: que el administrador, el
+// presidente o un vecino entienda la factura de las zonas comunes, vea que Logik trabaja con
+// comunidades y dé el primer paso. Dos públicos, una acción: vecinos y presidentes, al pre-estudi;
+// administradores de fincas, al contacto con el perfil ya elegido (?perfil=administrador).
+// Orden: hero · cifras · per a qui (2 chips) · un sol interlocutor (esquema) · la factura de la
+// comunitat · et reconeixes? · què inclou el servei · per aprofundir (blog, si hay) ·
+// plaques solars (solo con COMUNITATS_FV) · FAQ · ets administrador? · pre-estudi.
+// Solo datos confirmados (docs/contexto.md). Sin fotos de personas: visuales SVG de marca.
+// Reutiliza: stats-strip, faq-accordion, post-card y pre-study (perfil "comunitat" ya resuelto,
+// pagina_origen = "comunitats"; sin la casilla solar mientras COMUNITATS_FV = false).
+// Medición: persona_select { persona, location }, cta_click (comunitats_hero, comunitats_reconeix,
+// comunitats_admin, comunitats_cierre), click_call (location = comunitats),
+// blog_card_click (location = comunitats) y los del pre-estudi.
+import FaqAccordion from '../home/faq-accordion.astro';
+import PreStudy from '../home/pre-study.astro';
+import { preStudyTexts } from '../home/pre-study-texts';
+import StatsStrip from '../stats-strip.astro';
+import PostCard from '../blog/post-card.astro';
+import { COMUNITATS_FV } from '../../config/comunitats';
+import { PRE_STUDY_ID } from '../../config/home';
+import { pages, type Locale } from '../../config/pages';
+import { phone } from '../../config/site';
+import { getPublishedPosts } from '../../lib/blog';
+import type { CommunitiesContent, CommunityBillIcon } from './types';
+import '../../styles/motion.css';
+
+interface Props {
+  lang: Locale;
+  content: CommunitiesContent;
+}
+
+const { lang, content: c } = Astro.props;
+const words = c.hero.title.split(' ');
+const noArrow = (s: string) => s.replace(/\s*→$/, '');
+const studyHref = `#${PRE_STUDY_ID[lang]}`;
+const adminHref = `${pages.contacte[lang]}?perfil=administrador`;
+const solar = COMUNITATS_FV ? c.solar : undefined;
+
+// "Per aprofundir": hasta 3 artículos publicados del idioma; primero "Comunitats", después "Factura i potència".
+const published = await getPublishedPosts(lang);
+const related = [
+  ...published.filter((p) => p.data.category === 'comunitats'),
+  ...published.filter((p) => p.data.category === 'factura'),
+].slice(0, 3);
+
+// Iconos de línea (24 × 24). Cadenas fijas del propio código.
+const billIcons: Record<CommunityBillIcon, string> = {
+  building: '<path d="M4 21V7l8-4 8 4v14M2.5 21h19"/><path d="M10 21v-4h4v4"/><path class="ic-win" d="M8 9h2M14 9h2"/><path class="ic-win ic-win--2" d="M8 13h2M14 13h2"/>',
+  lift: '<rect x="3" y="3" width="10" height="18" rx="1.5"/><rect class="ic-cab" x="5.5" y="13" width="5" height="6" rx=".75"/><path d="M15.5 9.4A3.5 3.5 0 1 1 20.5 9.4V11h-5Z"/><path d="M16 14h4"/><path class="ic-a" d="M18 1v.5M22.5 4.5H22M13.5 4.5h.5"/>',
+  search: '<rect x="3" y="4" width="13" height="13" rx="2"/><path d="M3 8h13M7 2v4M12 2v4"/><g class="ic-lens"><circle cx="16.5" cy="16.5" r="3.5"/><path d="m19 19 2.5 2.5"/></g>',
+};
+const personaIcons = {
+  admin: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v2h6V3M8 10h8M8 14h8M8 18h5"/>',
+  resident: '<path d="M3 21h18M4 21V8l5-3 5 3v13M14 21V11h6v10"/><path d="M7 11h1M7 15h1M10 11h1M10 15h1"/>',
+};
+const check = '<path d="m5 12 5 5 9-10"/>';
+const phoneIcon =
+  '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/>';
+
+// Ventanas del edificio del hero: 3 columnas × 4 plantas; se encienden en secuencia (orden fijo,
+// salteado para que parezca vida real).
+const windowCols = [104, 140, 222];
+const windowRows = [52, 90, 128, 166];
+const windowOrder = [3, 7, 0, 10, 5, 1, 9, 4, 11, 2, 8, 6];
+const windows = windowRows.flatMap((y, r) => windowCols.map((x, col) => ({ x, y, d: windowOrder[r * 3 + col] })));
+---
+
+<!-- 1. Hero (5 elementos: etiqueta, H1, subtítulo, botón + microtexto, llamada) -->
+<section class="cm-hero tech-bg" aria-labelledby="cm-title" data-section="comunitats">
+  <div class="cm-hero__mesh" aria-hidden="true" data-anim>
+    <span class="cm-hero__blob cm-hero__blob--a"></span>
+    <span class="cm-hero__blob cm-hero__blob--b"></span>
+  </div>
+  <div class="container cm-hero__grid">
+    <div>
+      <p class="cm-hero__tag"><span class="cm-hero__pulse" aria-hidden="true"></span>{c.hero.tag}</p>
+      <h1 id="cm-title">
+        {
+          words.map((word, i) => (
+            <>
+              <span class="cm-hero__word" style={`--w:${i}`}>
+                {word}
+              </span>
+              {i < words.length - 1 && ' '}
+            </>
+          ))
+        }
+      </h1>
+      <p class="cm-hero__lead">{c.hero.lead}</p>
+      <a class="btn btn-primary btn-lg cm-hero__btn" href={studyHref} data-cta="comunitats_hero">
+        {noArrow(c.hero.cta)} <span class="arrow" aria-hidden="true">→</span>
+      </a>
+      <p class="cm-hero__note">{c.hero.note}</p>
+      <a class="cm-call" href={phone.tel}>
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={phoneIcon} />
+        <span>{c.hero.call} {phone.display}</span>
+      </a>
+    </div>
+
+    <!-- Edificio: ventanas que se encienden y energía que recorre zonas comunes, escalera y ascensor. Decorativo. -->
+    <div class="cm-building" aria-hidden="true" data-anim-late>
+      <svg viewBox="0 0 300 256" width="300" height="256" focusable="false">
+        <rect class="b-body" x="40" y="34" width="220" height="210" rx="8" />
+        <rect class="b-roof" x="32" y="26" width="236" height="12" rx="4" />
+        <!-- Escalera -->
+        <rect class="b-core" x="52" y="44" width="40" height="200" rx="3" />
+        <path class="b-stairs" d="M56 236 88 216 56 196 88 176 56 156 88 136 56 116 88 96 56 76 88 56" />
+        <!-- Ascensor -->
+        <rect class="b-core" x="178" y="44" width="30" height="200" rx="3" />
+        <path class="b-cable" d="M193 44v150" />
+        <rect class="b-cabin" x="181" y="206" width="24" height="34" rx="3" />
+        <!-- Ventanas -->
+        {
+          windows.map((w) => (
+            <g>
+              <rect class="b-win" x={w.x} y={w.y} width="24" height="24" rx="3" />
+              <rect class:list={["b-win-lit", { "is-on": w.d % 3 === 0 }]} x={w.x} y={w.y} width="24" height="24" rx="3" style={`--d:${w.d}`} />
+            </g>
+          ))
+        }
+        <!-- Planta baja: portal y luz de la zona común -->
+        <rect class="b-door" x="112" y="206" width="40" height="38" rx="3" />
+        <circle class="b-lamp" cx="132" cy="198" r="5" />
+        <circle class="b-lamp-glow" cx="132" cy="198" r="12" />
+        <!-- Contador y línea de energía -->
+        <rect class="b-meter" x="266" y="204" width="22" height="28" rx="4" />
+        <path class="b-wire" d="M277 232v8H72V40h121v4" />
+        <path class="b-pulse b-pulse--1" d="M277 232v8H152" />
+        <path class="b-pulse b-pulse--2" d="M152 240H72" />
+        <path class="b-pulse b-pulse--3" d="M72 240V40" />
+        <path class="b-pulse b-pulse--4" d="M72 40h121v4" />
+        <path class="b-ground" d="M8 244h284" />
+      </svg>
+    </div>
+  </div>
+</section>
+
+<StatsStrip items={c.stats} section="comunitats" />
+
+<!-- 2. Pensat per a comunitats i administradors: dos públicos, dos caminos -->
+<section class="section surface-white surface-grid" aria-labelledby="cm-persona-title" data-section="comunitats">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.persona.eyebrow}</p>
+      <h2 id="cm-persona-title">{c.persona.title}</h2>
+      <p class="section-head__intro">{c.persona.text}</p>
+    </div>
+    <ul class="cm-personas" aria-label={c.persona.label}>
+      <li data-reveal style="--i:0">
+        <a class="cm-persona card-lift" href={`#${c.admin.id}`} data-persona="administrador">
+          <span class="cm-persona__icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={personaIcons.admin} />
+          </span>
+          <span class="cm-persona__label">{c.persona.admin}</span>
+          <span class="cm-persona__arrow" aria-hidden="true">→</span>
+        </a>
+      </li>
+      <li data-reveal style="--i:1">
+        <a class="cm-persona card-lift" href={studyHref} data-persona="president_vei">
+          <span class="cm-persona__icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={personaIcons.resident} />
+          </span>
+          <span class="cm-persona__label">{c.persona.resident}</span>
+          <span class="cm-persona__arrow" aria-hidden="true">→</span>
+        </a>
+      </li>
+    </ul>
+    <p class="cm-personas__hint" data-reveal>{c.persona.hint}</p>
+  </div>
+</section>
+
+<!-- 3. Un sol interlocutor: esquema ilustrativo (decorativo; el texto lo explica) -->
+<section class="section" aria-labelledby="cm-hub-title" data-section="comunitats">
+  <div class="container cm-hub-wrap">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.hub.eyebrow}</p>
+      <h2 id="cm-hub-title">{c.hub.title}</h2>
+      <p class="section-head__intro">{c.hub.text}</p>
+    </div>
+    <div class="cm-hub" aria-hidden="true" data-anim data-reveal>
+      <div class="cm-hub__pair">
+        <span class="cm-hub__node">{c.hub.nodes.admin}</span>
+        <span class="cm-hub__node">{c.hub.nodes.residents}</span>
+      </div>
+      <span class="cm-hub__wire"><span class="cm-hub__spark"></span></span>
+      <span class="cm-hub__node cm-hub__node--logik">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7Z" /></svg>
+        {c.hub.nodes.logik}
+      </span>
+      <span class="cm-hub__wire cm-hub__wire--b"><span class="cm-hub__spark"></span></span>
+      <span class="cm-hub__node">{c.hub.nodes.companies}</span>
+    </div>
+    <ul class="cm-hub__chips">
+      {
+        c.hub.chips.map((chip, i) => (
+          <li data-reveal style={`--i:${i}`}>
+            <span class="cm-hub__check" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" set:html={check} />
+            </span>
+            {chip}
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<!-- 4. La factura de la comunitat, explicada (móvil: acordeón con la primera abierta; escritorio: en fila) -->
+<section class="section surface-white" aria-labelledby="cm-bill-title" data-section="comunitats">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.bill.eyebrow}</p>
+      <h2 id="cm-bill-title">{c.bill.title}</h2>
+    </div>
+    <ul class="cm-cards">
+      {
+        c.bill.items.map((item, i) => (
+          <li class:list={['cm-card', 'card']} data-reveal data-cm-card style={`--i:${i}`} data-open={i === 0 ? '' : undefined}>
+            <h3 class="cm-card__title">
+              <button class="cm-card__head" type="button" aria-expanded="true" aria-controls={`cm-card-${i}`} data-cm-toggle>
+                <span class="cm-card__icon" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={billIcons[item.icon]} />
+                </span>
+                <span class="cm-card__label">{item.title}</span>
+                <svg class="cm-card__chev" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+            </h3>
+            <div class="cm-card__panel" id={`cm-card-${i}`}>
+              <div class="cm-card__inner">
+                <p class="cm-card__text">{item.text}</p>
+              </div>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<!-- 5. Et reconeixes? (el mensaje y el botón tienen el sitio reservado: sin CLS) -->
+<section class="section band-alt" aria-labelledby="cm-fit-title" data-section="comunitats">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.fit.eyebrow}</p>
+      <h2 id="cm-fit-title">{c.fit.title}</h2>
+    </div>
+    <div class="cm-fit" data-fit>
+      <fieldset class="cm-fit__set">
+        <legend class="sr-only">{c.fit.label}</legend>
+        <div class="cm-fit__chips">
+          {
+            c.fit.items.map((item, i) => (
+              <label class="cm-fit__chip" data-reveal style={`--i:${i}`}>
+                <input type="checkbox" name="situacio" value={String(i + 1)} />
+                <span class="cm-fit__box" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" set:html={check} />
+                </span>
+                <span>{item}</span>
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+      <div class="cm-fit__result">
+        <p class="cm-fit__msg cm-fit__msg--help" data-fit-help>{c.fit.help}</p>
+        <p class="cm-fit__msg cm-fit__msg--yes" data-fit-yes aria-live="polite">{c.fit.yes}</p>
+      </div>
+      <a class="btn btn-primary cm-fit__btn" href={studyHref} data-cta="comunitats_reconeix" data-fit-btn>
+        {noArrow(c.fit.cta)} <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Què inclou el servei: tarjetas numeradas con trazo lateral (2 × 2 en escritorio) -->
+<section class="section" aria-labelledby="cm-services-title" data-section="comunitats">
+  <div class="container">
+    <h2 id="cm-services-title" class="cm-h2" data-reveal>{c.services.title}</h2>
+    <ol class="cm-services">
+      {
+        c.services.items.map((item, i) => (
+          <li class:list={['cm-service', { 'card-lift': item.page }]} data-reveal style={`--i:${i}`}>
+            <span class="cm-service__num" aria-hidden="true">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+            {item.page && item.link && (
+              <a class="cm-service__link" href={pages[item.page][lang]}>
+                {noArrow(item.link)} <span aria-hidden="true">→</span>
+              </a>
+            )}
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<!-- 7. Per aprofundir: solo si hay artículos publicados (si no, ni el título ni el hueco) -->
+{
+  related.length > 0 && (
+    <section class="section surface-white" aria-labelledby="cm-blog-title" data-section="comunitats" data-cm-blog>
+      <div class="container">
+        <h2 id="cm-blog-title" class="cm-h2" data-reveal>
+          {c.blogTitle}
+        </h2>
+        <div class="cm-posts">
+          {related.map((post, i) => (
+            <PostCard post={post} lang={lang} position={i + 1} heading="h3" />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{/* 8. Bloque solar: solo con COMUNITATS_FV = true (src/config/comunitats.ts). Nunca "sense cost" aquí. Comentario JSX: no llega al HTML. */}
+{
+  solar && (
+    <section class="section band-dark cm-solar" aria-labelledby="cm-solar-title" data-section="comunitats">
+      <div class="container cm-solar__inner">
+        <span class="cm-solar__icon" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20l3-9h12l3 9Z" /><path d="M9 11l-1 9M15 11l1 9M4.5 15.5h15M12 2v3M18 4l-2 2M6 4l2 2" /></svg>
+        </span>
+        <div>
+          <h2 id="cm-solar-title">{solar.title}</h2>
+          <p>{solar.text}</p>
+          <a class="cm-arrow-link" href={pages.autoconsum[lang]}>
+            {noArrow(solar.link)} <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<!-- 9. Preguntes freqüents (acordeón exclusivo, la primera abierta; el JSON-LD sale de los mismos textos) -->
+<FaqAccordion lang={lang} content={c.faq} idPrefix="cm-faq" section="comunitats" />
+
+<!-- 10. Ets administrador de finques? -> contacto con el perfil ya elegido -->
+<section class="section cm-admin-section" id={c.admin.id} aria-labelledby="cm-admin-title" data-section="comunitats">
+  <div class="container">
+    <div class="cm-admin tech-bg" data-reveal>
+      <span class="cm-admin__icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={personaIcons.admin} />
+      </span>
+      <div class="cm-admin__body">
+        <h2 id="cm-admin-title">{c.admin.title}</h2>
+        <p>{c.admin.text}</p>
+      </div>
+      <div class="cm-admin__actions">
+        <a class="btn btn-primary btn-lg" href={adminHref} data-cta="comunitats_admin">
+          {noArrow(c.admin.cta)} <span class="arrow" aria-hidden="true">→</span>
+        </a>
+        <a class="cm-call" href={phone.tel}>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={phoneIcon} />
+          <span>{c.admin.call} {phone.display}</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11. Pre-estudi de la comunitat: perfil "comunitat" ya resuelto (se puede volver atrás) -->
+<PreStudy
+  lang={lang}
+  content={{ ...preStudyTexts[lang], title: c.study.title, lead: c.study.lead }}
+  presetProfile="comunitat"
+  origin="comunitats"
+  solar={COMUNITATS_FV}
+/>
+<div class="cm-after" data-section="comunitats">
+  <div class="container cm-after__inner">
+    <p class="cm-after__call">
+      {c.study.callLead}{' '}
+      <a href={phone.tel} data-cta="comunitats_cierre">{phone.display}</a>
+    </p>
+    <p class="cm-after__other">
+      <span>{c.study.other}</span>
+      <a class="cm-arrow-link" href={pages.empreses[lang]}>{pages.empreses.name[lang]} <span aria-hidden="true">→</span></a>
+      <a class="cm-arrow-link" href={pages.llars[lang]}>{pages.llars.name[lang]} <span aria-hidden="true">→</span></a>
+    </p>
+  </div>
+</div>
+
+<script>
+  import { track } from '../../scripts/analytics';
+  import { initDecor, initReveal } from '../../scripts/motion';
+
+  initReveal();
+  initDecor();
+
+  // Edificio del hero: sus animaciones arrancan tras la carga y con el navegador libre (no afectan al LCP
+  // ni al bloqueo del hilo principal al cargar). Después, como el resto: solo mientras se ve.
+  const startLate = () => {
+    document.querySelectorAll('[data-anim-late]').forEach((el) => {
+      el.removeAttribute('data-anim-late');
+      el.setAttribute('data-anim', '');
+    });
+    initDecor();
+  };
+  const whenIdle = (fn: () => void) => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 3000 }) : setTimeout(fn, 1500));
+  if (document.readyState === 'complete') whenIdle(startLate);
+  else window.addEventListener('load', () => whenIdle(startLate), { once: true });
+
+  // --- Per a qui: persona_select. El enlace (#ancla) hace el scroll; sin JS también funciona.
+  document.querySelectorAll<HTMLAnchorElement>('[data-persona]').forEach((chip) => {
+    chip.addEventListener('click', () => track('persona_select', { persona: chip.dataset.persona, location: 'comunitats' }));
+  });
+
+  // --- La factura de la comunitat: acordeón solo en móvil (< 48rem); en escritorio, todo abierto.
+  // Sin JS, todo abierto (aria-expanded="true" en el HTML).
+  const desktopQuery = window.matchMedia('(min-width: 48rem)');
+  const cards = [...document.querySelectorAll<HTMLElement>('[data-cm-card]')];
+  const syncCards = () => {
+    cards.forEach((card) => {
+      const button = card.querySelector('[data-cm-toggle]')!;
+      button.setAttribute('aria-expanded', String(desktopQuery.matches || card.hasAttribute('data-open')));
+    });
+  };
+  cards.forEach((card) => {
+    const button = card.querySelector<HTMLButtonElement>('[data-cm-toggle]')!;
+    button.addEventListener('click', () => {
+      if (desktopQuery.matches) return;
+      const open = !card.hasAttribute('data-open');
+      card.toggleAttribute('data-open', open);
+      button.setAttribute('aria-expanded', String(open));
+    });
+  });
+  syncCards();
+  desktopQuery.addEventListener('change', syncCards);
+
+  // --- Et reconeixes?: con una o más casillas, aparecen el mensaje y el botón (sitio reservado).
+  document.querySelectorAll<HTMLElement>('[data-fit]').forEach((fit) => {
+    const boxes = [...fit.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
+    const button = fit.querySelector<HTMLAnchorElement>('[data-fit-btn]')!;
+    const update = () => {
+      const any = boxes.some((b) => b.checked);
+      fit.classList.toggle('is-yes', any);
+      // Oculto: fuera del orden de tabulación y del árbol de accesibilidad.
+      if (any) {
+        button.removeAttribute('tabindex');
+        button.removeAttribute('aria-hidden');
+      } else {
+        button.setAttribute('tabindex', '-1');
+        button.setAttribute('aria-hidden', 'true');
+      }
+    };
+    fit.classList.add('is-enhanced');
+    boxes.forEach((b) => b.addEventListener('change', update));
+    update();
+  });
+
+  // --- Per aprofundir: blog_card_click con location = comunitats.
+  document.querySelector('[data-cm-blog]')?.addEventListener('click', (event) => {
+    const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[data-card-link]');
+    if (!link) return;
+    const { slug, position, lang } = link.dataset;
+    track('blog_card_click', { slug, position: Number(position), lang, location: 'comunitats' });
+  });
+</script>
+
+<style>
+  /* ---------------- 1. Hero ---------------- */
+  .cm-hero {
+    padding-block: 1.5rem 3rem;
+    color: var(--white);
+  }
+
+  .cm-hero__mesh {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .cm-hero__blob {
+    position: absolute;
+    width: 34rem;
+    height: 34rem;
+    border-radius: 50%;
+    opacity: 0.55;
+    animation: cm-drift 28s ease-in-out infinite alternate;
+  }
+
+  .cm-hero__blob--a {
+    top: -14rem;
+    left: -12rem;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-500) 40%, transparent), transparent);
+  }
+
+  .cm-hero__blob--b {
+    right: -14rem;
+    bottom: -18rem;
+    background: radial-gradient(closest-side, var(--teal-700), transparent);
+    animation-duration: 34s;
+    animation-direction: alternate-reverse;
+  }
+
+  @keyframes cm-drift {
+    to {
+      transform: translate3d(5rem, 3rem, 0) scale(1.12);
+    }
+  }
+
+  .cm-hero__grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .cm-hero__tag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: fit-content;
+    margin-bottom: 0.875rem;
+    padding: 0.25rem 0.875rem 0.25rem 0.625rem;
+    border: 1px solid color-mix(in srgb, var(--white) 25%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--white) 8%, transparent);
+    font-weight: 700;
+  }
+
+  .cm-hero__pulse {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    background: var(--orange-500);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--orange-500) 30%, transparent);
+  }
+
+  .cm-hero h1 {
+    max-width: 20ch;
+    margin-bottom: 1rem;
+    color: var(--white);
+  }
+
+  .cm-hero__word {
+    display: inline-block;
+  }
+
+  /* Aparición palabra a palabra desde opacidad 0,15 (nunca 0: no retrasa el LCP). */
+  @media (prefers-reduced-motion: no-preference) {
+    .cm-hero__word {
+      animation: cm-word 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      animation-delay: calc(0.1s + var(--w) * 60ms);
+    }
+  }
+
+  @keyframes cm-word {
+    from {
+      opacity: 0.15;
+      transform: translateY(0.35em);
+    }
+  }
+
+  .cm-hero__lead {
+    max-width: 40rem;
+    margin-bottom: 1.25rem;
+    color: var(--teal-100);
+    font-size: 1.0625rem;
+  }
+
+  .cm-hero__btn {
+    width: 100%;
+  }
+
+  .cm-hero__note {
+    margin: 0.5rem 0 0;
+    color: var(--teal-100);
+  }
+
+  .cm-call {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    margin-top: 0.25rem;
+    color: var(--white);
+    font-weight: 700;
+  }
+
+  .cm-call svg {
+    flex: none;
+    color: var(--orange-500);
+  }
+
+  @media (min-width: 30rem) {
+    .cm-hero__btn {
+      width: auto;
+    }
+
+    .cm-hero__lead {
+      font-size: 1.125rem;
+    }
+  }
+
+  /* Edificio (SVG): tamaño fijo por proporción (sin CLS). */
+  .cm-building {
+    justify-self: center;
+    width: min(100%, 18rem);
+  }
+
+  .cm-building svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .b-body {
+    fill: var(--teal-700);
+    stroke: color-mix(in srgb, var(--white) 18%, transparent);
+    stroke-width: 1.5;
+  }
+
+  .b-roof {
+    fill: color-mix(in srgb, var(--white) 14%, var(--teal-900));
+  }
+
+  .b-core {
+    fill: var(--teal-900);
+  }
+
+  .b-stairs,
+  .b-cable {
+    fill: none;
+    stroke: color-mix(in srgb, var(--white) 30%, transparent);
+    stroke-width: 2;
+    stroke-linejoin: round;
+  }
+
+  .b-cabin {
+    fill: var(--teal-100);
+  }
+
+  .b-win {
+    fill: var(--teal-900);
+  }
+
+  .b-win-lit {
+    fill: var(--orange-100);
+  }
+
+  .b-door {
+    fill: var(--teal-900);
+    stroke: color-mix(in srgb, var(--white) 25%, transparent);
+  }
+
+  .b-lamp {
+    fill: var(--orange-500);
+  }
+
+  .b-lamp-glow {
+    fill: color-mix(in srgb, var(--orange-500) 30%, transparent);
+  }
+
+  .b-meter {
+    fill: var(--teal-900);
+    stroke: var(--orange-500);
+    stroke-width: 2;
+  }
+
+  .b-wire,
+  .b-pulse {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .b-wire {
+    stroke: color-mix(in srgb, var(--orange-500) 35%, transparent);
+  }
+
+  .b-pulse {
+    stroke: var(--orange-500);
+    opacity: 0;
+  }
+
+  .b-ground {
+    stroke: color-mix(in srgb, var(--white) 25%, transparent);
+    stroke-width: 2;
+  }
+
+  /* Estado estático (movimiento reducido o sin animación): unas ventanas encendidas y la línea visible. */
+  .b-win-lit {
+    opacity: 0;
+  }
+
+  .b-win-lit.is-on {
+    opacity: 1;
+  }
+
+  /* Hasta que arrancan las animaciones (o con movimiento reducido): la línea de energía, visible. */
+  .cm-building:not([data-anim]) .b-pulse {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .b-pulse {
+      opacity: 1;
+    }
+  }
+
+  /* Las animaciones del edificio arrancan después de la carga (data-anim lo pone el script cuando el
+     navegador está libre), para no competir con el primer pintado ni con el LCP. */
+  @media (prefers-reduced-motion: no-preference) {
+    .cm-building[data-anim] .b-win-lit {
+      opacity: 0;
+      animation: cm-window 7.2s ease-in-out infinite;
+      animation-delay: calc(var(--d) * 0.6s);
+    }
+
+    .cm-building[data-anim] .b-cabin {
+      animation: cm-lift 9s ease-in-out infinite;
+    }
+
+    .cm-building[data-anim] .b-pulse {
+      animation: cm-pulse 3.2s ease-in-out infinite;
+    }
+
+    .cm-building[data-anim] .b-pulse--2 {
+      animation-delay: 0.4s;
+    }
+
+    .cm-building[data-anim] .b-pulse--3 {
+      animation-delay: 0.8s;
+    }
+
+    .cm-building[data-anim] .b-pulse--4 {
+      animation-delay: 1.2s;
+    }
+
+    .cm-building[data-anim] .b-lamp-glow {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: cm-glow 3.2s ease-in-out infinite;
+    }
+  }
+
+  @keyframes cm-window {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    8%,
+    55% {
+      opacity: 1;
+    }
+    65% {
+      opacity: 0;
+    }
+  }
+
+  /* SVG: px = unidades del viewBox. La cabina sube de la planta baja a la última. */
+  @keyframes cm-lift {
+    0%,
+    12%,
+    100% {
+      transform: translateY(0);
+    }
+    45%,
+    60% {
+      transform: translateY(-150px);
+    }
+  }
+
+  @keyframes cm-pulse {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    20%,
+    45% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes cm-glow {
+    0%,
+    100% {
+      opacity: 0.2;
+      transform: scale(0.8);
+    }
+    25% {
+      opacity: 1;
+      transform: scale(1.15);
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .cm-hero {
+      padding-block: 3.5rem 4.5rem;
+    }
+
+    .cm-hero__grid {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      align-items: center;
+      gap: 2.5rem;
+    }
+
+    .cm-building {
+      width: min(100%, 22rem);
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .cm-hero__lead {
+      font-size: 1.25rem;
+    }
+  }
+
+  /* ---------------- Comunes ---------------- */
+  .cm-h2 {
+    max-width: 44rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .cm-arrow-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 44px;
+    color: var(--orange-700);
+    font-weight: 700;
+  }
+
+  /* ---------------- 2. Per a qui ---------------- */
+  .cm-personas {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cm-persona {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    min-height: 64px;
+    padding: 0.625rem 1.125rem 0.625rem 0.625rem;
+    border: 1.5px solid var(--teal-100);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--teal-900);
+    font-weight: 700;
+  }
+
+  .cm-persona:is(:hover, :focus-visible) {
+    border-color: var(--teal-900);
+  }
+
+  .cm-persona__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    background: var(--teal-900);
+    color: var(--orange-500);
+  }
+
+  .cm-persona__label {
+    flex: 1;
+    font-size: 1.0625rem;
+  }
+
+  .cm-persona__arrow {
+    color: var(--orange-700);
+    transition: transform 0.2s ease;
+  }
+
+  .cm-persona:is(:hover, :focus-visible, :active) .cm-persona__arrow {
+    transform: translateX(4px);
+  }
+
+  .cm-personas__hint {
+    margin: 0.875rem 0 0;
+    color: var(--text-muted);
+  }
+
+  @media (min-width: 40rem) {
+    .cm-personas {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      max-width: 44rem;
+    }
+  }
+
+  /* ---------------- 3. Un sol interlocutor ---------------- */
+  .cm-hub {
+    display: grid;
+    justify-items: center;
+    margin-block: 0.5rem 1.75rem;
+  }
+
+  .cm-hub__pair {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.625rem;
+  }
+
+  .cm-hub__node {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.125rem;
+    border: 1.5px solid var(--teal-100);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--teal-900);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .cm-hub__node--logik {
+    position: relative;
+    padding: 0.875rem 1.5rem;
+    border-color: var(--teal-900);
+    background: var(--teal-900);
+    color: var(--white);
+    font-family: var(--font-heading);
+    font-size: 1.125rem;
+  }
+
+  .cm-hub__node--logik svg {
+    color: var(--orange-500);
+  }
+
+  /* Anillo que late alrededor de Logik (solo transform y opacity). */
+  .cm-hub__node--logik::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border: 2px solid var(--orange-500);
+    border-radius: inherit;
+    opacity: 0;
+  }
+
+  /* Cable vertical en móvil: línea central y un punto de luz que la recorre. */
+  .cm-hub__wire {
+    position: relative;
+    width: 1rem;
+    height: 2.5rem;
+    overflow: hidden;
+    background: linear-gradient(var(--teal-100), var(--teal-100)) center / 3px 100% no-repeat;
+  }
+
+  .cm-hub__spark {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, var(--orange-500) 0 4px, transparent 5px);
+    transform: translateY(-50%);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .cm-hub__spark {
+      animation: cm-spark-y 2.6s ease-in-out infinite;
+    }
+
+    .cm-hub__wire--b .cm-hub__spark {
+      animation-delay: 1.3s;
+    }
+
+    .cm-hub__node--logik::after {
+      animation: cm-ring 2.6s ease-out infinite;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cm-hub__spark {
+      transform: none;
+    }
+  }
+
+  @keyframes cm-spark-y {
+    0% {
+      opacity: 0;
+      transform: translateY(-50%);
+    }
+    15%,
+    85% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(50%);
+    }
+  }
+
+  @keyframes cm-spark-x {
+    0% {
+      opacity: 0;
+      transform: translateX(-50%);
+    }
+    15%,
+    85% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(50%);
+    }
+  }
+
+  @keyframes cm-ring {
+    0% {
+      opacity: 0.7;
+      transform: scale(0.96);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.12);
+    }
+  }
+
+  .cm-hub__chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cm-hub__chips li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.375rem 1rem 0.375rem 0.5rem;
+    border-radius: 999px;
+    background: var(--orange-100);
+    color: var(--teal-900);
+    font-weight: 600;
+  }
+
+  .cm-hub__check {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background: var(--teal-900);
+    color: var(--orange-500);
+  }
+
+  @media (min-width: 48rem) {
+    .cm-hub {
+      grid-template-columns: auto minmax(3rem, 1fr) auto minmax(3rem, 1fr) auto;
+      align-items: center;
+      max-width: 52rem;
+      margin-inline: auto;
+    }
+
+    .cm-hub__pair {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .cm-hub__wire {
+      width: 100%;
+      height: 1rem;
+      background: linear-gradient(90deg, var(--teal-100), var(--teal-100)) center / 100% 3px no-repeat;
+    }
+
+    .cm-hub__spark {
+      transform: translateX(-50%);
+    }
+
+    .cm-hub__chips {
+      justify-content: center;
+    }
+  }
+
+  @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) {
+    .cm-hub__spark {
+      animation-name: cm-spark-x;
+    }
+  }
+
+  @media (min-width: 48rem) and (prefers-reduced-motion: reduce) {
+    .cm-hub__spark {
+      transform: none;
+    }
+  }
+
+  /* ---------------- 4. La factura de la comunitat ---------------- */
+  .cm-cards {
+    display: grid;
+    gap: 1rem;
+    align-items: start;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cm-card {
+    overflow: hidden;
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease,
+      border-color 0.2s;
+  }
+
+  .cm-card:is(:focus-within, :active) {
+    border-color: var(--orange-700);
+  }
+
+  .cm-card__title {
+    margin: 0;
+  }
+
+  .cm-card__head {
+    display: flex;
+    gap: 0.875rem;
+    align-items: center;
+    width: 100%;
+    min-height: 56px;
+    padding: 1.25rem 1.25rem 0.75rem;
+    border: 0;
+    background: none;
+    color: var(--teal-900);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .cm-card__label {
+    flex: 1;
+    font-family: var(--font-heading);
+    font-size: 1.1875rem;
+    font-weight: 700;
+  }
+
+  .cm-card__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 0.875rem;
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .cm-card__icon :global(.ic-a),
+  .cm-card__icon :global(.ic-win),
+  .cm-card__icon :global(.ic-cab),
+  .cm-card__icon :global(.ic-lens) {
+    stroke: var(--orange-500);
+  }
+
+  .cm-card__chev {
+    flex: none;
+    color: var(--orange-700);
+    transition: transform 0.25s ease;
+  }
+
+  .cm-card[data-open] .cm-card__chev {
+    transform: rotate(180deg);
+  }
+
+  .cm-card__inner {
+    padding: 0 1.25rem 1.25rem;
+  }
+
+  .cm-card__text {
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  /* Móvil con JS: acordeón (la primera abierta). Sin JS, todo abierto. */
+  @media (max-width: 47.99rem) {
+    :global(.js) .cm-card__panel {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.28s ease;
+    }
+
+    :global(.js) .cm-card[data-open] .cm-card__panel {
+      grid-template-rows: 1fr;
+    }
+
+    :global(.js) .cm-card__inner {
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    :global(.js) .cm-card:not([data-open]) .cm-card__inner {
+      padding-bottom: 0;
+    }
+  }
+
+  /* Escritorio: en fila, todo abierto; al pasar el cursor o enfocar se eleva y el icono se anima. */
+  @media (min-width: 48rem) {
+    .cm-cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.25rem;
+      align-items: stretch;
+    }
+
+    .cm-card__head {
+      flex-direction: column;
+      align-items: flex-start;
+      cursor: default;
+    }
+
+    .cm-card__chev {
+      display: none;
+    }
+
+    .cm-card:is(:hover, :focus-within) {
+      transform: translateY(-4px);
+      box-shadow: 0 1.25rem 2.5rem -1.25rem color-mix(in srgb, var(--teal-900) 35%, transparent);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .cm-card__icon :global(.ic-cab),
+    .cm-card__icon :global(.ic-lens) {
+      transition: transform 0.6s cubic-bezier(0.3, 1.4, 0.5, 1);
+    }
+
+    .cm-card:is(:hover, :focus-within, :active) .cm-card__icon :global(.ic-cab) {
+      transform: translateY(-8px);
+    }
+
+    .cm-card:is(:hover, :focus-within, :active) .cm-card__icon :global(.ic-lens) {
+      transform: translate(-3px, -3px);
+    }
+
+    .cm-card:is(:hover, :focus-within, :active) .cm-card__icon :global(.ic-win),
+    .cm-card:is(:hover, :focus-within, :active) .cm-card__icon :global(.ic-a) {
+      animation: cm-blink 0.9s ease-in-out 2;
+    }
+
+    .cm-card:is(:hover, :focus-within, :active) .cm-card__icon :global(.ic-win--2) {
+      animation-delay: 0.3s;
+    }
+  }
+
+  @keyframes cm-blink {
+    50% {
+      opacity: 0.2;
+    }
+  }
+
+  /* ---------------- 5. Et reconeixes? ---------------- */
+  .cm-fit__set {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .cm-fit__chips {
+    display: grid;
+    gap: 0.625rem;
+  }
+
+  .cm-fit__chip {
+    position: relative;
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    min-height: 56px;
+    margin: 0;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid color-mix(in srgb, var(--teal-900) 15%, transparent);
+    border-radius: 1rem;
+    background: var(--white);
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      border-color 0.15s,
+      background-color 0.15s,
+      transform 0.2s;
+  }
+
+  .cm-fit__chip input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .cm-fit__box {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid var(--teal-900);
+    border-radius: 0.375rem;
+    color: transparent;
+    transition: background-color 0.15s;
+  }
+
+  .cm-fit__chip:has(input:checked) {
+    border-color: var(--teal-900);
+    background: var(--orange-100);
+  }
+
+  .cm-fit__chip:has(input:checked) .cm-fit__box {
+    border-color: var(--orange-500);
+    background: var(--orange-500);
+    color: var(--teal-900);
+  }
+
+  .cm-fit__chip:has(input:focus-visible) {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  .cm-fit__chip:active {
+    transform: scale(0.99);
+  }
+
+  /* Mensaje: los dos estados ocupan la misma celda (sin CLS al marcar). */
+  .cm-fit__result {
+    display: grid;
+    margin: 1.25rem 0 1rem;
+  }
+
+  .cm-fit__msg {
+    grid-area: 1 / 1;
+    margin: 0;
+    transition:
+      opacity 0.25s ease,
+      transform 0.25s ease;
+  }
+
+  .cm-fit__msg--help {
+    color: var(--text-muted);
+  }
+
+  .cm-fit__msg--yes {
+    color: var(--teal-900);
+    font-size: 1.125rem;
+    font-weight: 700;
+    opacity: 0;
+    transform: translateY(6px);
+    visibility: hidden;
+  }
+
+  .cm-fit.is-yes .cm-fit__msg--help {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .cm-fit.is-yes .cm-fit__msg--yes {
+    opacity: 1;
+    transform: none;
+    visibility: visible;
+  }
+
+  /* El botón aparece con la primera casilla; su sitio está reservado. Sin JS, siempre visible. */
+  .cm-fit__btn {
+    transition:
+      opacity 0.25s ease,
+      transform 0.25s ease,
+      visibility 0.25s;
+  }
+
+  .cm-fit.is-enhanced:not(.is-yes) .cm-fit__btn {
+    opacity: 0;
+    transform: translateY(6px);
+    visibility: hidden;
+  }
+
+  @media (min-width: 48rem) {
+    .cm-fit__chips {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* ---------------- 6. Què inclou el servei ---------------- */
+  .cm-services {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cm-service {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1.5rem 1.5rem 1.75rem;
+    border: 1px solid var(--teal-100);
+    border-radius: 1rem;
+    background: var(--white);
+    overflow: hidden;
+  }
+
+  /* Trazo lateral de color: naranja arriba, teal abajo. */
+  .cm-service::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 5px;
+    background: linear-gradient(var(--orange-500), var(--teal-700));
+  }
+
+  .cm-service:focus-within {
+    border-color: var(--orange-700);
+  }
+
+  .cm-service__num {
+    margin-bottom: 0.5rem;
+    color: var(--orange-700);
+    font-family: var(--font-heading);
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .cm-service h3 {
+    font-size: 1.25rem;
+  }
+
+  .cm-service p {
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  .cm-service__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 44px;
+    margin-top: 0.75rem;
+    color: var(--orange-700);
+    font-weight: 700;
+  }
+
+  /* Tarjeta con enlace: toda ella es un único enlace (stretched link). */
+  .cm-service__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  @media (min-width: 48rem) {
+    .cm-services {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+
+    /* Mismo alto por fila (sin huecos) y el enlace al pie. */
+    .cm-service__link {
+      margin-top: auto;
+      padding-top: 0.75rem;
+    }
+  }
+
+  /* ---------------- 7. Blog ---------------- */
+  .cm-posts {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  @media (min-width: 48rem) {
+    .cm-posts {
+      grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    }
+  }
+
+  /* ---------------- 8. Plaques solars (solo con COMUNITATS_FV) ---------------- */
+  .cm-solar__inner {
+    display: grid;
+    gap: 1rem;
+    max-width: 52rem;
+  }
+
+  .cm-solar__icon {
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--white) 10%, transparent);
+    color: var(--orange-500);
+  }
+
+  .cm-solar h2 {
+    color: var(--white);
+  }
+
+  .cm-solar p {
+    color: var(--teal-100);
+  }
+
+  .cm-solar .cm-arrow-link {
+    color: var(--white);
+  }
+
+  @media (min-width: 48rem) {
+    .cm-solar__inner {
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 1.5rem;
+    }
+  }
+
+  /* ---------------- 10. Ets administrador de finques? ---------------- */
+  .cm-admin {
+    display: grid;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+    color: var(--white);
+  }
+
+  .cm-admin__icon {
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 0.875rem;
+    background: var(--orange-500);
+    color: var(--teal-900);
+  }
+
+  .cm-admin h2 {
+    margin-bottom: 0.5rem;
+    color: var(--white);
+  }
+
+  .cm-admin__body p {
+    margin: 0;
+    color: var(--teal-100);
+    font-size: 1.125rem;
+  }
+
+  .cm-admin__actions {
+    display: grid;
+    gap: 0.25rem;
+    justify-items: start;
+  }
+
+  .cm-admin__actions .btn {
+    width: 100%;
+  }
+
+  @media (min-width: 30rem) {
+    .cm-admin__actions .btn {
+      width: auto;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .cm-admin {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 1.75rem;
+      padding: 2rem 2.5rem;
+    }
+
+    .cm-admin__actions {
+      justify-items: center;
+    }
+  }
+
+  /* ---------------- 11. Bajo el pre-estudi ---------------- */
+  .cm-after {
+    padding-block: 0 3rem;
+    background: var(--cream);
+  }
+
+  .cm-after__inner {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .cm-after__call,
+  .cm-after__other {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1rem;
+    align-items: center;
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .cm-after__call a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--orange-700);
+  }
+
+  .cm-after__other span:first-child {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cm-hero__blob,
+    .cm-card,
+    .cm-card__chev,
+    .cm-fit__msg,
+    .cm-fit__btn,
+    .cm-fit__chip,
+    .cm-persona__arrow {
+      animation: none;
+      transition: none;
+    }
+  }
+</style>

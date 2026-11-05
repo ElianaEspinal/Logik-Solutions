@@ -1,0 +1,130 @@
+---
+// Cómo trabajamos (castellano). Textos de Eliana (encargo del 3/11/2026), con apóstrofo recto.
+// Los marcados [Claude] no estaban en el encargo.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HowPage from '../../components/how/how-page.astro';
+import { howSchema } from '../../components/how/schema';
+import type { HowContent } from '../../components/how/types';
+import { pages } from '../../config/pages';
+import logo from '../../assets/images/logo-web.webp';
+import { safeJsonLd } from '../../lib/json-ld';
+
+const title = 'Cómo trabajamos | Asesoramiento energético | Logik Solutions';
+const description =
+  'Así trabajamos en Logik Solutions: revisamos tu factura, comparamos ofertas, hacemos los trámites y te seguimos todo el año, hasta la renovación.';
+
+const content: HowContent = {
+  hero: {
+    tag: 'Cómo trabajamos',
+    title: 'Asesoramiento energético, paso a paso y todo el año',
+    lead: 'Del primer contacto a la renovación: esto es lo que pasa cuando nos dejas tu factura.',
+    cta: 'Revisa mi factura →',
+    call: 'Llama al',
+  },
+  route: {
+    eyebrow: 'El recorrido',
+    title: 'Del primer contacto a la renovación, paso a paso',
+    lead: 'Tú decides. Nosotros nos ocupamos.',
+    who: { tu: 'Tú', logik: 'Logik' },
+    steps: [
+      { who: 'tu', icon: 'chat', title: 'Nos cuentas tu caso', text: 'Por teléfono, por WhatsApp o con el formulario. Si quieres, vamos a verte.' },
+      { who: 'logik', icon: 'invoice', title: 'Revisamos tu factura y tu contrato', text: 'Miramos la potencia, el consumo y las condiciones.' },
+      {
+        who: 'logik',
+        icon: 'compare',
+        title: 'Comparamos ofertas',
+        text: 'Ponemos las ofertas de varias comercializadoras una al lado de otra y te decimos qué tiene sentido.',
+      },
+      { who: 'tu', icon: 'decide', title: 'Tú decides qué cambia', text: 'Tú eliges, con toda la información sobre la mesa.' },
+      {
+        who: 'logik',
+        icon: 'stamp',
+        title: 'Hacemos los trámites',
+        text: 'Cambios de titularidad, subidas y bajadas de potencia y altas nuevas, con trato directo con los administradores de cada compañía.',
+      },
+      { who: 'logik', icon: 'calendar', title: 'Seguimiento mensual y anual', text: 'Cada mes revisamos tu factura y resolvemos las incidencias.' },
+      { who: 'logik', icon: 'bell', title: 'Mes 11: renovación', text: 'Te avisamos para renovar y que no se te pase la fecha.' },
+    ],
+  },
+  start: {
+    title: 'Para empezar, una factura reciente',
+    text: 'Puedes enviarla por el formulario y la usaremos para preparar tu estudio, de acuerdo con nuestra política de privacidad.',
+    note: 'Sin coste para ti: nos remunera la comercializadora.',
+    cta: 'Empezar el pre-estudio →',
+  },
+  solar: {
+    eyebrow: 'Autoconsumo',
+    title: '¿Y si quieres placas solares?',
+    lead: 'Aquí el camino es un poco distinto: primero estudiamos, y solo después se habla de instalar.',
+    steps: [
+      { icon: 'consumption', title: 'Estudiamos tu consumo', text: 'Miramos cómo consumes para saber si el autoconsumo tiene sentido.' },
+      { icon: 'install', title: 'Si tiene sentido, la instalación', text: 'La hacen ingenieros y especialistas en instalación.' },
+      { icon: 'surplus', title: 'Qué pasa con los excedentes', text: 'Te explicamos qué pasa con la energía que no consumes.' },
+    ],
+    callout: 'La instalación tiene un coste; antes te explicamos si tiene sentido para tu consumo.',
+    link: 'Autoconsumo fotovoltaico →',
+  },
+  scenarios: {
+    eyebrow: 'Situaciones concretas',
+    title: '¿Qué pasa si…?',
+    label: 'Situaciones concretas', // [Claude]: etiqueta accesible de las pestañas
+    items: [
+      {
+        icon: 'incident',
+        chip: '…hay una incidencia?',
+        q: '¿Qué pasa si hay una incidencia con mi factura?',
+        a: 'La resolvemos nosotros. Las incidencias están incluidas en el servicio.',
+      },
+      {
+        icon: 'renewal',
+        chip: '…se acaba el contrato?',
+        q: '¿Qué pasa cuando se acaba el contrato?',
+        a: 'Te avisamos en el mes 11 para renovar y que no se te pase la fecha.',
+      },
+      {
+        icon: 'change',
+        chip: '…quiero cambiar la titularidad o la potencia?',
+        q: '¿Qué pasa si quiero cambiar la titularidad o la potencia?',
+        a: 'Nos ocupamos nosotros, con trato directo con los administradores de cada compañía.',
+      },
+      {
+        icon: 'location',
+        chip: '…no soy de Girona?',
+        q: '¿Qué pasa si no soy de Girona?',
+        a: 'Trabajamos en toda Cataluña y en toda España. En Girona y en localidades cercanas, además, hacemos visitas presenciales.',
+      },
+      {
+        icon: 'privacy',
+        chip: '…envío mi factura?',
+        q: '¿Qué pasa con mi factura y mis datos?',
+        a: 'Tu factura y tus datos los usamos para preparar tu estudio, de acuerdo con nuestra política de privacidad.',
+      },
+    ],
+  },
+  closing: {
+    title: '¿Empezamos?',
+    text: 'Cuéntanos tu caso y te decimos qué miramos y cómo lo hacemos.',
+    cta: 'Revisa mi factura →',
+    call: 'Llama al',
+  },
+  breadcrumbHome: 'Inicio',
+};
+
+const pageUrl = new URL(pages.comTreballem.es, Astro.site).href;
+const logoUrl = new URL(logo.src, Astro.site).href;
+const schema = howSchema({
+  lang: 'es',
+  pageUrl,
+  homeUrl: new URL(pages.home.es, Astro.site).href,
+  title,
+  description,
+  homeName: content.breadcrumbHome,
+  pageName: pages.comTreballem.name.es,
+  faq: content.scenarios.items,
+});
+---
+
+<BaseLayout lang="es" pageKey="comTreballem" title={title} description={description} og={{ image: logoUrl, imageAlt: 'Logik Solutions' }}>
+  <Fragment slot="head" set:html={`<script type="application/ld+json">${safeJsonLd(schema)}</script>`} />
+  <HowPage lang="es" content={content} />
+</BaseLayout>

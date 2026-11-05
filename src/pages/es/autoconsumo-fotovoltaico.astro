@@ -1,0 +1,167 @@
+---
+// Autoconsumo fotovoltaico (castellano). Textos de Eliana (encargo del 4/11/2026), con apóstrofo recto.
+// Los marcados [Claude] no estaban en el encargo.
+// En esta página nunca "sin coste" ni "gratis": la instalación tiene un coste.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SolarPage from '../../components/solar/solar-page.astro';
+import { solarSchema } from '../../components/solar/schema';
+import type { SolarContent } from '../../components/solar/types';
+import { pages } from '../../config/pages';
+import logo from '../../assets/images/logo-web.webp';
+import { safeJsonLd } from '../../lib/json-ld';
+
+const title = 'Placas solares en Girona y autoconsumo | Logik Solutions';
+const description =
+  'Placas solares en Girona para hogares, comunidades y pymes: estudiamos tu consumo y, si tiene sentido, la instalación la hacen ingenieros y especialistas.';
+
+const content: SolarContent = {
+  hero: {
+    tag: 'Autoconsumo fotovoltaico',
+    title: 'Placas solares en Girona, con estudio previo de tu consumo',
+    lead: 'Energía solar para hogares, comunidades y pymes. Primero estudiamos tu consumo; si el autoconsumo tiene sentido, la instalación la hacen ingenieros y especialistas.',
+    cta: 'Estudia mi consumo →',
+    note: 'Antes de instalar, te explicamos si tiene sentido para tu consumo.',
+    call: 'Llama al',
+    visual: {
+      label: 'Esquema: el sol ilumina las placas, que alimentan la casa; la energía que no se consume son los excedentes.',
+      tags: { sun: 'Sol', panels: 'Placas', home: 'Casa', surplus: 'Excedentes' },
+    },
+  },
+  // Rótulos de las cifras [Claude], los mismos que en Empresas y pymes: las cifras son las confirmadas.
+  stats: [
+    { value: '+2.000', label: 'clientes' },
+    { value: '+10', label: 'años en el sector' },
+    { value: '12 meses', label: 'de seguimiento' },
+  ],
+  who: {
+    eyebrow: 'Para quién',
+    title: 'Autoconsumo fotovoltaico para hogares, comunidades y pymes',
+    start: 'Empezar el pre-estudio',
+    items: [
+      {
+        persona: 'llar',
+        profile: 'llar',
+        page: 'llars',
+        title: 'Paneles solares para tu casa',
+        text: 'Estudiamos tu consumo para saber si el autoconsumo tiene sentido en casa.',
+        link: 'Hogares →',
+      },
+      {
+        persona: 'comunitat',
+        profile: 'comunitat',
+        page: 'comunitats',
+        title: 'Para comunidades de vecinos',
+        text: 'Estudiamos el consumo de las zonas comunes, con un solo interlocutor para el administrador y los vecinos.',
+        link: 'Comunidades de vecinos →',
+      },
+      {
+        persona: 'pime',
+        profile: 'empresa',
+        page: 'empreses',
+        title: 'Placas solares para empresas y pymes',
+        text: 'Estudiamos el consumo de tu negocio antes de hablar de instalar.',
+        link: 'Empresas y pymes →',
+      },
+    ],
+  },
+  path: {
+    eyebrow: 'Cómo lo hacemos',
+    title: 'Del estudio de tu consumo a la instalación fotovoltaica',
+    items: [
+      { title: 'Estudiamos tu consumo', text: 'Miramos cómo consumes para saber si el autoconsumo tiene sentido.' },
+      { title: 'Te explicamos si tiene sentido', text: 'Antes de hablar de instalar, te decimos si el autoconsumo encaja con tu consumo.' },
+      { title: 'La instalación, con especialistas', text: 'La hacen ingenieros y especialistas en instalación. La instalación tiene un coste.' },
+      { title: 'Qué pasa con los excedentes', text: 'Te explicamos qué pasa con la energía que no consumes.' },
+    ],
+  },
+  consum: {
+    eyebrow: 'Antes de instalar',
+    title: 'Cuándo consumes, importa',
+    intro: 'Las placas producen de día. Por eso, antes que nada, miramos a qué horas consumes.',
+    label: '¿Cuándo consumes?', // [Claude]: nombre accesible del grupo
+    // [Claude]: descripción accesible del gráfico, sin cifras.
+    chartLabel: 'Gráfico de un día: la producción solar se concentra en las horas de sol; la silueta muestra cuándo consumes.',
+    items: [
+      { shape: 'dia', q: 'Consumo sobre todo de día', a: 'Cuanto más coincide tu consumo con las horas de sol, más sentido suele tener el autoconsumo.' },
+      { shape: 'vespre', q: 'Consumo sobre todo por la tarde-noche', a: 'Lo estudiamos con calma: miramos tu consumo y qué pasa con los excedentes antes de proponer nada.' },
+      { shape: 'mixt', q: 'Un poco de cada', a: 'Miramos tu consumo y te explicamos qué tiene sentido.' },
+      { shape: 'nose', q: 'No lo sé', a: 'No pasa nada: con una factura reciente y tu consumo lo vemos juntos.' },
+    ],
+    cta: 'Estudia mi consumo →',
+  },
+  trust: {
+    title: 'Un estudio serio y una instalación con especialistas',
+    items: [
+      { title: 'Estudio previo', text: 'Primero estudiamos tu consumo y te explicamos si tiene sentido.' },
+      { title: 'Ingenieros y especialistas', text: 'La instalación la hacen ingenieros y especialistas en instalación.' },
+    ],
+  },
+  blogTitle: 'Para profundizar', // [Claude]: mismo título que en Empresas y pymes
+  faq: {
+    eyebrow: '¿Dudas?',
+    title: 'Preguntas frecuentes sobre placas solares y autoconsumo',
+    items: [
+      {
+        q: '¿Cuánto cuesta instalar placas solares?',
+        a: 'Depende de cada caso: del consumo y del tipo de instalación. Por eso primero estudiamos tu consumo y te explicamos si tiene sentido antes de hablar de instalar. La instalación tiene un coste.',
+      },
+      {
+        q: '¿Cómo sé si el autoconsumo tiene sentido para mí?',
+        a: 'Depende de tu consumo, sobre todo de cuándo consumes. Con una factura reciente y tu consumo, te lo valoramos antes de hablar de instalar.',
+      },
+      {
+        q: '¿Hacéis instalaciones para comunidades de vecinos?',
+        a: 'Sí, con ingenieros y especialistas en instalación. Estudiamos el consumo de las zonas comunes y tenemos un solo interlocutor para el administrador y los vecinos.',
+      },
+      {
+        q: '¿Hacéis instalaciones para hogares y pymes?',
+        a: 'Sí, para hogares, comunidades y pymes, con ingenieros y especialistas en instalación.',
+      },
+      {
+        q: '¿Quién hace la instalación?',
+        a: 'Ingenieros y especialistas en instalación. Nosotros estudiamos tu consumo y te explicamos si tiene sentido.',
+      },
+      {
+        q: '¿Qué son los excedentes?',
+        a: 'Es la energía que produces y no consumes. Durante el estudio te explicamos qué pasa con ella en tu caso.',
+      },
+      {
+        q: '¿Dónde instaláis?',
+        a: 'Nuestra base está en Girona y hacemos visitas presenciales en localidades cercanas. Cuéntanos dónde está la instalación y te lo confirmamos.',
+      },
+    ],
+  },
+  study: {
+    title: 'Empieza el pre-estudio solar',
+    lead: 'Nos cuentas tu consumo en unos pocos pasos y te explicamos si el autoconsumo tiene sentido. La instalación tiene un coste.',
+    // [Claude]: la frase habitual del preestudio sin "Sin coste para ti: nos remunera la comercializadora."
+    note: 'No es una oferta ni un compromiso.',
+    points: ['Estudio previo de tu consumo', 'Ingenieros y especialistas en instalación', 'Te explicamos si tiene sentido antes de instalar'],
+    callLead: '¿Prefieres llamar?',
+    other: '¿Solo quieres revisar la factura?',
+  },
+  serviceType: 'Instalación de placas solares y autoconsumo fotovoltaico',
+  audience: ['Hogares', 'Comunidades de vecinos', 'Pymes'],
+  breadcrumbHome: 'Inicio',
+};
+
+const pageUrl = new URL(pages.autoconsum.es, Astro.site).href;
+const logoUrl = new URL(logo.src, Astro.site).href;
+const schema = solarSchema({
+  lang: 'es',
+  pageUrl,
+  homeUrl: new URL(pages.home.es, Astro.site).href,
+  title,
+  description,
+  homeName: content.breadcrumbHome,
+  pageName: pages.autoconsum.name.es,
+  serviceType: content.serviceType,
+  audience: content.audience,
+  faq: content.faq.items,
+});
+---
+
+<BaseLayout lang="es" pageKey="autoconsum" title={title} description={description} og={{ image: logoUrl, imageAlt: 'Logik Solutions' }}>
+  <Fragment slot="head" set:html={`<script type="application/ld+json">${safeJsonLd(schema)}</script>`} />
+  <SolarPage lang="es" content={content} />
+</BaseLayout>

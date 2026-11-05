@@ -1,0 +1,1406 @@
+---
+// Com treballem / Cómo trabajamos. Un solo objetivo: que el visitante entienda cómo trabajamos
+// y dé el primer paso (pre-estudi o llamada). Orden: hero · el recorregut (qui fa què) · per
+// començar · plaques solars (camí a part) · què passa si… (pestañas) · cierre.
+// Solo datos confirmados (docs/contexto.md). Sin fotos de personas: visuales SVG de marca.
+// Medición: cta_click con data-cta (com_treballem_hero / _inici / _cierre); click_call con
+// location = com_treballem (data-section de todas las secciones; src/scripts/analytics.ts).
+import { heroCtaHref } from '../../config/home';
+import { pages, type Locale } from '../../config/pages';
+import { phone } from '../../config/site';
+import { useTranslations } from '../../i18n/ui';
+import type { HowContent, RouteIcon, ScenarioIcon, SolarIcon } from './types';
+import '../../styles/motion.css';
+
+interface Props {
+  lang: Locale;
+  content: HowContent;
+}
+
+const { lang, content: c } = Astro.props;
+const t = useTranslations(lang);
+const words = c.hero.title.split(' ');
+const noArrow = (s: string) => s.replace(/\s*→$/, '');
+const studyHref = heroCtaHref(lang);
+const privacy = t('form.consentLink');
+/** Parte un texto por la frase de la política de privacidad para enlazarla. */
+const withPrivacy = (text: string) => text.split(privacy);
+
+// Iconos de línea (24 × 24). .ic-a: detalle naranja que se anima.
+const routeIcons: Record<RouteIcon, string> = {
+  chat: '<path d="M4 5h16v11H9l-5 4Z"/><path class="ic-a" d="M8 9.5h8M8 12.5h5"/>',
+  invoice: '<path d="M6 3h9l3 3v15H6Z"/><path d="M9 8h5M9 11h3"/><g class="ic-a ic-scan"><circle cx="14.5" cy="15" r="2.75"/><path d="m16.5 17 2.5 2.5"/></g>',
+  compare: '<path d="M4 20h16"/><rect x="5" y="11" width="3" height="9" rx=".5"/><rect class="ic-a ic-grow" x="10.5" y="5" width="3" height="15" rx=".5"/><rect x="16" y="14" width="3" height="6" rx=".5"/>',
+  decide: '<rect x="3.5" y="3.5" width="11" height="11" rx="2"/><path class="ic-a ic-draw" d="m6.5 9 2 2 3.5-4"/><path d="M14 21v-5a1.5 1.5 0 0 1 3 0v1.5l2.3.6a1.5 1.5 0 0 1 1.1 1.8L20 21"/>',
+  stamp: '<path d="M14 3H6v18h7"/><path d="M14 3l4 4v5"/><path d="M14 3v4h4M9 11h5M9 14h2"/><g class="ic-a ic-pop"><circle cx="17.5" cy="17.5" r="3.5"/><path d="m16 17.5 1 1 2-2"/></g>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path class="ic-a" d="M6 16h3l1.5-3 2 5 1.5-2H18"/>',
+  bell: '<g class="ic-bell"><path d="M6 17v-6a6 6 0 0 1 12 0v6l1.5 2h-15Z"/><path d="M10 21a2 2 0 0 0 4 0"/></g><path class="ic-a" d="M12 2v1.5"/>',
+};
+const solarIcons: Record<SolarIcon, string> = {
+  consumption: '<g class="ic-sun"><circle cx="12" cy="12" r="4"/><path class="ic-a" d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g>',
+  install: '<path d="M3 20l3-9h12l3 9Z"/><path d="M9 11l-1 9M15 11l1 9M4.5 15.5h15"/><path class="ic-a ic-pop" d="M8 7l4-4 4 4"/>',
+  surplus: '<path d="M3 12h11"/><path class="ic-a ic-push" d="m11 7 5 5-5 5"/><path d="M20 4v16"/>',
+};
+const scenarioIcons: Record<ScenarioIcon, string> = {
+  incident: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5Z"/>',
+  renewal: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v4h-4"/><path class="ic-a" d="M12 8v4l3 2"/>',
+  change: '<path d="M6 3h9l3 3v15H6Z"/><path class="ic-a" d="m12.5 8-3 5h3l-1 4 3-5h-3Z"/>',
+  location: '<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z"/><circle class="ic-a" cx="12" cy="9.5" r="2.5"/>',
+  privacy: '<path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6Z"/><path class="ic-a" d="m8.5 12 2.5 2.5 4.5-5"/>',
+};
+const phoneIcon =
+  '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/>';
+
+// Esquema del hero: siete nodos unidos por una línea; un punto luminoso la recorre.
+const nodes = [
+  [60, 40],
+  [300, 90],
+  [90, 150],
+  [290, 205],
+  [70, 265],
+  [295, 320],
+  [180, 375],
+];
+const routePath = `M${nodes.map(([x, y]) => `${x} ${y}`).join(' L')}`;
+const total = c.route.steps.length;
+---
+
+<!-- 1. Hero -->
+<section class="hw-hero tech-bg" aria-labelledby="hw-title" data-section="com_treballem">
+  <div class="hw-hero__mesh" aria-hidden="true" data-anim>
+    <span class="hw-hero__blob hw-hero__blob--a"></span>
+    <span class="hw-hero__blob hw-hero__blob--b"></span>
+  </div>
+  <div class="container hw-hero__grid">
+    <div>
+      <p class="hw-hero__tag"><span class="hw-hero__pulse" aria-hidden="true"></span>{c.hero.tag}</p>
+      <h1 id="hw-title">
+        {
+          words.map((word, i) => (
+            <>
+              <span class="hw-hero__word" style={`--w:${i}`}>
+                {word}
+              </span>
+              {i < words.length - 1 && ' '}
+            </>
+          ))
+        }
+      </h1>
+      <p class="hw-hero__lead">{c.hero.lead}</p>
+      <div class="hw-hero__actions">
+        <a class="btn btn-primary btn-lg hw-hero__btn" href={studyHref} data-cta="com_treballem_hero">
+          {noArrow(c.hero.cta)} <span class="arrow" aria-hidden="true">→</span>
+        </a>
+        <a class="hw-call" href={phone.tel}>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={phoneIcon} />
+          <span>{c.hero.call} {phone.display}</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="hw-hero__art" aria-hidden="true" data-anim>
+      <svg viewBox="0 0 360 415" width="360" height="415" focusable="false">
+        <path class="hw-hero__track" d={routePath}></path>
+        <path class="hw-hero__line" d={routePath}></path>
+        {
+          nodes.map(([x, y], i) => (
+            <g class="hw-hero__node" style={`--n:${i}`}>
+              <circle cx={x} cy={y} r="15"></circle>
+              <text x={x} y={y + 5} text-anchor="middle">{i + 1}</text>
+            </g>
+          ))
+        }
+        <circle class="hw-hero__spark" r="7" style={`offset-path: path('${routePath}')`}></circle>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 2. El recorregut: qui fa què -->
+<section class="section surface-white surface-grid hw-route-section" aria-labelledby="hw-route-title" data-section="com_treballem">
+  <div class="container">
+    <div class="section-head hw-center" data-reveal>
+      <p class="eyebrow">{c.route.eyebrow}</p>
+      <h2 id="hw-route-title">{c.route.title}</h2>
+      <p class="section-head__intro">{c.route.lead}</p>
+    </div>
+
+    <div class="hw-legend" aria-hidden="true">
+      <span class="hw-chip hw-chip--tu">{c.route.who.tu}</span>
+      <span class="hw-chip hw-chip--logik">{c.route.who.logik}</span>
+    </div>
+
+    <div class="hw-route" data-route style="--progress:1">
+      <span class="hw-route__track" aria-hidden="true"><span class="hw-route__fill"></span></span>
+      <ol class="hw-route__list">
+        {
+          c.route.steps.map((step, i) => (
+            <li class:list={['hw-step', `hw-step--${step.who}`, `hw-step--${step.icon}`]} style={`--row:${i + 1}`} data-step-index={i}>
+              <span class="hw-step__node" aria-hidden="true">
+                {i + 1}
+              </span>
+              <div class="hw-step__card card" data-reveal style={`--i:${i % 2}`}>
+                <div class="hw-step__top">
+                  <span class="hw-step__icon" aria-hidden="true">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={routeIcons[step.icon]} />
+                  </span>
+                  <span class:list={['hw-chip', `hw-chip--${step.who}`]}>{c.route.who[step.who]}</span>
+                </div>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Per començar -->
+<section class="section hw-start-section" aria-labelledby="hw-start-title" data-section="com_treballem">
+  <div class="container">
+    <div class="hw-start card" data-reveal>
+      <span class="hw-start__icon" aria-hidden="true">
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none" focusable="false">
+          <path class="hw-start__doc" d="M14 6h20l10 10v34H14Z"></path>
+          <path class="hw-start__doc" d="M34 6v10h10"></path>
+          <path class="hw-start__lines" d="M20 24h18M20 30h18M20 36h12"></path>
+          <rect class="hw-start__scan" x="10" y="10" width="38" height="3" rx="1.5"></rect>
+        </svg>
+      </span>
+      <div class="hw-start__body">
+        <h2 id="hw-start-title">{c.start.title}</h2>
+        <p class="prose">
+          {
+            withPrivacy(c.start.text).map((part, i, all) => (
+              <>
+                {part}
+                {i < all.length - 1 && <a href={pages.privacitat[lang]}>{privacy}</a>}
+              </>
+            ))
+          }
+        </p>
+        <p class="hw-start__note">{c.start.note}</p>
+        <a class="btn btn-primary" href={studyHref} data-cta="com_treballem_inici">
+          {noArrow(c.start.cta)} <span class="arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. Plaques solars: camí a part (la instal·lació té cost; aquí mai "sense cost") -->
+<section class="section band-alt hw-solar-section" aria-labelledby="hw-solar-title" data-section="com_treballem">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.solar.eyebrow}</p>
+      <h2 id="hw-solar-title">{c.solar.title}</h2>
+      <p class="section-head__intro">{c.solar.lead}</p>
+    </div>
+
+    <div class="hw-solar">
+      <span class="hw-solar__track" aria-hidden="true" data-anim><span class="hw-solar__runner"></span></span>
+      <ol class="hw-solar__list">
+        {
+          c.solar.steps.map((step, i) => (
+            <li class="hw-solar__step card" data-reveal style={`--i:${i}`}>
+              <span class="hw-solar__num" aria-hidden="true">
+                {i + 1}
+              </span>
+              <span class="hw-solar__icon" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={solarIcons[step.icon]} />
+              </span>
+              <h3>{step.title}</h3>
+              <p>{step.text}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+
+    <p class="hw-callout" data-reveal>
+      <span class="hw-callout__icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16.5v.5"></path></svg>
+      </span>
+      {c.solar.callout}
+    </p>
+    <p class="hw-more">
+      <a class="hw-arrow-link" href={pages.autoconsum[lang]}>
+        {noArrow(c.solar.link)} <span aria-hidden="true">→</span>
+      </a>
+    </p>
+  </div>
+</section>
+
+<!-- 5. Què passa si…? (pestañas accesibles; sin JS, todas las respuestas en lista) -->
+<section class="section surface-white hw-sc-section" aria-labelledby="hw-sc-title" data-section="com_treballem">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.scenarios.eyebrow}</p>
+      <h2 id="hw-sc-title">{c.scenarios.title}</h2>
+    </div>
+
+    <div class="hw-tabs" data-tabs>
+      <div class="hw-tabs__list" role="tablist" aria-label={c.scenarios.label}>
+        {
+          c.scenarios.items.map((item, i) => (
+            <button
+              class="hw-tabs__tab"
+              type="button"
+              role="tab"
+              id={`hw-tab-${i}`}
+              aria-controls={`hw-panel-${i}`}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              tabindex={i === 0 ? undefined : '-1'}
+            >
+              {item.chip}
+            </button>
+          ))
+        }
+      </div>
+      <div class="hw-tabs__panels">
+        {
+          c.scenarios.items.map((item, i) => (
+            <div class="hw-panel" role="tabpanel" id={`hw-panel-${i}`} aria-labelledby={`hw-tab-${i}`} tabindex="0" hidden={i !== 0}>
+              <span class="hw-panel__icon" aria-hidden="true">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={scenarioIcons[item.icon]} />
+              </span>
+              <div class="hw-panel__body">
+                <h3>{item.q}</h3>
+                <p class="prose">
+                  {item.a.includes(privacy)
+                    ? withPrivacy(item.a).map((part, j, all) => (
+                        <>
+                          {part}
+                          {j < all.length - 1 && <a href={pages.privacitat[lang]}>{privacy}</a>}
+                        </>
+                      ))
+                    : item.a}
+                </p>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <p class="hw-more">
+      <a class="hw-arrow-link" href={pages.empreses[lang]}>
+        {pages.empreses.name[lang]} <span aria-hidden="true">→</span>
+      </a>
+      <a class="hw-arrow-link" href={pages.comunitats[lang]}>
+        {pages.comunitats.name[lang]} <span aria-hidden="true">→</span>
+      </a>
+      <a class="hw-arrow-link" href={pages.llars[lang]}>
+        {pages.llars.name[lang]} <span aria-hidden="true">→</span>
+      </a>
+      <a class="hw-arrow-link" href={pages.gestio[lang]}>
+        {pages.gestio.name[lang]} <span aria-hidden="true">→</span>
+      </a>
+      <a class="hw-arrow-link" href={pages.contacte[lang]}>
+        {pages.contacte.name[lang]} <span aria-hidden="true">→</span>
+      </a>
+    </p>
+  </div>
+</section>
+
+<!-- 6. Cierre -->
+<section class="section hw-close-section" aria-labelledby="hw-close-title" data-section="com_treballem">
+  <div class="container">
+    <div class="hw-close tech-bg" data-reveal>
+      <h2 id="hw-close-title">{c.closing.title}</h2>
+      <p>{c.closing.text}</p>
+      <div class="hw-close__actions">
+        <a class="btn btn-primary btn-lg" href={studyHref} data-cta="com_treballem_cierre">
+          {noArrow(c.closing.cta)} <span class="arrow" aria-hidden="true">→</span>
+        </a>
+        <a class="hw-call" href={phone.tel}>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={phoneIcon} />
+          <span>{c.closing.call} {phone.display}</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { initDecor, initReveal } from '../../scripts/motion';
+
+  initReveal();
+  initDecor();
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // --- El recorregut: la línea se rellena al hacer scroll y cada nodo se enciende al llegar.
+  // Por defecto (sin JS o con movimiento reducido) todo está relleno y encendido.
+  const route = document.querySelector<HTMLElement>('[data-route]');
+  if (route && !reduce && 'IntersectionObserver' in window) {
+    const steps = [...route.querySelectorAll<HTMLElement>('[data-step-index]')];
+    let reached = -1;
+    const paint = () => {
+      route.style.setProperty('--progress', String((reached + 1) / steps.length));
+      steps.forEach((step, i) => step.classList.toggle('is-lit', i <= reached));
+    };
+    route.classList.add('is-pending');
+    paint();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) reached = Math.max(reached, Number((entry.target as HTMLElement).dataset.stepIndex));
+        }
+        paint();
+      },
+      { rootMargin: '0px 0px -45% 0px' },
+    );
+    steps.forEach((step) => observer.observe(step));
+  }
+
+  // --- Què passa si…?: pestañas accesibles (flechas, Inicio y Fin; activación al seleccionar).
+  document.querySelectorAll<HTMLElement>('[data-tabs]').forEach((root) => {
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const panels = tabs.map((tab) => document.getElementById(tab.getAttribute('aria-controls')!)!);
+    const select = (index: number, focus: boolean) => {
+      tabs.forEach((tab, i) => {
+        const on = i === index;
+        tab.setAttribute('aria-selected', String(on));
+        if (on) tab.removeAttribute('tabindex');
+        else tab.setAttribute('tabindex', '-1');
+        panels[i].hidden = !on;
+      });
+      if (focus) tabs[index].focus();
+      tabs[index].scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+    };
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => select(i, false));
+      tab.addEventListener('keydown', (e) => {
+        const last = tabs.length - 1;
+        const to = { ArrowRight: i === last ? 0 : i + 1, ArrowLeft: i === 0 ? last : i - 1, Home: 0, End: last }[e.key];
+        if (to === undefined) return;
+        e.preventDefault();
+        select(to, true);
+      });
+    });
+  });
+</script>
+
+<style>
+  /* ---------------- 1. Hero ---------------- */
+  .hw-hero {
+    padding-block: 1.5rem 3rem;
+    color: var(--white);
+  }
+
+  .hw-hero__mesh {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .hw-hero__blob {
+    position: absolute;
+    width: 34rem;
+    height: 34rem;
+    border-radius: 50%;
+    opacity: 0.55;
+    animation: hw-drift 28s ease-in-out infinite alternate;
+  }
+
+  .hw-hero__blob--a {
+    top: -14rem;
+    right: -12rem;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-500) 45%, transparent), transparent);
+  }
+
+  .hw-hero__blob--b {
+    bottom: -18rem;
+    left: -14rem;
+    background: radial-gradient(closest-side, var(--teal-700), transparent);
+    animation-duration: 34s;
+    animation-direction: alternate-reverse;
+  }
+
+  @keyframes hw-drift {
+    to {
+      transform: translate3d(-6rem, 4rem, 0) scale(1.15);
+    }
+  }
+
+  .hw-hero__grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .hw-hero__tag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: fit-content;
+    margin-bottom: 0.875rem;
+    padding: 0.25rem 0.875rem 0.25rem 0.625rem;
+    border: 1px solid color-mix(in srgb, var(--white) 25%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--white) 8%, transparent);
+    font-weight: 700;
+  }
+
+  .hw-hero__pulse {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    background: var(--orange-500);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--orange-500) 30%, transparent);
+  }
+
+  .hw-hero h1 {
+    max-width: 18ch;
+    margin-bottom: 1rem;
+    color: var(--white);
+  }
+
+  .hw-hero__word {
+    display: inline-block;
+  }
+
+  /* Aparición palabra a palabra: arranca en opacidad 0,15 (nunca 0) para no retrasar el LCP. */
+  @media (prefers-reduced-motion: no-preference) {
+    .hw-hero__word {
+      animation: hw-word 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      animation-delay: calc(0.1s + var(--w) * 70ms);
+    }
+  }
+
+  @keyframes hw-word {
+    from {
+      opacity: 0.15;
+      transform: translateY(0.35em);
+    }
+  }
+
+  .hw-hero__lead {
+    max-width: 36rem;
+    margin-bottom: 1.25rem;
+    color: var(--teal-100);
+    font-size: 1.125rem;
+  }
+
+  /* Mismo espacio entre botón y teléfono que el hero de Nosaltres (.ab-hero__actions). */
+  .hw-hero__actions {
+    display: grid;
+    gap: 0.25rem;
+    justify-items: start;
+  }
+
+  .hw-hero__actions .hw-call {
+    margin-top: 0;
+  }
+
+  .hw-hero__btn {
+    width: 100%;
+  }
+
+  .hw-call {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    margin-top: 0.5rem;
+    color: var(--white);
+    font-weight: 700;
+  }
+
+  .hw-call svg {
+    flex: none;
+    color: var(--orange-500);
+  }
+
+  .hw-hero__art {
+    justify-self: center;
+    width: 11rem;
+  }
+
+  .hw-hero__art svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .hw-hero__track {
+    fill: none;
+    stroke: color-mix(in srgb, var(--white) 18%, transparent);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .hw-hero__line {
+    fill: none;
+    stroke: var(--orange-500);
+    stroke-width: 2;
+    stroke-dasharray: 3 9;
+    stroke-linecap: round;
+  }
+
+  .hw-hero__node circle {
+    fill: var(--teal-900);
+    stroke: var(--orange-500);
+    stroke-width: 3;
+  }
+
+  .hw-hero__node text {
+    fill: var(--white);
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .hw-hero__node {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .hw-hero__spark {
+    fill: var(--orange-500);
+    filter: drop-shadow(0 0 8px var(--orange-500));
+    offset-rotate: 0deg;
+    opacity: 0;
+  }
+
+  /* Punto que viaja de nodo en nodo (motion path). Sin soporte o con movimiento reducido: no se ve. */
+  @supports (offset-path: path('M0 0')) {
+    @media (prefers-reduced-motion: no-preference) {
+      .hw-hero__spark {
+        opacity: 1;
+        animation: hw-travel 14s linear infinite;
+      }
+
+      .hw-hero__node {
+        animation: hw-node 14s linear infinite;
+        animation-delay: calc(var(--n) * 2s);
+      }
+    }
+  }
+
+  @keyframes hw-travel {
+    from {
+      offset-distance: 0%;
+    }
+    to {
+      offset-distance: 100%;
+    }
+  }
+
+  @keyframes hw-node {
+    0%,
+    6%,
+    100% {
+      transform: scale(1);
+    }
+    3% {
+      transform: scale(1.18);
+    }
+  }
+
+  @media (min-width: 30rem) {
+    .hw-hero__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.5rem;
+      align-items: center;
+    }
+
+    .hw-hero__btn {
+      width: auto;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .hw-hero {
+      padding-block: 3.5rem 4.5rem;
+    }
+
+    .hw-hero__grid {
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+      align-items: center;
+      gap: 2.5rem;
+    }
+
+    .hw-hero__art {
+      width: 100%;
+      max-width: 20rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .hw-hero__lead {
+      font-size: 1.25rem;
+    }
+  }
+
+  /* ---------------- 2. El recorregut ---------------- */
+  .hw-center {
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .hw-center .eyebrow {
+    justify-content: center;
+  }
+
+  .hw-legend {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .hw-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.75rem;
+    border-radius: 999px;
+    font-weight: 700;
+    line-height: 1.6;
+  }
+
+  .hw-chip--tu {
+    background: var(--orange-100);
+    color: var(--teal-900);
+  }
+
+  .hw-chip--logik {
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  /* Móvil: una columna con la línea a la izquierda. */
+  .hw-route {
+    --node: 2.5rem;
+    position: relative;
+  }
+
+  .hw-route__track {
+    position: absolute;
+    top: 1rem;
+    bottom: 1rem;
+    left: calc(var(--node) / 2 - 1.5px);
+    width: 3px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: var(--teal-100);
+  }
+
+  .hw-route__fill {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(var(--orange-700), var(--orange-500));
+    transform: scaleY(var(--progress, 1));
+    transform-origin: top;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .hw-route__list {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0 0 0 calc(var(--node) + 0.875rem);
+    list-style: none;
+  }
+
+  .hw-step {
+    position: relative;
+    min-width: 0;
+  }
+
+  .hw-step__node {
+    position: absolute;
+    top: 1.25rem;
+    left: calc(-1 * (var(--node) + 0.875rem));
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: var(--node);
+    height: var(--node);
+    border-radius: 50%;
+    background: var(--orange-500);
+    color: var(--teal-900);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    box-shadow: 0 0 0 5px var(--white);
+    transition:
+      background-color 0.3s,
+      color 0.3s,
+      transform 0.3s;
+  }
+
+  .hw-route.is-pending .hw-step:not(.is-lit) .hw-step__node {
+    background: var(--teal-100);
+    color: var(--teal-900);
+    transform: scale(0.88);
+  }
+
+  .hw-step__card {
+    padding: 1.25rem;
+  }
+
+  .hw-step--tu .hw-step__card {
+    border-color: color-mix(in srgb, var(--orange-500) 40%, transparent);
+  }
+
+  .hw-step__top {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+
+  .hw-step__icon {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.875rem;
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .hw-step--tu .hw-step__icon {
+    background: var(--orange-100);
+    color: var(--teal-900);
+  }
+
+  .hw-step__icon :global(.ic-a) {
+    stroke: var(--orange-500);
+  }
+
+  .hw-step--tu .hw-step__icon :global(.ic-a) {
+    stroke: var(--orange-700);
+  }
+
+  .hw-step__card h3 {
+    margin-bottom: 0.375rem;
+  }
+
+  .hw-step__card p {
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  /* Iconos animados: un gesto al encenderse el paso; el 6 late y el 7 hace sonar la campana. */
+  @media (prefers-reduced-motion: no-preference) {
+    .hw-step.is-lit .hw-step__icon :global(.ic-a) {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: hw-pop 0.6s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+    }
+
+    .hw-step--calendar.is-lit .hw-step__node {
+      animation: hw-pulse 2.4s ease-in-out infinite;
+    }
+
+    .hw-step--bell.is-lit .hw-step__icon :global(.ic-bell) {
+      transform-box: fill-box;
+      transform-origin: 50% 0;
+      animation: hw-ring 2.8s ease-in-out infinite;
+    }
+  }
+
+  @keyframes hw-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+  }
+
+  @keyframes hw-pulse {
+    50% {
+      box-shadow:
+        0 0 0 5px var(--white),
+        0 0 0 11px color-mix(in srgb, var(--orange-500) 30%, transparent);
+    }
+  }
+
+  @keyframes hw-ring {
+    0%,
+    60%,
+    100% {
+      transform: rotate(0);
+    }
+    66% {
+      transform: rotate(14deg);
+    }
+    74% {
+      transform: rotate(-12deg);
+    }
+    82% {
+      transform: rotate(6deg);
+    }
+  }
+
+  /* Escritorio: línea central y dos carriles ("Tu" a la izquierda, "Logik" a la derecha). */
+  @media (min-width: 56rem) {
+    .hw-route {
+      --node: 3rem;
+      --gutter: 5rem;
+    }
+
+    .hw-route__track {
+      left: calc(50% - 1.5px);
+    }
+
+    .hw-route__list {
+      grid-template-columns: minmax(0, 1fr) var(--gutter) minmax(0, 1fr);
+      gap: 0.75rem 0;
+      padding: 0;
+    }
+
+    .hw-step {
+      grid-row: var(--row);
+    }
+
+    .hw-step--tu {
+      grid-column: 1;
+    }
+
+    .hw-step--logik {
+      grid-column: 3;
+    }
+
+    .hw-step__node {
+      left: auto;
+      right: calc(-1 * (var(--gutter) + var(--node)) / 2);
+    }
+
+    .hw-step--logik .hw-step__node {
+      right: auto;
+      left: calc(-1 * (var(--gutter) + var(--node)) / 2);
+    }
+
+    .hw-step--tu .hw-step__card {
+      text-align: right;
+    }
+
+    .hw-step--tu .hw-step__top {
+      flex-direction: row-reverse;
+    }
+  }
+
+  /* ---------------- 3. Per començar ---------------- */
+  .hw-start-section {
+    padding-block: 1rem 3rem;
+  }
+
+  .hw-start {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 52rem;
+    margin-inline: auto;
+    padding: 1.5rem;
+    border-color: color-mix(in srgb, var(--orange-500) 45%, transparent);
+    box-shadow: 0 1.5rem 3rem -2rem color-mix(in srgb, var(--teal-900) 40%, transparent);
+  }
+
+  .hw-start__icon {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 5rem;
+    height: 5rem;
+    overflow: hidden;
+    border-radius: 1.25rem;
+    background: var(--teal-900);
+  }
+
+  .hw-start__doc {
+    stroke: var(--white);
+    stroke-width: 2.5;
+    stroke-linejoin: round;
+  }
+
+  .hw-start__lines {
+    stroke: var(--teal-100);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+  }
+
+  .hw-start__scan {
+    fill: var(--orange-500);
+    filter: drop-shadow(0 0 6px var(--orange-500));
+  }
+
+  /* La línea luminosa recorre la factura de arriba abajo, despacio. */
+  @media (prefers-reduced-motion: no-preference) {
+    .hw-start__scan {
+      animation: hw-scan 3.6s ease-in-out infinite;
+    }
+  }
+
+  @keyframes hw-scan {
+    0%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.2;
+    }
+    50% {
+      transform: translateY(36px);
+      opacity: 1;
+    }
+  }
+
+  .hw-start__body h2 {
+    font-size: clamp(1.375rem, 2.5vw + 0.75rem, 1.75rem);
+  }
+
+  .hw-start__body .prose {
+    color: var(--text-muted);
+  }
+
+  .hw-start__note {
+    color: var(--teal-900);
+    font-weight: 700;
+  }
+
+  @media (min-width: 40rem) {
+    .hw-start {
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: start;
+      gap: 1.75rem;
+      padding: 2rem;
+    }
+  }
+
+  /* ---------------- 4. Plaques solars ---------------- */
+  .hw-solar {
+    position: relative;
+  }
+
+  /* Línea con un punto que viaja (móvil: vertical; escritorio: horizontal). */
+  .hw-solar__track {
+    position: absolute;
+    top: 2rem;
+    bottom: 2rem;
+    left: 1.75rem;
+    width: 3px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--teal-900) 15%, transparent);
+  }
+
+  .hw-solar__runner {
+    position: absolute;
+    inset: 0;
+  }
+
+  .hw-solar__runner::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -3.5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--orange-500);
+    box-shadow: 0 0 10px var(--orange-500);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hw-solar__runner {
+      animation: hw-run-y 5s linear infinite;
+    }
+  }
+
+  @keyframes hw-run-y {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  .hw-solar__list {
+    position: relative;
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .hw-solar__step {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 0.875rem;
+    padding: 1.25rem;
+  }
+
+  .hw-solar__num {
+    position: absolute;
+    top: 0.75rem;
+    right: 1rem;
+    color: var(--text-muted);
+    font-family: var(--font-heading);
+    font-weight: 700;
+  }
+
+  .hw-solar__icon {
+    display: grid;
+    grid-row: span 2;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 0.875rem;
+    background: var(--orange-100);
+    color: var(--teal-900);
+  }
+
+  .hw-solar__icon :global(.ic-a) {
+    stroke: var(--orange-700);
+  }
+
+  .hw-solar__step h3 {
+    margin: 0 2rem 0.25rem 0;
+  }
+
+  .hw-solar__step p {
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hw-solar__icon :global(.ic-sun) {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: hw-spin 18s linear infinite;
+    }
+
+    .hw-solar__icon :global(.ic-push) {
+      animation: hw-push 2.4s ease-in-out infinite;
+    }
+
+    .hw-solar__icon :global(.ic-pop) {
+      animation: hw-bob 2.8s ease-in-out infinite;
+    }
+  }
+
+  @keyframes hw-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes hw-push {
+    50% {
+      transform: translateX(2px);
+    }
+  }
+
+  @keyframes hw-bob {
+    50% {
+      transform: translateY(-1.5px);
+    }
+  }
+
+  @media (min-width: 56rem) {
+    .hw-solar__track {
+      top: 3.6rem;
+      bottom: auto;
+      left: 2rem;
+      right: 2rem;
+      width: auto;
+      height: 3px;
+    }
+
+    .hw-solar__runner::after {
+      top: -3.5px;
+      right: 0;
+      bottom: auto;
+      left: auto;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .hw-solar__runner {
+        animation-name: hw-run-x;
+      }
+    }
+
+    .hw-solar__list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+
+    .hw-solar__step {
+      grid-template-columns: 1fr;
+      align-content: start;
+      padding: 1.5rem;
+    }
+
+    .hw-solar__icon {
+      grid-row: auto;
+      margin-bottom: 1rem;
+    }
+  }
+
+  @keyframes hw-run-x {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .hw-callout {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    max-width: 44rem;
+    margin: 1.75rem 0 0;
+    padding: 1rem 1.25rem;
+    border-left: 4px solid var(--orange-500);
+    border-radius: 0.75rem;
+    background: var(--white);
+    color: var(--teal-900);
+    font-weight: 700;
+  }
+
+  .hw-callout__icon {
+    flex: none;
+    margin-top: 0.1rem;
+    color: var(--orange-700);
+  }
+
+  .hw-more {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.5rem;
+    margin: 1.25rem 0 0;
+  }
+
+  .hw-arrow-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 44px;
+    color: var(--orange-700);
+    font-weight: 700;
+  }
+
+  /* orange-700 no llega a 4,5:1 sobre teal suave: ahí el enlace va en teal. */
+  .band-alt .hw-arrow-link {
+    color: var(--teal-900);
+  }
+
+  /* ---------------- 5. Què passa si…? ---------------- */
+  .hw-tabs__list {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0 -1rem 1rem;
+    padding: 0.25rem 1rem 0.5rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 1rem;
+    scrollbar-width: thin;
+  }
+
+  html:not(.js) .hw-tabs__list {
+    display: none;
+  }
+
+  .hw-tabs__tab {
+    flex: none;
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    border: 1.5px solid var(--teal-100);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--teal-900);
+    font: inherit;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    scroll-snap-align: start;
+    transition:
+      background-color 0.2s,
+      border-color 0.2s,
+      color 0.2s;
+  }
+
+  .hw-tabs__tab[aria-selected='true'] {
+    border-color: var(--teal-900);
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  @media (hover: hover) {
+    .hw-tabs__tab:hover {
+      border-color: var(--teal-900);
+    }
+  }
+
+  /*
+   * Paneles: con JS, todos en la misma celda (la altura es la del más largo): cambiar de pestaña
+   * no mueve la página. El inactivo conserva el atributo hidden (oculto para los lectores).
+   * Sin JS: todos visibles, uno tras otro.
+   */
+  .hw-tabs__panels {
+    display: grid;
+    gap: 1rem;
+  }
+
+  html:not(.js) .hw-panel[hidden] {
+    display: grid;
+  }
+
+  .js .hw-tabs__panels {
+    gap: 0;
+  }
+
+  .js .hw-panel {
+    grid-area: 1 / 1;
+  }
+
+  .js .hw-panel[hidden] {
+    display: grid;
+    visibility: hidden;
+  }
+
+  .hw-panel {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+    background:
+      radial-gradient(24rem 12rem at 100% 0%, color-mix(in srgb, var(--orange-500) 12%, transparent), transparent 70%),
+      var(--cream);
+    border: 1px solid var(--teal-100);
+  }
+
+  .hw-panel__icon {
+    display: grid;
+    place-items: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 1.25rem;
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .hw-panel__icon :global(.ic-a) {
+    stroke: var(--orange-500);
+  }
+
+  .hw-panel__body h3 {
+    margin-bottom: 0.5rem;
+  }
+
+  .hw-panel__body p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 1.0625rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .js .hw-panel:not([hidden]) {
+      animation: hw-panel-in 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+
+    .js .hw-panel:not([hidden]) .hw-panel__icon {
+      animation: hw-pop 0.5s cubic-bezier(0.3, 1.5, 0.5, 1) 0.05s both;
+    }
+  }
+
+  @keyframes hw-panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+
+  @media (max-width: 29.99rem) {
+    .hw-panel {
+      grid-template-columns: 1fr;
+      padding: 1.25rem;
+    }
+
+    .hw-panel__icon {
+      width: 3.25rem;
+      height: 3.25rem;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .hw-tabs__list {
+      flex-wrap: wrap;
+      margin-inline: 0;
+      padding-inline: 0;
+      overflow: visible;
+    }
+  }
+
+  /* ---------------- 6. Cierre ---------------- */
+  .hw-close {
+    padding: 2rem 1.5rem;
+    border-radius: 1.5rem;
+    color: var(--white);
+    text-align: center;
+  }
+
+  .hw-close h2 {
+    color: var(--white);
+    font-size: clamp(2rem, 5vw + 1rem, 3rem);
+  }
+
+  .hw-close p {
+    max-width: 34rem;
+    margin-inline: auto;
+    color: var(--teal-100);
+    font-size: 1.125rem;
+  }
+
+  .hw-close__actions {
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .hw-close__actions .btn {
+    width: 100%;
+  }
+
+  @media (min-width: 30rem) {
+    .hw-close__actions .btn {
+      width: auto;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .hw-close {
+      padding: 3.5rem 3rem;
+    }
+  }
+
+  /* Movimiento reducido: sin bucles ni desplazamientos (además de la regla global). */
+  @media (prefers-reduced-motion: reduce) {
+    .hw-hero__blob,
+    .hw-route__fill,
+    .hw-step__node,
+    .hw-tabs__tab {
+      animation: none;
+      transition: none;
+    }
+
+    .hw-solar__runner {
+      display: none;
+    }
+  }
+</style>

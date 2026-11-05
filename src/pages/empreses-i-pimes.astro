@@ -1,0 +1,181 @@
+---
+// Empreses i pimes (català). Textos de Eliana (encargo del 3/11/2026), con apòstrof recte.
+// Los marcados [Claude] no estaban en el encargo.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BusinessPage from '../components/business/business-page.astro';
+import { businessSchema } from '../components/business/schema';
+import type { BusinessContent } from '../components/business/types';
+import { pages } from '../config/pages';
+import logo from '../assets/images/logo-web.webp';
+import { safeJsonLd } from '../lib/json-ld';
+
+const title = 'Consultoria energètica per a pimes | Logik Solutions';
+const description =
+  "Consultoria energètica per a pimes i empreses a Girona i a tot Espanya: revisem la teva factura, comparem ofertes i et fem el seguiment tot l'any.";
+
+const content: BusinessContent = {
+  hero: {
+    tag: 'Empreses i pimes',
+    title: 'Consultoria energètica per a pimes i empreses a Girona',
+    lead: "Revisem la factura de llum i gas del teu negoci, comparem ofertes de diverses comercialitzadores i ens ocupem dels tràmits i del seguiment tot l'any.",
+    cta: 'Revisa la factura del meu negoci →',
+    note: 'Sense cost per a tu: ens remunera la comercialitzadora.',
+    call: 'Truca al',
+    blocks: ['Potència', 'Energia', 'Impostos i altres conceptes'],
+  },
+  // Rótulos de las cifras [Claude]: las cifras son las confirmadas.
+  stats: [
+    { value: '+2.000', label: 'clients' },
+    { value: '+10', label: 'anys al sector' },
+    { value: '12 mesos', label: 'de seguiment' },
+  ],
+  sectors: {
+    eyebrow: 'Per a qui',
+    title: 'Pensat per a negocis com el teu',
+    text: 'Logik Solutions és una consultoria energètica de Girona. Les empreses i pimes són una de les àrees on treballem, juntament amb les comunitats de veïns i les llars.',
+    items: [
+      { key: 'hostaleria', label: 'Hostaleria i restauració', activity: 'Restauració i hostaleria' },
+      { key: 'comerc', label: 'Comerç', activity: 'Comerç' },
+      { key: 'tallers', label: 'Tallers', activity: 'Indústria i tallers' },
+      { key: 'cliniques', label: 'Clíniques', activity: 'Salut i benestar' },
+      { key: 'altres', label: 'Altres negocis', activity: 'Altres' },
+    ],
+    hint: 'Tria el teu tipus de negoci i comença el pre-estudi.',
+  },
+  bill: {
+    eyebrow: 'Entén la teva factura',
+    title: "Què mirem a la factura d'un negoci",
+    intro:
+      "Tota factura de la llum té tres blocs: la potència, l'energia i els impostos i altres conceptes, com el lloguer de l'equip de mesura. En un negoci, hi posem la lupa en tres punts.",
+    lookLabel: 'Què mirem:',
+    items: [
+      {
+        icon: 'gauge',
+        title: 'La potència',
+        text: 'Pagues per la potència que tens contractada, la facis servir o no. Si és més alta del que necessites, la pagues cada mes igualment; si és massa baixa, et pot saltar el general.',
+        look: 'La potència contractada i la que fas servir realment.',
+      },
+      {
+        icon: 'clock',
+        title: 'Les franges horàries',
+        text: 'La factura classifica el consum en franges horàries (punta, pla i vall) i el que consumeixes a cada una pot tenir un preu diferent segons el contracte.',
+        look: "A quines hores consumeix el teu negoci i si el contracte s'hi adapta.",
+        source: { label: 'Font: CNMC', href: 'https://cnmc.es/prensa/circular-3-2020-peajes-electricidad-transporte-distribucion-20200124' },
+      },
+      {
+        icon: 'calendar',
+        title: 'El contracte',
+        text: "Convé saber quan venç el contracte i quines condicions s'apliquen després.",
+        look: "Les condicions i el venciment. Per això t'avisem al mes 11.",
+      },
+    ],
+  },
+  fit: {
+    eyebrow: 'Quan té sentit revisar-ho',
+    title: "Et reconeixes en alguna d'aquestes situacions?",
+    label: "Situacions en què té sentit revisar la factura", // [Claude]: nombre accesible del grupo
+    items: [
+      'He obert, ampliat o reformat el negoci',
+      "He canviat d'horari o de maquinària",
+      'El contracte de la llum ve a venciment',
+      'No recordo quan vaig revisar la factura per última vegada',
+    ],
+    help: "Marca les que t'encaixin.",
+    yes: 'Si és així, val la pena mirar-ho: amb una factura recent ja podem començar.',
+    cta: 'Revisa la factura del meu negoci →',
+  },
+  services: {
+    title: 'Què fem per a la teva empresa',
+    items: [
+      {
+        title: 'Consultoria i seguiment',
+        // Encargo: "amb aviso de renovació"; corregido a "avís" (errata en catalán).
+        text: 'Revisem la factura, comparem ofertes de diverses comercialitzadores i et fem el seguiment mensual i anual, amb avís de renovació al mes 11.',
+        link: 'Com treballem →',
+        page: 'comTreballem',
+      },
+      {
+        title: 'Gestions i tràmits',
+        text: 'Canvis de titularitat, pujades i baixades de potència i altes noves, amb tracte directe amb els administradors de cada companyia.',
+        link: 'Gestió i tràmits →',
+        page: 'gestio',
+      },
+      {
+        title: 'Plaques solars per a pimes',
+        text: "Primer estudiem el teu consum. Si l'autoconsum té sentit, la instal·lació la fan enginyers i especialistes. La instal·lació té un cost.",
+        link: 'Autoconsum fotovoltaic →',
+        page: 'autoconsum',
+      },
+    ],
+  },
+  steps: {
+    title: "Com t'acompanyem, de la factura a la renovació",
+    items: [
+      { icon: 'invoice', title: 'Revisem la factura' },
+      { icon: 'compare', title: 'Comparem ofertes' },
+      { icon: 'stamp', title: 'Fem els tràmits' },
+      { icon: 'bell', title: 'Seguiment i renovació al mes 11' },
+    ],
+    cta: 'Veure com treballem →',
+  },
+  logosTitle: 'Empreses que ja confien en nosaltres',
+  blogTitle: 'Per aprofundir',
+  faq: {
+    eyebrow: 'Dubtes?',
+    title: 'Preguntes freqüents sobre consultoria energètica per a pimes',
+    items: [
+      {
+        q: 'Quant costa una consultoria energètica per a una pime?',
+        a: 'Per a tu, el servei de consultoria i gestions no té cost: ens remunera la comercialitzadora amb la qual contractes.',
+      },
+      {
+        q: "Què és la potència contractada d'un negoci?",
+        a: "És el màxim que pot fer servir el negoci alhora, i la pagues cada mes tant si l'utilitzes com si no. Si és més alta del que necessites, pagues de més; si és massa baixa, et pot saltar el general. Amb una factura recent i el teu consum, t'ho podem valorar.",
+      },
+      {
+        q: 'Què són les franges horàries de la factura?',
+        a: 'Són els trams del dia en què es classifica el consum: punta, pla i vall. El preu pot dependre de la franja segons el contracte, per això mirem a quines hores consumeix el teu negoci.',
+      },
+      {
+        q: 'Quins tipus de negoci atenen?',
+        a: "Treballem amb empreses i pimes de diferents sectors, com ara hostaleria i restauració, comerç, tallers o clíniques. Explica'ns el teu cas i el mirem.",
+      },
+      {
+        q: 'Puc posar plaques solars al meu negoci?',
+        a: "Sí, per a pimes i llars, amb enginyers i especialistes en instal·lació. La instal·lació té un cost; abans t'expliquem si té sentit pel teu consum.",
+      },
+      {
+        q: 'Feu visites al meu negoci?',
+        a: 'Sí, fem visites presencials a Girona i a localitats properes. També treballem a tot Catalunya i a tot Espanya.',
+      },
+    ],
+  },
+  study: {
+    title: 'Comença el pre-estudi del teu negoci',
+    lead: 'Ens expliques el teu cas en uns quants passos. Sense cost per a tu: ens remunera la comercialitzadora.',
+    callLead: 'Prefereixes trucar?',
+    other: 'No ets una empresa?',
+  },
+  serviceType: 'Consultoria energètica per a pimes i empreses',
+  breadcrumbHome: 'Inici',
+};
+
+const pageUrl = new URL(pages.empreses.ca, Astro.site).href;
+const logoUrl = new URL(logo.src, Astro.site).href;
+const schema = businessSchema({
+  lang: 'ca',
+  pageUrl,
+  homeUrl: new URL(pages.home.ca, Astro.site).href,
+  title,
+  description,
+  homeName: content.breadcrumbHome,
+  pageName: pages.empreses.name.ca,
+  serviceType: content.serviceType,
+  faq: content.faq.items,
+});
+---
+
+<BaseLayout lang="ca" pageKey="empreses" title={title} description={description} og={{ image: logoUrl, imageAlt: 'Logik Solutions' }}>
+  <Fragment slot="head" set:html={`<script type="application/ld+json">${safeJsonLd(schema)}</script>`} />
+  <BusinessPage lang="ca" content={content} />
+</BaseLayout>

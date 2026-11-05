@@ -1,0 +1,175 @@
+---
+// Banner de consentimiento (bilingüe: sigue el idioma de la página).
+// - Tres botones con las mismas clases (.btn .btn-secondary .cookie-banner__choice): mismo tamaño,
+//   color y peso. Rechazar es tan fácil como aceptar.
+// - Configurar: técnicas siempre activas (sin interruptor); analítica y contenido externo con
+//   interruptor, desactivados; publicidad solo si ADS_CONSENT (src/config/legal.ts).
+// - Cerrar (✕ o Escape) o seguir navegando no es consentir: no se guarda nada ni se carga nada.
+// - No bloquea el scroll ni tapa la barra fija de llamar y WhatsApp (estilos en global.css).
+import { SITE_ENV, PUBLIC_GTM_ID, PUBLIC_GTM_TEST } from 'astro:env/server';
+import { ADS_CONSENT } from '../config/legal';
+import { pages, type Locale } from '../config/pages';
+import { useTranslations } from '../i18n/ui';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+// En staging no se pasa el ID (GTM nunca se carga y no se ensucian los datos),
+// salvo con PUBLIC_GTM_TEST=true para usar la vista previa de GTM.
+const gtmEnabled = SITE_ENV === 'production' || PUBLIC_GTM_TEST;
+const gtmId = gtmEnabled && PUBLIC_GTM_ID ? PUBLIC_GTM_ID : undefined;
+const options = [
+  { key: 'analytics', label: t('cookies.analytics'), text: t('cookies.analyticsText') },
+  { key: 'external', label: t('cookies.external'), text: t('cookies.externalText') },
+  ...(ADS_CONSENT ? [{ key: 'ads', label: t('cookies.ads'), text: t('cookies.adsText') }] : []),
+];
+---
+
+<!-- Oculto por defecto: el JS lo muestra si no hay elección guardada (o tiene más de 12 meses). -->
+<section
+  class="cookie-banner"
+  role="dialog"
+  aria-modal="false"
+  aria-labelledby="cookie-title"
+  aria-describedby="cookie-text"
+  tabindex="-1"
+  data-cookie-banner
+  data-gtm-id={gtmId}
+  hidden
+>
+  <div class="cookie-banner__inner">
+    <!-- No es un encabezado: el banner va antes del h1 y no forma parte del contenido. -->
+    <p class="cookie-banner__title" id="cookie-title">{t('cookies.title')}</p>
+    <button class="cookie-banner__close" type="button" aria-label={t('cookies.close')} data-cookie-close>
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+    </button>
+    <p id="cookie-text">{t('cookies.text')} <a href={pages.cookies[lang]}>{pages.cookies.name[lang]}</a>.</p>
+
+    <div class="cookie-banner__panel" id="cookie-panel" data-cookie-panel hidden>
+      <div class="cookie-banner__option">
+        <p>
+          <strong>{t('cookies.necessary')}</strong>
+          <span>{t('cookies.necessaryText')}</span>
+        </p>
+        <span class="cookie-banner__always">{t('cookies.alwaysOn')}</span>
+      </div>
+      {
+        options.map((o) => (
+          <div class="cookie-banner__option">
+            <label for={`cookie-${o.key}`}>
+              <strong>{o.label}</strong>
+              <span id={`cookie-${o.key}-text`}>{o.text}</span>
+            </label>
+            <input
+              class="cookie-switch"
+              id={`cookie-${o.key}`}
+              type="checkbox"
+              role="switch"
+              aria-describedby={`cookie-${o.key}-text`}
+              data-cookie-option={o.key}
+            />
+          </div>
+        ))
+      }
+      <button class="btn btn-secondary cookie-banner__save" type="button" data-cookie-save>{t('cookies.save')}</button>
+    </div>
+
+    <!-- Tres botones con las mismas clases: mismo tamaño, color y peso visual. -->
+    <div class="cookie-banner__actions">
+      <button class="btn btn-secondary cookie-banner__choice" type="button" data-cookie-accept>{t('cookies.accept')}</button>
+      <button class="btn btn-secondary cookie-banner__choice" type="button" data-cookie-reject>{t('cookies.reject')}</button>
+      <button
+        class="btn btn-secondary cookie-banner__choice"
+        type="button"
+        aria-expanded="false"
+        aria-controls="cookie-panel"
+        data-cookie-configure
+      >
+        {t('cookies.configure')}
+      </button>
+    </div>
+  </div>
+</section>
+
+<script>
+  import {
+    NO_CONSENT,
+    dismissWithoutChoice,
+    initGtm,
+    readConsent,
+    saveConsent,
+    wasDismissed,
+    type Consent,
+  } from '../scripts/consent';
+  import '../scripts/analytics';
+  import '../scripts/embeds';
+
+  const banner = document.querySelector<HTMLElement>('[data-cookie-banner]');
+  if (banner) {
+    const panel = banner.querySelector<HTMLElement>('[data-cookie-panel]')!;
+    const configure = banner.querySelector<HTMLButtonElement>('[data-cookie-configure]')!;
+    const switches = [...banner.querySelectorAll<HTMLInputElement>('[data-cookie-option]')];
+    let opener: HTMLElement | null = null;
+
+    const setPanel = (open: boolean) => {
+      panel.hidden = !open;
+      configure.setAttribute('aria-expanded', String(open));
+      if (open) switches[0]?.focus();
+    };
+
+    const show = (withPanel: boolean, from: HTMLElement | null = null) => {
+      const saved = readConsent() ?? NO_CONSENT;
+      // Nada premarcado: cada interruptor refleja la elección guardada (sin elección, todos apagados).
+      for (const input of switches) input.checked = saved[input.dataset.cookieOption as keyof Consent] === true;
+      opener = from;
+      banner.hidden = false;
+      setPanel(withPanel);
+      if (!withPanel) banner.focus({ preventScroll: true });
+    };
+
+    const hide = () => {
+      banner.hidden = true;
+      opener?.focus();
+      opener = null;
+    };
+
+    const choose = (consent: Consent) => {
+      hide();
+      saveConsent(consent);
+    };
+
+    const all = (on: boolean): Consent => ({ analytics: on, external: on, ads: on && switches.some((s) => s.dataset.cookieOption === 'ads') });
+
+    banner.querySelector('[data-cookie-accept]')!.addEventListener('click', () => choose(all(true)));
+    banner.querySelector('[data-cookie-reject]')!.addEventListener('click', () => choose(all(false)));
+    banner.querySelector('[data-cookie-save]')!.addEventListener('click', () => {
+      const picked = { ...NO_CONSENT };
+      for (const input of switches) picked[input.dataset.cookieOption as keyof Consent] = input.checked;
+      choose(picked);
+    });
+    configure.addEventListener('click', () => setPanel(configure.getAttribute('aria-expanded') !== 'true'));
+
+    // Cerrar sin elegir = no consentir: no se guarda ninguna elección y no se carga nada.
+    const close = () => {
+      if (!readConsent()) dismissWithoutChoice();
+      hide();
+    };
+    banner.querySelector('[data-cookie-close]')!.addEventListener('click', close);
+    banner.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') close();
+    });
+
+    // "Configurar cookies" (pie y política de cookies): abre el banner con el panel.
+    document.querySelectorAll<HTMLElement>('[data-cookie-open]').forEach((button) => {
+      button.hidden = false;
+      button.addEventListener('click', () => show(true, button));
+    });
+
+    initGtm(banner.dataset.gtmId);
+
+    if (!readConsent() && !wasDismissed()) show(false);
+  }
+</script>

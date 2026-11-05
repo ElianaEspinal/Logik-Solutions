@@ -1,0 +1,147 @@
+---
+// Hogares (castellano). Textos de Eliana (encargo del 4/11/2026), con apóstrofo recto.
+// Los marcados [Claude] no estaban en el encargo.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HomesPage from '../../components/homes/homes-page.astro';
+import { homesSchema } from '../../components/homes/schema';
+import type { HomesContent } from '../../components/homes/types';
+import { pages } from '../../config/pages';
+import logo from '../../assets/images/logo-web.webp';
+import { safeJsonLd } from '../../lib/json-ld';
+
+const title = 'Asesor energético para particulares | Logik Solutions';
+const description =
+  'Asesor energético para particulares y hogares en Girona y toda España: te explicamos tu factura de luz y gas, comparamos ofertas y hacemos los trámites.';
+
+const content: HomesContent = {
+  hero: {
+    tag: 'Hogares',
+    title: 'Asesor energético para particulares y hogares en Girona',
+    lead: 'Te explicamos la factura de la luz y del gas con palabras sencillas, comparamos las tarifas de varias comercializadoras y nos ocupamos de los trámites y del seguimiento todo el año.',
+    cta: 'Revisa mi factura →',
+    note: 'Sin coste para ti: nos remunera la comercializadora.',
+    call: 'Llama al',
+  },
+  // Rótulos de las cifras [Claude], los mismos que en Empresas y pymes: las cifras son las confirmadas.
+  stats: [
+    { value: '+2.000', label: 'clientes' },
+    { value: '+10', label: 'años en el sector' },
+    { value: '12 meses', label: 'de seguimiento' },
+  ],
+  bill: {
+    eyebrow: 'Sin letra pequeña',
+    title: 'Entender la factura de la luz, sin letra pequeña',
+    intro: 'Toca los puntos de la factura y te explicamos qué es cada cosa.',
+    label: 'Puntos de la factura', // [Claude]: nombre accesible del grupo de botones
+    items: [
+      { key: 'potencia', title: 'Potencia', text: 'Lo que pagas por tener la potencia contratada, la uses o no.' },
+      { key: 'energia', title: 'Energía', text: 'Lo que consumes realmente.' },
+      { key: 'impostos', title: 'Impuestos y otros conceptos', text: 'Impuestos y otros conceptos, como el alquiler del equipo de medida.' },
+    ],
+    close: 'Con una factura reciente vemos si cada bloque tiene sentido en tu caso.',
+    cta: 'Revisa mi factura →',
+  },
+  power: {
+    eyebrow: 'Potencia',
+    title: 'La potencia de tu casa, bien mirada',
+    text: 'La potencia contratada es el máximo que puedes usar a la vez. Si es más alta de lo que necesitas, la pagas cada mes igualmente; si es demasiado baja, puede saltarte el general. Con una factura reciente y tu consumo, podemos valorarlo.',
+    link: 'Subidas y bajadas de potencia →',
+    zones: ['Demasiado baja', 'Ajustada', 'Demasiado alta'],
+  },
+  chat: {
+    eyebrow: 'Hablemos',
+    title: '¿Qué te preocupa de tu luz y de tu gas?',
+    intro:
+      'Logik Solutions es una consultoría energética de Girona y los hogares son una de las áreas en las que trabajamos, junto con las empresas y pymes y las comunidades de vecinos. Elige una frase y te respondemos.',
+    label: '¿Qué te preocupa?', // [Claude]: nombre accesible del grupo
+    answerLabel: 'Respuesta de Logik Solutions', // [Claude]
+    items: [
+      {
+        q: 'No entiendo mi factura',
+        a: 'Te lo explicamos con palabras sencillas: qué pagas por potencia, qué por energía y qué es cada impuesto o concepto.',
+        action: { kind: 'study', label: 'Revisa mi factura →' },
+      },
+      {
+        q: 'Quiero saber si mi tarifa se adapta a mis horarios',
+        a: 'Miramos a qué horas consumes y si el contrato se adapta.',
+        action: { kind: 'study', label: 'Revisa mi factura →' },
+      },
+      {
+        q: 'Quiero cambiar la titularidad o la potencia',
+        a: 'Nos ocupamos nosotros, con trato directo con los administradores de cada compañía.',
+        action: { kind: 'page', label: 'Gestión y trámites →', page: 'gestio' },
+      },
+      {
+        q: 'Estoy pensando en placas solares',
+        a: 'Primero estudiamos tu consumo. Si el autoconsumo tiene sentido, la instalación la hacen ingenieros y especialistas. La instalación tiene un coste; antes te explicamos si tiene sentido para tu consumo.',
+        action: { kind: 'page', label: 'Autoconsumo fotovoltaico →', page: 'autoconsum' },
+      },
+      {
+        q: 'Solo quiero que alguien se ocupe',
+        a: 'Revisamos la factura, comparamos ofertas de varias comercializadoras y te hacemos el seguimiento mensual y anual, con aviso de renovación en el mes 11.',
+        action: { kind: 'page', label: 'Cómo trabajamos →', page: 'comTreballem' },
+      },
+    ],
+  },
+  blogTitle: 'Para profundizar', // [Claude]: mismo título que en Empresas y pymes
+  faq: {
+    eyebrow: '¿Dudas?',
+    title: 'Preguntas frecuentes sobre asesoría energética para hogares',
+    items: [
+      {
+        q: '¿Cómo puedo entender la factura de la luz?',
+        a: 'Tiene tres bloques: la potencia, la energía y los impuestos y otros conceptos, como el alquiler del equipo de medida. Si nos envías una factura reciente, te la explicamos con palabras sencillas.',
+      },
+      {
+        q: '¿Tiene coste para mí?',
+        a: 'El servicio de consultoría y gestiones no tiene coste para ti: nos remunera la comercializadora con la que contratas.',
+      },
+      {
+        q: '¿Tengo que cambiar de compañía de luz?',
+        a: 'No necesariamente. Primero revisamos tu contrato y te decimos qué tiene sentido en tu caso.',
+      },
+      {
+        q: '¿Revisáis también la factura del gas?',
+        a: 'Sí, revisamos la factura de la luz y del gas.',
+      },
+      {
+        q: '¿Quién hace los trámites?',
+        a: 'Los hacemos nosotros: cambios de titularidad, subidas y bajadas de potencia y altas nuevas, con trato directo con los administradores de cada compañía.',
+      },
+      {
+        q: '¿Trabajáis fuera de Girona?',
+        a: 'Nuestra base está en Girona y hacemos visitas presenciales en localidades cercanas. También trabajamos en toda Cataluña y en toda España.',
+      },
+    ],
+  },
+  study: {
+    title: 'Empieza el pre-estudio de tu hogar',
+    lead: 'Nos cuentas tu caso en unos pocos pasos. Sin coste para ti: nos remunera la comercializadora.',
+    callLead: '¿Prefieres llamar?',
+    other: '¿No eres un hogar?',
+  },
+  serviceType: 'Asesoría energética para particulares y hogares',
+  audience: 'Particulares y hogares',
+  breadcrumbHome: 'Inicio',
+};
+
+const pageUrl = new URL(pages.llars.es, Astro.site).href;
+const logoUrl = new URL(logo.src, Astro.site).href;
+const schema = homesSchema({
+  lang: 'es',
+  pageUrl,
+  homeUrl: new URL(pages.home.es, Astro.site).href,
+  title,
+  description,
+  homeName: content.breadcrumbHome,
+  pageName: pages.llars.name.es,
+  serviceType: content.serviceType,
+  audience: content.audience,
+  faq: content.faq.items,
+});
+---
+
+<BaseLayout lang="es" pageKey="llars" title={title} description={description} og={{ image: logoUrl, imageAlt: 'Logik Solutions' }}>
+  <Fragment slot="head" set:html={`<script type="application/ld+json">${safeJsonLd(schema)}</script>`} />
+  <HomesPage lang="es" content={content} />
+</BaseLayout>

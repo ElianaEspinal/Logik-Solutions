@@ -1,0 +1,19 @@
+---
+// Borradores en castellano (ver src/pages/[...draft].astro).
+import DraftPage from '../../components/DraftPage.astro';
+import { draftKeys, pages, type PageKey } from '../../config/pages';
+import { SITE_ENV } from 'astro:env/server';
+
+export function getStaticPaths() {
+  // Un borrador es solo un estado de trabajo: en producción no se construye.
+  if (SITE_ENV === 'production') return [];
+  return draftKeys.map((key) => ({
+    params: { draft: pages[key].es.replace(/^\/es\/|\/$/g, '') },
+    props: { pageKey: key },
+  }));
+}
+
+const { pageKey } = Astro.props as { pageKey: PageKey };
+---
+
+<DraftPage lang="es" pageKey={pageKey} />

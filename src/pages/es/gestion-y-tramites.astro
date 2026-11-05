@@ -1,0 +1,147 @@
+---
+// Gestión y trámites (castellano). Textos de Eliana (encargo del 4/11/2026), escritos aparte del
+// catalán. Los marcados [Claude] no estaban en el encargo.
+// Enfoque confirmado: las gestiones van incluidas en el servicio anual; no se contratan sueltas.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GestionsPage from '../../components/gestions/gestions-page.astro';
+import { gestionsSchema } from '../../components/gestions/schema';
+import type { GestionsContent } from '../../components/gestions/types';
+import { pages } from '../../config/pages';
+import logo from '../../assets/images/logo-web.webp';
+import { safeJsonLd } from '../../lib/json-ld';
+
+const title = 'Cambio de titularidad y potencia de luz | Logik Solutions';
+const description =
+  'Los cambios de titularidad, de potencia y las altas de luz van incluidos en el servicio anual de Logik. Consultoría energética en Girona.';
+
+const content: GestionsContent = {
+  hero: {
+    tag: 'Gestiones y trámites',
+    title: 'Cambio de titularidad, potencia y alta de luz en Girona, incluidos en el servicio',
+    lead: 'Gestoría energética para hogares, negocios y comunidades. Cuando trabajamos juntos, las gestiones van incluidas durante todo el año, con trato directo con las compañías.',
+    cta: 'Empieza el pre-estudio →',
+    note: 'Las gestiones están incluidas en el servicio anual de Logik.',
+    call: 'Llama al',
+    nodes: ['Tú', 'Logik', 'Compañía'],
+  },
+  // Las mismas cifras confirmadas y rótulos que en el resto de páginas.
+  stats: [
+    { value: '+2.000', label: 'clientes' },
+    { value: '+10', label: 'años en el sector' },
+    { value: '12 meses', label: 'de seguimiento' },
+  ],
+  tramits: {
+    eyebrow: 'Incluidas en el servicio',
+    title: 'Cambio de titularidad, potencia o alta nueva: qué gestionamos por ti',
+    intro: 'Elige tu caso y te lo explicamos en dos líneas.',
+    label: 'Gestiones incluidas en el servicio', // [Claude]: nombre accesible de las pestañas
+    items: [
+      {
+        key: 'titularitat',
+        title: 'Cambio de titularidad',
+        text: 'El cambio de titular de la luz pasa el contrato a nombre de otra persona o empresa. Pasa, por ejemplo, con una mudanza, un alquiler o el traspaso de un negocio.',
+      },
+      {
+        key: 'potencia',
+        title: 'Subir o bajar potencia',
+        text: 'La potencia contratada es el máximo que puedes usar a la vez. Si se te queda corta o te sobra, se puede subir o bajar.',
+      },
+      {
+        key: 'alta',
+        title: 'Alta nueva',
+        text: 'Para dar de alta la luz en una vivienda nueva, un local o una actividad que empieza.',
+      },
+      {
+        key: 'incidencies',
+        title: 'Incidencias',
+        text: 'Si durante el año hay una incidencia, la resolvemos nosotros como parte del servicio.',
+      },
+    ],
+    included: 'Incluido en el servicio anual de Logik, con trato directo con la compañía.',
+    cta: 'Quiero tenerlo incluido →',
+  },
+  service: {
+    eyebrow: 'Durante todo el año',
+    title: 'Qué incluye el servicio anual de Logik',
+    items: [
+      {
+        icon: 'gestions',
+        title: 'Gestiones',
+        text: 'Cambios de titularidad, subidas y bajadas de potencia y altas nuevas, con trato directo con las compañías.',
+      },
+      { icon: 'incidencies', title: 'Incidencias', text: 'Si las hay, las resolvemos nosotros.' },
+      { icon: 'seguiment', title: 'Seguimiento', text: 'Seguimiento mensual y anual. La renovación se agenda en el mes 11.' },
+    ],
+    link: 'Ver cómo es el año con Logik →',
+  },
+  audience: {
+    title: 'Gestiones para hogares, negocios y comunidades',
+    items: [
+      { page: 'llars', title: 'Hogares', text: 'Mudanzas, alquileres y altas en casa.', link: 'Hogares →' },
+      { page: 'empreses', title: 'Negocios y pymes', text: 'Locales nuevos, traspasos y actividades que empiezan.', link: 'Empresas y pymes →' },
+      { page: 'comunitats', title: 'Comunidades de vecinos', text: 'Gestiones con un solo interlocutor.', link: 'Comunidades de vecinos →' },
+    ],
+  },
+  blogTitle: 'Para profundizar', // [Claude]: mismo título que en las otras páginas
+  faq: {
+    eyebrow: '¿Dudas?',
+    title: 'Preguntas frecuentes sobre cambios de titularidad, potencia y altas de luz',
+    items: [
+      {
+        q: '¿Qué gestiones están incluidas?',
+        a: 'Cambios de titularidad, subidas y bajadas de potencia y altas nuevas, con trato directo con las compañías.',
+      },
+      {
+        q: '¿Puedo pedir solo una gestión?',
+        a: 'Las gestiones forman parte del servicio anual de Logik y no las ofrecemos como servicio independiente. Si quieres trabajar con nosotros, empiezas por el pre-estudio.',
+      },
+      {
+        q: '¿Qué es un cambio de titularidad?',
+        a: 'Pasar el contrato de la luz a nombre de otra persona o empresa, por ejemplo por una mudanza, un alquiler o el traspaso de un negocio.',
+      },
+      {
+        q: '¿Qué es la potencia contratada?',
+        a: 'Es el máximo que puedes usar a la vez. Si se te queda corta o te sobra, se puede subir o bajar, y cuando trabajamos juntos nos ocupamos nosotros.',
+      },
+      {
+        q: '¿Cuánto tarda un trámite?',
+        a: 'Depende del trámite y de la compañía, y no damos plazos genéricos. Lo que hacemos es tratar directamente con las compañías para agilizarlo.',
+      },
+      { q: '¿Qué pasa si hay una incidencia?', a: 'La resolvemos nosotros como parte del servicio.' },
+      {
+        q: '¿Para quién y dónde trabajáis?',
+        a: 'Para hogares, negocios y comunidades de vecinos. Nuestra base está en Girona y hacemos visitas presenciales en localidades cercanas.',
+      },
+    ],
+  },
+  study: {
+    title: 'Empieza el pre-estudio',
+    lead: 'Nos cuentas tu consumo en unos pocos pasos y, cuando trabajamos juntos, las gestiones van incluidas.',
+    callLead: '¿Prefieres llamar?',
+  },
+  serviceType:
+    'Gestiones de cambio de titularidad, potencia y altas de suministro eléctrico incluidas en el servicio anual de consultoría energética',
+  serviceAudience: ['Hogares', 'Pymes', 'Comunidades de vecinos'],
+  breadcrumbHome: 'Inicio',
+};
+
+const pageUrl = new URL(pages.gestio.es, Astro.site).href;
+const logoUrl = new URL(logo.src, Astro.site).href;
+const schema = gestionsSchema({
+  lang: 'es',
+  pageUrl,
+  homeUrl: new URL(pages.home.es, Astro.site).href,
+  title,
+  description,
+  homeName: content.breadcrumbHome,
+  pageName: pages.gestio.name.es,
+  serviceType: content.serviceType,
+  audience: content.serviceAudience,
+  faq: content.faq.items,
+});
+---
+
+<BaseLayout lang="es" pageKey="gestio" title={title} description={description} og={{ image: logoUrl, imageAlt: 'Logik Solutions' }}>
+  <Fragment slot="head" set:html={`<script type="application/ld+json">${safeJsonLd(schema)}</script>`} />
+  <GestionsPage lang="es" content={content} />
+</BaseLayout>

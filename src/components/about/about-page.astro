@@ -1,0 +1,999 @@
+---
+// Página Nosaltres / Nosotros. Un único objetivo: que el visitante hable con nosotros (llamar o formulario).
+// Orden: hero · cifras · per què existim · qui hi ha al capdavant · com ens entenem · què podem fer per tu ·
+// on treballem · logos · FAQ · cierre. Solo datos confirmados (docs/contexto.md). Sin fotos de personas:
+// los visuales son SVG de marca; la foto de Lluís solo aparece si se define founder.photo (src/config/site.ts).
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import FaqAccordion from '../home/faq-accordion.astro';
+import LogosBand from '../logos-band.astro';
+import StatsStrip from '../stats-strip.astro';
+import { heroCtaHref } from '../../config/home';
+import { pages, type Locale, type PageKey } from '../../config/pages';
+import { founder, phone } from '../../config/site';
+import type { AboutContent } from './types';
+import '../../styles/motion.css';
+
+interface Props {
+  lang: Locale;
+  content: AboutContent;
+}
+
+const { lang, content: c } = Astro.props;
+const words = c.hero.title.split(' ');
+const noArrow = (s: string) => s.replace(/\s*→$/, '');
+
+// Foto del fundador: solo si founder.photo nombra un archivo de src/assets/images/.
+const photos = import.meta.glob<{ default: ImageMetadata }>('../../assets/images/*.{jpg,jpeg,png,webp}', { eager: true });
+const photoFile = founder.photo as string;
+const photo = photoFile ? Object.entries(photos).find(([path]) => path.endsWith(`/${photoFile}`))?.[1].default : undefined;
+if (photoFile && !photo) throw new Error(`founder.photo: no existe src/assets/images/${photoFile}`);
+
+const icon = {
+  phone:
+    '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/>',
+};
+// "Com ens entenem": un icono de línea por tarjeta.
+const howIcons = [
+  '<path d="M3 11h4l3-3 3 3 2-2 3 2h3"/><path d="M7 11v6l3 3 3-3 3 3 3-3v-6"/><circle cx="12" cy="4" r="1.5"/>', // cara a cara (encuentro)
+  '<path d="M12 3v18M5 7h14M5 7l-3 7a3 3 0 0 0 6 0Zm14 0-3 7a3 3 0 0 0 6 0Z"/>', // preus honestos (balança)
+  '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="m9 15 2 2 4-4"/>', // tot l'any (calendari)
+  '<path d="M10 14a4 4 0 0 0 6 .4l3-3a4 4 0 0 0-5.7-5.7l-1.7 1.7"/><path d="M14 10a4 4 0 0 0-6-.4l-3 3a4 4 0 0 0 5.7 5.7l1.7-1.7"/>', // tracte directe (enllaç)
+  '<circle cx="12" cy="12" r="9"/><path d="M15 8.5a4 4 0 1 0 0 7M7.5 11h5M7.5 13.5h5"/>', // sense cost (euro)
+];
+// Tres tarjetas de 2 columnas y dos de 3 en escritorio (rejilla de 6, sin huecos).
+const howSpan = [2, 2, 2, 3, 3];
+
+const services: { page: PageKey; icon: string; note?: string }[] = [
+  { page: 'empreses', icon: '<path d="M3 21h18M5 21V6l7-3v18M12 9h7v12"/><path d="M8 9h1M8 13h1M8 17h1M15 13h1M15 17h1"/>' },
+  { page: 'comunitats', icon: '<path d="M3 21h18M4 21V8l5-3 5 3v13M14 21V11h6v10"/><path d="M7 11h1M7 15h1M10 11h1M10 15h1"/>' },
+  { page: 'llars', icon: '<path d="m3 11 9-8 9 8M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>' },
+  { page: 'gestio', icon: '<path d="M8 3h8l4 4v14H4V3h4"/><path d="M16 3v4h4"/><path d="m8 14 2.5 2.5L16 11"/>' },
+  {
+    page: 'autoconsum',
+    icon: '<path d="M3 20l3-9h12l3 9Z"/><path d="M9 11l-1 9M15 11l1 9M4.5 15.5h15M12 2v3M18 4l-2 2M6 4l2 2"/>',
+    note: c.services.solarNote,
+  },
+];
+---
+
+<div class="about" data-section="nosaltres">
+  <!-- 1. Hero -->
+  <section class="ab-hero tech-bg" aria-labelledby="ab-title">
+    <div class="ab-hero__mesh" aria-hidden="true" data-anim>
+      <span class="ab-hero__blob ab-hero__blob--a"></span>
+      <span class="ab-hero__blob ab-hero__blob--b"></span>
+    </div>
+    <div class="container ab-hero__grid">
+      <div class="ab-hero__copy">
+        <p class="eyebrow ab-hero__tag">{c.hero.tag}</p>
+        <h1 id="ab-title">
+          {
+            words.map((word, i) => (
+              <>
+                <span class="ab-hero__word" style={`--w:${i}`}>
+                  {word}
+                </span>
+                {i < words.length - 1 && ' '}
+              </>
+            ))
+          }
+        </h1>
+        <p class="ab-hero__lead">{c.hero.lead}</p>
+        <div class="ab-hero__actions">
+          <a class="btn btn-primary btn-lg" href={pages.contacte[lang]} data-cta="nosaltres_hero">
+            {noArrow(c.hero.cta)} <span class="arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="ab-call" href={phone.tel}>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={icon.phone} />
+            <span>{c.hero.call} {phone.display}</span>
+          </a>
+        </div>
+      </div>
+      <!-- Rayo con anillos que se expanden: decorativo, dimensiones fijas por CSS (sin CLS). -->
+      <div class="ab-hero__art" aria-hidden="true" data-anim>
+        <svg viewBox="0 0 300 300" width="300" height="300" focusable="false">
+          <circle class="ab-ring" cx="150" cy="150" r="120"></circle>
+          <circle class="ab-ring ab-ring--dash" cx="150" cy="150" r="88"></circle>
+          <circle class="ab-wave" cx="150" cy="150" r="56"></circle>
+          <circle class="ab-wave ab-wave--2" cx="150" cy="150" r="56"></circle>
+          <circle class="ab-wave ab-wave--3" cx="150" cy="150" r="56"></circle>
+          <circle class="ab-core" cx="150" cy="150" r="52"></circle>
+          <g class="ab-bolt">
+            <path d="M160 104 128 156h22l-9 40 34-56h-22Z"></path>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Cifras (componente compartido con la home) -->
+  <StatsStrip items={c.stats} section="nosaltres" label={c.hero.tag} />
+
+  <!-- 3. Per què existim -->
+  <section class="section ab-why" aria-labelledby="ab-why-title">
+    <div class="container ab-why__grid">
+      <h2 id="ab-why-title" class="ab-why__title" data-reveal>
+        {c.why.title}
+        <span class="ab-why__stroke" aria-hidden="true"></span>
+      </h2>
+      <p class="ab-why__text" data-reveal style="--i:1">{c.why.text}</p>
+    </div>
+  </section>
+
+  <!-- 4. Qui hi ha al capdavant -->
+  <section class="section band-alt ab-founder" aria-labelledby="ab-founder-name">
+    <div class="container ab-founder__grid">
+      {
+        photo ? (
+          <figure class="ab-founder__photo" data-reveal>
+            <Image src={photo} alt={founder.photoAlt} widths={[360, 720]} sizes="(min-width: 48rem) 22rem, 100vw" format="webp" loading="lazy" />
+          </figure>
+        ) : (
+          <div class="ab-plate tech-bg" aria-hidden="true" data-reveal data-anim>
+            <svg class="ab-plate__bolt" viewBox="0 0 100 100" width="100" height="100" focusable="false">
+              <path d="M58 6 26 56h20l-8 38 34-52H52Z" />
+            </svg>
+            <span class="ab-plate__chip">Logik Solutions</span>
+            <span class="ab-plate__name">{founder.name}</span>
+            <span class="ab-plate__role">{founder.role[lang]}</span>
+            <span class="ab-plate__place">Girona</span>
+          </div>
+        )
+      }
+      <div class="ab-founder__copy" data-reveal style="--i:1">
+        <p class="eyebrow">{c.founder.label}</p>
+        <h2 id="ab-founder-name">{founder.name}</h2>
+        <p class="ab-founder__role">{founder.role[lang]}</p>
+        <p class="ab-founder__text">{c.founder.text}</p>
+        <a class="ab-call ab-call--dark" href={phone.tel}>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={icon.phone} />
+          <span>{c.founder.call} {phone.display}</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Com ens entenem -->
+  <section class="section ab-how" aria-labelledby="ab-how-title">
+    <div class="container">
+      <h2 id="ab-how-title" class="ab-section-title" data-reveal>{c.how.title}</h2>
+      <ul class="ab-how__grid">
+        {
+          c.how.items.map((item, i) => (
+            <li class="ab-how__card card card-lift" data-reveal style={`--i:${i % 3};--span:${howSpan[i]}`}>
+              <span class="ab-how__icon" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={howIcons[i]} />
+              </span>
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- 6. Què podem fer per tu -->
+  <section class="section band-alt ab-services" aria-labelledby="ab-services-title">
+    <div class="container">
+      <h2 id="ab-services-title" class="ab-section-title" data-reveal>{c.services.title}</h2>
+      <ul class="ab-services__list">
+        {
+          services.map((s, i) => (
+            <li class="ab-service card card-lift" data-reveal style={`--i:${i % 5}`}>
+              <span class="ab-service__icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={s.icon} />
+              </span>
+              <span class="ab-service__text">
+                <a class="ab-service__link" href={pages[s.page][lang]}>
+                  {pages[s.page].name[lang]} <span aria-hidden="true">→</span>
+                </a>
+                {s.note && <span class="ab-service__note">{s.note}</span>}
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- 7. On treballem -->
+  <section class="section ab-where" aria-labelledby="ab-where-title">
+    <div class="container ab-where__grid">
+      <div class="ab-where__copy" data-reveal>
+        <h2 id="ab-where-title" class="ab-section-title">{c.where.title}</h2>
+        <p class="ab-where__text">{c.where.text}</p>
+      </div>
+      <!-- Anillos concéntricos (no es un mapa): Girona en el centro, Catalunya y Espanya alrededor. -->
+      <div class="ab-where__art" aria-hidden="true" data-anim data-reveal style="--i:1">
+        <svg viewBox="0 0 320 320" width="320" height="320" focusable="false">
+          <circle class="ab-zone ab-zone--3" cx="160" cy="160" r="150"></circle>
+          <circle class="ab-zone ab-zone--2" cx="160" cy="160" r="102"></circle>
+          <circle class="ab-zone ab-zone--1" cx="160" cy="160" r="52"></circle>
+          <circle class="ab-pulse" cx="160" cy="160" r="20"></circle>
+          <circle class="ab-pulse ab-pulse--2" cx="160" cy="160" r="20"></circle>
+          <circle class="ab-dot" cx="160" cy="160" r="8"></circle>
+          <text x="160" y="190" text-anchor="middle" class="ab-label ab-label--main">{c.where.rings[0]}</text>
+          <text x="160" y="76" text-anchor="middle" class="ab-label">{c.where.rings[1]}</text>
+          <text x="160" y="28" text-anchor="middle" class="ab-label">{c.where.rings[2]}</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. Logos (componente compartido con la home) -->
+  <LogosBand lang={lang} title={c.logosTitle} />
+
+  <!-- 9. FAQ (componente compartido con la home; JSON-LD FAQPage en schema.ts con las mismas 4) -->
+  <FaqAccordion lang={lang} content={c.faq} idPrefix="faq-nosaltres" section="nosaltres" />
+
+  <!-- 10. Cierre: único CTA final -->
+  <section class="section ab-close" aria-labelledby="ab-close-title">
+    <div class="container">
+      <div class="ab-close__panel tech-bg" data-reveal>
+        <span class="ab-close__glow" aria-hidden="true"></span>
+        <h2 id="ab-close-title">{c.closing.title}</h2>
+        <p class="ab-close__text">{c.closing.text}</p>
+        <div class="ab-close__actions">
+          <a class="btn btn-primary btn-lg" href={heroCtaHref(lang)} data-cta="nosaltres_cta">
+            {noArrow(c.closing.cta)} <span class="arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="ab-call" href={phone.tel}>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={icon.phone} />
+            <span>{c.closing.call} {phone.display}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  import { initDecor, initReveal } from '../../scripts/motion';
+
+  initReveal();
+  initDecor();
+</script>
+
+<style>
+  /* ---- 1. Hero ---- */
+  .ab-hero {
+    padding-block: 1.5rem 2.5rem;
+    color: var(--white);
+  }
+
+  .ab-hero__mesh {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .ab-hero__blob {
+    position: absolute;
+    width: 32rem;
+    height: 32rem;
+    border-radius: 50%;
+    opacity: 0.5;
+    animation: ab-drift 30s ease-in-out infinite alternate;
+  }
+
+  .ab-hero__blob--a {
+    top: -14rem;
+    right: -12rem;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-500) 40%, transparent), transparent);
+  }
+
+  .ab-hero__blob--b {
+    bottom: -18rem;
+    left: -14rem;
+    background: radial-gradient(closest-side, var(--teal-700), transparent);
+    animation-direction: alternate-reverse;
+  }
+
+  @keyframes ab-drift {
+    to {
+      transform: translate3d(-5rem, 3rem, 0) scale(1.12);
+    }
+  }
+
+  .ab-hero__grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .ab-hero__tag {
+    margin-bottom: 0.75rem;
+  }
+
+  .ab-hero h1 {
+    max-width: 18ch;
+    margin-bottom: 0.875rem;
+    color: var(--white);
+    font-size: clamp(1.875rem, 5vw + 0.75rem, 3.5rem);
+  }
+
+  .ab-hero__word {
+    display: inline-block;
+  }
+
+  /* Palabra a palabra con CSS: empieza en opacidad 0,15 (nunca 0) para no retrasar el LCP. */
+  @media (prefers-reduced-motion: no-preference) {
+    .ab-hero__word {
+      animation: ab-word 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      animation-delay: calc(0.1s + var(--w) * 60ms);
+    }
+  }
+
+  @keyframes ab-word {
+    from {
+      opacity: 0.15;
+      transform: translateY(0.35em);
+    }
+  }
+
+  .ab-hero__lead {
+    max-width: 38rem;
+    margin-bottom: 1.25rem;
+    color: var(--teal-100);
+    font-size: 1.125rem;
+  }
+
+  .ab-hero__actions {
+    display: grid;
+    gap: 0.25rem;
+    justify-items: start;
+  }
+
+  .ab-hero__actions .btn {
+    width: 100%;
+  }
+
+  .ab-call {
+    display: inline-flex;
+    gap: 0.5rem;
+    align-items: center;
+    min-height: 44px;
+    color: var(--white);
+    font-weight: 700;
+  }
+
+  .ab-call svg {
+    flex: none;
+    color: var(--orange-500);
+  }
+
+  .ab-call--dark {
+    color: var(--teal-900);
+  }
+
+  .ab-call--dark svg {
+    color: var(--orange-700);
+  }
+
+  .ab-hero__art {
+    justify-self: center;
+    width: 8rem;
+    aspect-ratio: 1;
+    margin-top: -0.5rem;
+  }
+
+  .ab-hero__art svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .ab-ring {
+    fill: none;
+    stroke: color-mix(in srgb, var(--white) 20%, transparent);
+    stroke-width: 1.5;
+  }
+
+  .ab-ring--dash {
+    stroke: color-mix(in srgb, var(--orange-500) 70%, transparent);
+    stroke-dasharray: 4 12;
+    transform-origin: 150px 150px;
+    animation: ab-spin 50s linear infinite;
+  }
+
+  @keyframes ab-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .ab-core {
+    fill: color-mix(in srgb, var(--orange-500) 14%, transparent);
+  }
+
+  .ab-wave {
+    fill: none;
+    stroke: var(--orange-500);
+    stroke-width: 2;
+    opacity: 0;
+    transform-origin: 150px 150px;
+    animation: ab-wave 5s ease-out infinite;
+  }
+
+  .ab-wave--2 {
+    animation-delay: 1.7s;
+  }
+
+  .ab-wave--3 {
+    animation-delay: 3.4s;
+  }
+
+  @keyframes ab-wave {
+    0% {
+      opacity: 0.6;
+      transform: scale(0.9);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(2.3);
+    }
+  }
+
+  .ab-bolt {
+    fill: var(--orange-500);
+    filter: drop-shadow(0 0 14px var(--orange-500));
+    transform-origin: 150px 150px;
+    animation: ab-bolt 3.4s ease-in-out infinite;
+  }
+
+  @keyframes ab-bolt {
+    50% {
+      transform: scale(1.06);
+    }
+  }
+
+  @media (min-width: 30rem) {
+    .ab-hero__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.5rem;
+      align-items: center;
+    }
+
+    .ab-hero__actions .btn {
+      width: auto;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .ab-hero {
+      padding-block: 3.5rem 4rem;
+    }
+
+    .ab-hero__grid {
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+      align-items: center;
+      gap: 2.5rem;
+    }
+
+    .ab-hero__art {
+      width: 100%;
+      max-width: 18rem;
+      margin: 0;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .ab-hero {
+      padding-block: 4.5rem 5rem;
+    }
+
+    .ab-hero__lead {
+      font-size: 1.25rem;
+    }
+
+    .ab-hero__art {
+      max-width: 22rem;
+    }
+  }
+
+  /* ---- Títulos de sección ---- */
+  .ab-section-title {
+    max-width: 40rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ---- 3. Per què existim ---- */
+  .ab-why__grid {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .ab-why__title {
+    position: relative;
+    max-width: 22ch;
+    margin: 0;
+    padding-bottom: 1rem;
+    font-size: clamp(1.625rem, 3vw + 0.875rem, 2.75rem);
+  }
+
+  /* Trazo naranja que se dibuja (scaleX) al revelarse; estático sin JS o con movimiento reducido. */
+  .ab-why__stroke {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 5rem;
+    height: 4px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--orange-700), var(--orange-500));
+    transform-origin: left;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ab-why__title:global(.is-revealed) .ab-why__stroke {
+      animation: ab-stroke 0.8s cubic-bezier(0.6, 0, 0.2, 1) 0.35s both;
+    }
+  }
+
+  @keyframes ab-stroke {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  .ab-why__text {
+    max-width: 40rem;
+    margin: 0;
+    color: var(--teal-900);
+    font-size: 1.125rem;
+    line-height: 1.7;
+  }
+
+  @media (min-width: 64rem) {
+    .ab-why__grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: start;
+      gap: 4rem;
+    }
+
+    .ab-why__text {
+      padding-top: 0.5rem;
+      font-size: 1.1875rem;
+    }
+  }
+
+  /* ---- 4. Qui hi ha al capdavant ---- */
+  .ab-founder__grid {
+    display: grid;
+    gap: 1.75rem;
+  }
+
+  .ab-plate {
+    position: relative;
+    display: grid;
+    align-content: end;
+    gap: 0.25rem;
+    min-height: 16rem;
+    padding: 1.5rem;
+    border-radius: 1.5rem;
+    color: var(--white);
+    box-shadow: 0 1.5rem 3rem -1.75rem color-mix(in srgb, var(--teal-900) 70%, transparent);
+  }
+
+  .ab-plate__bolt {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    width: 4.5rem;
+    height: auto;
+    fill: var(--orange-500);
+    filter: drop-shadow(0 0 16px color-mix(in srgb, var(--orange-500) 70%, transparent));
+    animation: ab-flicker 4s ease-in-out infinite;
+  }
+
+  @keyframes ab-flicker {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.75;
+      transform: scale(1.05);
+    }
+  }
+
+  .ab-plate__chip {
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+    padding: 0.125rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--white) 25%, transparent);
+    border-radius: 999px;
+    color: var(--orange-100);
+    font-weight: 700;
+  }
+
+  .ab-plate__name {
+    font-family: var(--font-heading);
+    font-size: clamp(1.75rem, 3vw + 1rem, 2.25rem);
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .ab-plate__role {
+    color: var(--teal-100);
+  }
+
+  .ab-plate__place {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid color-mix(in srgb, var(--white) 18%, transparent);
+    color: var(--orange-100);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .ab-founder__photo {
+    margin: 0;
+    overflow: hidden;
+    border-radius: 1.5rem;
+  }
+
+  .ab-founder__photo :global(img) {
+    width: 100%;
+    height: auto;
+  }
+
+  .ab-founder__copy h2 {
+    margin-bottom: 0.25rem;
+  }
+
+  .ab-founder__role {
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+
+  .ab-founder__text {
+    max-width: 38rem;
+    margin-bottom: 0.5rem;
+    font-size: 1.125rem;
+  }
+
+  @media (min-width: 48rem) {
+    .ab-founder__grid {
+      grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+      align-items: center;
+      gap: 3rem;
+    }
+
+    .ab-plate {
+      min-height: 20rem;
+      padding: 2rem;
+    }
+  }
+
+  /* ---- 5. Com ens entenem: 1 columna en móvil, rejilla de 6 desde 48rem (2+2+2 / 3+3) ---- */
+  .ab-how__grid {
+    display: grid;
+    gap: 0.875rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ab-how__card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.25rem 0.875rem;
+    align-content: start;
+    padding: 1.125rem 1.25rem;
+    border-radius: 1.25rem;
+  }
+
+  .ab-how__icon {
+    display: grid;
+    grid-row: span 2;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.875rem;
+    background: var(--teal-900);
+    color: var(--orange-500);
+  }
+
+  .ab-how__icon svg {
+    transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  /* El icono se anima al pasar el cursor, al tocar o al enfocar dentro de la tarjeta. */
+  .ab-how__card:is(:hover, :active, :focus-within) .ab-how__icon svg {
+    transform: scale(1.12) rotate(-6deg);
+  }
+
+  .ab-how__card h3 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+
+  .ab-how__card p {
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  @media (min-width: 48rem) {
+    .ab-how__grid {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+
+    .ab-how__card {
+      grid-column: span var(--span, 2);
+      grid-template-columns: none;
+      gap: 0.5rem;
+      padding: 1.5rem;
+    }
+
+    .ab-how__icon {
+      grid-row: auto;
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  /* ---- 6. Què podem fer per tu ---- */
+  .ab-services__list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ab-service {
+    position: relative;
+    display: flex;
+    gap: 0.875rem;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+  }
+
+  .ab-service:focus-within {
+    border-color: var(--orange-700);
+  }
+
+  .ab-service__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.75rem;
+    background: var(--teal-100);
+    color: var(--teal-900);
+  }
+
+  .ab-service__text {
+    display: grid;
+    min-width: 0;
+  }
+
+  .ab-service__link {
+    display: inline-flex;
+    gap: 0.25rem;
+    align-items: center;
+    min-height: 44px;
+    color: var(--teal-900);
+    font-weight: 700;
+  }
+
+  /* Toda la tarjeta es clicable a través del enlace. */
+  .ab-service__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  .ab-service__note {
+    margin-top: -0.25rem;
+    color: var(--text-muted);
+  }
+
+  @media (min-width: 40rem) {
+    .ab-services__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .ab-services__list {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .ab-service {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 1.25rem;
+    }
+  }
+
+  /* ---- 7. On treballem ---- */
+  .ab-where__grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .ab-where__text {
+    max-width: 36rem;
+    margin: 0;
+    font-size: 1.125rem;
+  }
+
+  .ab-where__art {
+    justify-self: center;
+    width: min(100%, 18rem);
+    aspect-ratio: 1;
+  }
+
+  .ab-where__art svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .ab-zone {
+    fill: color-mix(in srgb, var(--teal-900) 5%, transparent);
+    stroke: color-mix(in srgb, var(--teal-900) 22%, transparent);
+    stroke-width: 1.5;
+  }
+
+  .ab-zone--1 {
+    fill: color-mix(in srgb, var(--orange-500) 12%, transparent);
+    stroke: var(--orange-500);
+  }
+
+  .ab-zone--2 {
+    stroke-dasharray: 5 8;
+  }
+
+  .ab-pulse {
+    fill: none;
+    stroke: var(--orange-500);
+    stroke-width: 2;
+    opacity: 0;
+    transform-origin: 160px 160px;
+    animation: ab-pulse 4.5s ease-out infinite;
+  }
+
+  .ab-pulse--2 {
+    animation-delay: 2.25s;
+  }
+
+  @keyframes ab-pulse {
+    0% {
+      opacity: 0.7;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(7.4);
+    }
+  }
+
+  .ab-dot {
+    fill: var(--orange-500);
+  }
+
+  .ab-label {
+    fill: var(--teal-900);
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .ab-label--main {
+    font-family: var(--font-heading);
+    font-size: 17px;
+  }
+
+  @media (min-width: 48rem) {
+    .ab-where__grid {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      align-items: center;
+      gap: 3rem;
+    }
+
+    .ab-where__art {
+      width: min(100%, 22rem);
+    }
+  }
+
+  /* ---- 10. Cierre ---- */
+  .ab-close {
+    padding-top: 3rem;
+  }
+
+  .ab-close__panel {
+    padding: 2rem 1.25rem;
+    border-radius: 1.5rem;
+    color: var(--white);
+  }
+
+  .ab-close__glow {
+    position: absolute;
+    top: -6rem;
+    right: -4rem;
+    z-index: -1;
+    width: 18rem;
+    height: 18rem;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-500) 30%, transparent), transparent);
+    pointer-events: none;
+  }
+
+  .ab-close__panel h2 {
+    margin-bottom: 0.5rem;
+    color: var(--white);
+  }
+
+  .ab-close__text {
+    max-width: 36rem;
+    margin-bottom: 1.5rem;
+    color: var(--teal-100);
+    font-size: 1.125rem;
+  }
+
+  .ab-close__actions {
+    display: grid;
+    gap: 0.25rem;
+    justify-items: start;
+  }
+
+  .ab-close__actions .btn {
+    width: 100%;
+  }
+
+  @media (min-width: 30rem) {
+    .ab-close__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.5rem;
+      align-items: center;
+    }
+
+    .ab-close__actions .btn {
+      width: auto;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .ab-close {
+      padding-top: 5rem;
+    }
+
+    .ab-close__panel {
+      padding: 3.5rem;
+    }
+  }
+
+  /* ---- Movimiento reducido: sin bucles ni desplazamientos (el contenido se ve igual) ---- */
+  @media (prefers-reduced-motion: reduce) {
+    .ab-hero__blob,
+    .ab-ring--dash,
+    .ab-bolt,
+    .ab-plate__bolt,
+    .ab-how__icon svg {
+      animation: none;
+      transition: none;
+    }
+
+    .ab-wave,
+    .ab-pulse {
+      display: none;
+    }
+
+    .ab-how__card:is(:hover, :active, :focus-within) .ab-how__icon svg {
+      transform: none;
+    }
+  }
+</style>

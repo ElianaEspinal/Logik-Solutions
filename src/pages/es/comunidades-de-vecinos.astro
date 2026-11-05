@@ -1,0 +1,190 @@
+---
+// Comunidades de vecinos (castellano). Textos de Eliana (encargo del 4/11/2026), escritos aparte
+// del catalán. Los marcados [Claude] no estaban en el encargo.
+// Interruptor COMUNITATS_FV (src/config/comunitats.ts): con false (hoy) no se usa "placas solares"
+// en title, H1, meta ni JSON-LD, y no se pintan el bloque solar ni su pregunta del FAQ.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CommunitiesPage from '../../components/communities/communities-page.astro';
+import { communitiesSchema } from '../../components/communities/schema';
+import type { CommunitiesContent } from '../../components/communities/types';
+import { COMUNITATS_FV } from '../../config/comunitats';
+import { pages } from '../../config/pages';
+import logo from '../../assets/images/logo-web.webp';
+import { safeJsonLd } from '../../lib/json-ld';
+
+const title = COMUNITATS_FV
+  ? 'Placas solares para comunidades de vecinos | Logik Solutions'
+  : 'Consultoría energética para comunidades | Logik Solutions';
+const description = COMUNITATS_FV
+  ? 'Placas solares y consultoría energética para comunidades de vecinos en Girona. Un solo interlocutor para el administrador y los vecinos.'
+  : 'Consultoría energética para comunidades de vecinos en Girona: un solo interlocutor para el administrador y los vecinos, y seguimiento todo el año.';
+
+const faqBase = [
+  {
+    q: '¿Trabajáis con el administrador de fincas o con los vecinos?',
+    a: 'Con ambos. Somos un solo interlocutor para el administrador y para los vecinos.',
+  },
+  {
+    q: '¿La factura de la comunidad es diferente de la de mi casa?',
+    a: 'Sí: la factura de las zonas comunes es independiente de la de cada vivienda y la paga la comunidad. Con una factura reciente vemos qué hay en cada concepto.',
+  },
+  {
+    q: '¿Hay que cambiar la tarifa de luz de la comunidad?',
+    a: 'No necesariamente. Primero revisamos el contrato y te decimos qué tiene sentido en tu caso.',
+  },
+  {
+    q: '¿Tiene coste para la comunidad?',
+    a: 'El servicio de consultoría y gestiones no tiene coste: nos remunera la comercializadora con la que se contrata.',
+  },
+  {
+    q: '¿Dónde trabajáis?',
+    a: 'Nuestra base está en Girona y hacemos visitas presenciales en localidades cercanas. También trabajamos en toda Cataluña y en toda España.',
+  },
+];
+const faqSolar = {
+  q: '¿Hacéis instalaciones de placas solares para comunidades?',
+  a: 'Sí, con ingenieros y especialistas en instalación. La instalación tiene un coste; antes te explicamos si tiene sentido para vuestro consumo.',
+};
+
+const content: CommunitiesContent = {
+  hero: {
+    tag: 'Comunidades de vecinos',
+    title: COMUNITATS_FV
+      ? 'Consultoría energética y placas solares para comunidades de vecinos'
+      : 'Consultoría energética para comunidades de vecinos en Girona',
+    lead: 'Un solo interlocutor para el administrador y los vecinos. Revisamos los suministros de las zonas comunes, comparamos ofertas de varias comercializadoras y hacemos el seguimiento todo el año.',
+    cta: 'Revisa la factura de mi comunidad →',
+    note: 'Sin coste para ti: nos remunera la comercializadora.',
+    call: 'Llama al',
+  },
+  // Las mismas cifras confirmadas y rótulos que en Empresas y pymes.
+  stats: [
+    { value: '+2.000', label: 'clientes' },
+    { value: '+10', label: 'años en el sector' },
+    { value: '12 meses', label: 'de seguimiento' },
+  ],
+  persona: {
+    eyebrow: 'Para quién',
+    title: 'Pensado para comunidades y administradores de fincas',
+    text: 'Logik Solutions es una consultoría energética de Girona. Las comunidades de vecinos son una de las áreas en las que trabajamos, junto con las empresas y pymes y los hogares.',
+    label: 'Elige tu caso', // [Claude]: nombre accesible de la lista de chips
+    admin: 'Soy administrador de fincas',
+    resident: 'Soy presidente o vecino',
+    hint: 'Elige tu caso y empieza.',
+  },
+  hub: {
+    eyebrow: 'Cómo te lo ponemos fácil',
+    title: 'Un solo interlocutor para el administrador y los vecinos',
+    text: 'En una comunidad, la factura de la luz afecta a todos y no siempre hay quien tenga tiempo de mirarla. Nosotros hacemos de interlocutor entre el administrador, los vecinos y las compañías.',
+    nodes: { admin: 'Administrador', residents: 'Vecinos', logik: 'Logik Solutions', companies: 'Compañías' },
+    chips: ['Suministros de las zonas comunes', 'Coordinación con el administrador', 'Seguimiento mensual y anual'],
+  },
+  bill: {
+    eyebrow: 'Entiende la factura',
+    title: 'La factura de la luz de una comunidad de vecinos, explicada',
+    items: [
+      {
+        icon: 'building',
+        title: 'Es la factura de la comunidad',
+        text: 'El suministro de las zonas comunes es independiente de la luz de cada vivienda: el contrato es de la comunidad y lo pagan todos los vecinos a través de las cuotas.',
+      },
+      {
+        icon: 'lift',
+        title: 'Dónde se consume',
+        text: 'Ascensores, alumbrado y otros equipos de las zonas comunes. Con una factura reciente vemos qué hay en cada concepto.',
+      },
+      {
+        icon: 'search',
+        title: 'Qué revisamos',
+        text: 'La potencia contratada, las franjas horarias de consumo y el vencimiento del contrato. Por eso te avisamos en el mes 11.',
+      },
+    ],
+  },
+  fit: {
+    eyebrow: 'Cuándo tiene sentido revisarlo',
+    title: '¿Te reconoces en alguna de estas situaciones?',
+    label: 'Situaciones en las que tiene sentido revisar la factura de la comunidad', // [Claude]: nombre accesible del grupo
+    items: [
+      'No recordamos cuándo se revisó el contrato de la luz de la comunidad',
+      'Hemos cambiado el ascensor, el alumbrado o algún equipo común',
+      'El contrato de la comunidad está a punto de vencer',
+      'Tenemos un administrador nuevo o queremos un único punto de contacto',
+    ],
+    help: 'Marca las que te encajen.',
+    yes: 'Si es así, vale la pena mirarlo: con una factura reciente de la comunidad ya podemos empezar.',
+    cta: 'Revisa la factura de mi comunidad →',
+  },
+  services: {
+    title: 'Ahorro energético en comunidades de vecinos: qué incluye el servicio',
+    items: [
+      {
+        title: 'Revisión y comparativa',
+        text: 'Revisamos el suministro de la comunidad y comparamos ofertas de varias comercializadoras.',
+      },
+      {
+        title: 'Trámites con la compañía',
+        text: 'Cambios de titularidad, subidas y bajadas de potencia y altas nuevas, con trato directo con los administradores de cada compañía.',
+        link: 'Gestión y trámites →',
+        page: 'gestio',
+      },
+      {
+        title: 'Seguimiento mensual y anual',
+        text: 'Revisamos la factura de la comunidad durante todo el año.',
+      },
+      {
+        title: 'Renovación e incidencias',
+        text: 'Te avisamos en el mes 11 para renovar y resolvemos las incidencias, incluidas en el servicio.',
+        link: 'Cómo trabajamos →',
+        page: 'comTreballem',
+      },
+    ],
+  },
+  blogTitle: 'Para profundizar',
+  solar: {
+    title: '¿Y si la comunidad quiere placas solares?',
+    text: 'Primero estudiamos el consumo de las zonas comunes. Si el autoconsumo tiene sentido, la instalación la hacen ingenieros y especialistas. La instalación tiene un coste; antes te explicamos si tiene sentido para vuestro consumo.',
+    link: 'Autoconsumo fotovoltaico →',
+  },
+  faq: {
+    eyebrow: '¿Dudas?',
+    title: 'Preguntas frecuentes sobre consultoría energética para comunidades de vecinos',
+    items: COMUNITATS_FV ? [...faqBase, faqSolar] : faqBase,
+  },
+  admin: {
+    id: 'administradores-de-fincas', // [Claude]: destino del chip "Soy administrador de fincas"
+    title: '¿Eres administrador de fincas?',
+    text: 'Si administras varias comunidades, habla con nosotros y lo miramos.',
+    cta: 'Habla con nosotros →',
+    call: 'Llama al',
+  },
+  study: {
+    title: 'Empieza el pre-estudio de tu comunidad',
+    lead: 'Nos cuentas el caso en unos pocos pasos. Sin coste para ti: nos remunera la comercializadora.',
+    callLead: '¿Prefieres llamar?',
+    other: '¿No eres una comunidad?',
+  },
+  serviceType: 'Consultoría energética para comunidades de vecinos',
+  audience: { communities: 'Comunidades de vecinos', administrators: 'Administradores de fincas' },
+  breadcrumbHome: 'Inicio',
+};
+
+const pageUrl = new URL(pages.comunitats.es, Astro.site).href;
+const logoUrl = new URL(logo.src, Astro.site).href;
+const schema = communitiesSchema({
+  lang: 'es',
+  pageUrl,
+  homeUrl: new URL(pages.home.es, Astro.site).href,
+  title,
+  description,
+  homeName: content.breadcrumbHome,
+  pageName: pages.comunitats.name.es,
+  serviceType: content.serviceType,
+  audience: content.audience,
+  faq: content.faq.items,
+});
+---
+
+<BaseLayout lang="es" pageKey="comunitats" title={title} description={description} og={{ image: logoUrl, imageAlt: 'Logik Solutions' }}>
+  <Fragment slot="head" set:html={`<script type="application/ld+json">${safeJsonLd(schema)}</script>`} />
+  <CommunitiesPage lang="es" content={content} />
+</BaseLayout>

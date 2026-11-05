@@ -1,0 +1,190 @@
+---
+// Comunitats de veïns (català). Textos de Eliana (encargo del 4/11/2026), con apòstrof recte.
+// Los marcados [Claude] no estaban en el encargo.
+// Interruptor COMUNITATS_FV (src/config/comunitats.ts): con false (hoy) no se usa "plaques solars"
+// en title, H1, meta ni JSON-LD, y no se pintan el bloque solar ni su pregunta del FAQ.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CommunitiesPage from '../components/communities/communities-page.astro';
+import { communitiesSchema } from '../components/communities/schema';
+import type { CommunitiesContent } from '../components/communities/types';
+import { COMUNITATS_FV } from '../config/comunitats';
+import { pages } from '../config/pages';
+import logo from '../assets/images/logo-web.webp';
+import { safeJsonLd } from '../lib/json-ld';
+
+const title = COMUNITATS_FV
+  ? 'Plaques solars per a comunitats de veïns | Logik Solutions'
+  : 'Consultoria energètica per a comunitats | Logik Solutions';
+const description = COMUNITATS_FV
+  ? 'Plaques solars i consultoria energètica per a comunitats de veïns a Girona. Un sol interlocutor per a l\'administrador i els veïns.'
+  : "Consultoria energètica per a comunitats de veïns a Girona: un sol interlocutor per a l'administrador i els veïns, i seguiment tot l'any.";
+
+const faqBase = [
+  {
+    q: "Treballeu amb l'administrador de finques o amb els veïns?",
+    a: "Amb tots dos. Som un sol interlocutor per a l'administrador i per als veïns.",
+  },
+  {
+    q: 'La factura de la comunitat és diferent de la de casa meva?',
+    a: 'Sí: la factura de les zones comunes és independent de la de cada habitatge i la paga la comunitat. Amb una factura recent veiem què hi ha a cada concepte.',
+  },
+  {
+    q: 'Cal canviar la tarifa de llum de la comunitat?',
+    a: "No necessàriament. Primer revisem el contracte i et diem què té sentit en el teu cas.",
+  },
+  {
+    q: 'Té cost per a la comunitat?',
+    a: 'El servei de consultoria i gestions no té cost: ens remunera la comercialitzadora amb la qual es contracta.',
+  },
+  {
+    q: 'On treballeu?',
+    a: 'La nostra base és a Girona i fem visites presencials a localitats properes. També treballem a tot Catalunya i a tot Espanya.',
+  },
+];
+const faqSolar = {
+  q: 'Feu instal·lacions de plaques solars per a comunitats?',
+  a: "Sí, amb enginyers i especialistes en instal·lació. La instal·lació té un cost; abans t'expliquem si té sentit pel vostre consum.",
+};
+
+const content: CommunitiesContent = {
+  hero: {
+    tag: 'Comunitats de veïns',
+    title: COMUNITATS_FV
+      ? 'Consultoria energètica i plaques solars per a comunitats de veïns'
+      : 'Consultoria energètica per a comunitats de veïns a Girona',
+    lead: "Un sol interlocutor per a l'administrador i els veïns. Revisem els subministraments de les zones comunes, comparem ofertes de diverses comercialitzadores i fem el seguiment tot l'any.",
+    cta: 'Revisa la factura de la meva comunitat →',
+    note: 'Sense cost per a tu: ens remunera la comercialitzadora.',
+    call: 'Truca al',
+  },
+  // Las mismas cifras confirmadas y rótulos que en Empreses i pimes.
+  stats: [
+    { value: '+2.000', label: 'clients' },
+    { value: '+10', label: 'anys al sector' },
+    { value: '12 mesos', label: 'de seguiment' },
+  ],
+  persona: {
+    eyebrow: 'Per a qui',
+    title: 'Pensat per a comunitats i administradors de finques',
+    text: 'Logik Solutions és una consultoria energètica de Girona. Les comunitats de veïns són una de les àrees on treballem, juntament amb les empreses i pimes i les llars.',
+    label: 'Tria el teu cas', // [Claude]: nombre accesible de la lista de chips
+    admin: 'Soc administrador de finques',
+    resident: 'Soc president o veí',
+    hint: 'Tria el teu cas i comença.',
+  },
+  hub: {
+    eyebrow: "Com t'ho posem fàcil",
+    title: "Un sol interlocutor per a l'administrador i els veïns",
+    text: "En una comunitat, la factura de la llum afecta tothom i no sempre hi ha qui tingui temps de mirar-la. Nosaltres fem d'interlocutor entre l'administrador, els veïns i les companyies.",
+    nodes: { admin: 'Administrador', residents: 'Veïns', logik: 'Logik Solutions', companies: 'Companyies' },
+    chips: ['Subministraments de les zones comunes', "Coordinació amb l'administrador", 'Seguiment mensual i anual'],
+  },
+  bill: {
+    eyebrow: 'Entén la factura',
+    title: "La factura de la llum d'una comunitat de veïns, explicada",
+    items: [
+      {
+        icon: 'building',
+        title: 'És la factura de la comunitat',
+        text: "El subministrament de les zones comunes és independent de la llum de cada habitatge: el contracte és de la comunitat i el paguen tots els veïns a través de les quotes.",
+      },
+      {
+        icon: 'lift',
+        title: 'On es consumeix',
+        text: 'Ascensors, enllumenat i altres equips de les zones comunes. Amb una factura recent veiem què hi ha a cada concepte.',
+      },
+      {
+        icon: 'search',
+        title: 'Què revisem',
+        text: "La potència contractada, les franges horàries de consum i el venciment del contracte. Per això t'avisem al mes 11.",
+      },
+    ],
+  },
+  fit: {
+    eyebrow: 'Quan té sentit revisar-ho',
+    title: "Et reconeixes en alguna d'aquestes situacions?",
+    label: 'Situacions en què té sentit revisar la factura de la comunitat', // [Claude]: nombre accesible del grupo
+    items: [
+      'No recordem quan es va revisar el contracte de la llum de la comunitat',
+      "Hem canviat l'ascensor, l'enllumenat o algun equip comú",
+      'El contracte de la comunitat ve a venciment',
+      'Tenim un administrador nou o volem un únic punt de contacte',
+    ],
+    help: "Marca les que t'encaixin.",
+    yes: 'Si és així, val la pena mirar-ho: amb una factura recent de la comunitat ja podem començar.',
+    cta: 'Revisa la factura de la meva comunitat →',
+  },
+  services: {
+    title: 'Estalvi energètic a les comunitats de veïns: què inclou el servei',
+    items: [
+      {
+        title: 'Revisió i comparativa',
+        text: 'Revisem el subministrament de la comunitat i comparem ofertes de diverses comercialitzadores.',
+      },
+      {
+        title: 'Tràmits amb la companyia',
+        text: 'Canvis de titularitat, pujades i baixades de potència i altes noves, amb tracte directe amb els administradors de cada companyia.',
+        link: 'Gestió i tràmits →',
+        page: 'gestio',
+      },
+      {
+        title: 'Seguiment mensual i anual',
+        text: "Revisem la factura de la comunitat durant tot l'any.",
+      },
+      {
+        title: 'Renovació i incidències',
+        text: "T'avisem al mes 11 per renovar i resolem les incidències, incloses al servei.",
+        link: 'Com treballem →',
+        page: 'comTreballem',
+      },
+    ],
+  },
+  blogTitle: 'Per aprofundir',
+  solar: {
+    title: 'I si la comunitat vol plaques solars?',
+    text: "Primer estudiem el consum de les zones comunes. Si l'autoconsum té sentit, la instal·lació la fan enginyers i especialistes. La instal·lació té un cost; abans t'expliquem si té sentit pel vostre consum.",
+    link: 'Autoconsum fotovoltaic →',
+  },
+  faq: {
+    eyebrow: 'Dubtes?',
+    title: 'Preguntes freqüents sobre consultoria energètica per a comunitats de veïns',
+    items: COMUNITATS_FV ? [...faqBase, faqSolar] : faqBase,
+  },
+  admin: {
+    id: 'administradors-de-finques', // [Claude]: destino del chip "Soc administrador de finques"
+    title: 'Ets administrador de finques?',
+    text: 'Si administres diverses comunitats, parla amb nosaltres i ho mirem.',
+    cta: 'Parla amb nosaltres →',
+    call: 'Truca al',
+  },
+  study: {
+    title: 'Comença el pre-estudi de la teva comunitat',
+    lead: 'Ens expliques el cas en uns quants passos. Sense cost per a tu: ens remunera la comercialitzadora.',
+    callLead: 'Prefereixes trucar?',
+    other: 'No ets una comunitat?',
+  },
+  serviceType: 'Consultoria energètica per a comunitats de veïns',
+  audience: { communities: 'Comunitats de veïns', administrators: 'Administradors de finques' },
+  breadcrumbHome: 'Inici',
+};
+
+const pageUrl = new URL(pages.comunitats.ca, Astro.site).href;
+const logoUrl = new URL(logo.src, Astro.site).href;
+const schema = communitiesSchema({
+  lang: 'ca',
+  pageUrl,
+  homeUrl: new URL(pages.home.ca, Astro.site).href,
+  title,
+  description,
+  homeName: content.breadcrumbHome,
+  pageName: pages.comunitats.name.ca,
+  serviceType: content.serviceType,
+  audience: content.audience,
+  faq: content.faq.items,
+});
+---
+
+<BaseLayout lang="ca" pageKey="comunitats" title={title} description={description} og={{ image: logoUrl, imageAlt: 'Logik Solutions' }}>
+  <Fragment slot="head" set:html={`<script type="application/ld+json">${safeJsonLd(schema)}</script>`} />
+  <CommunitiesPage lang="ca" content={content} />
+</BaseLayout>

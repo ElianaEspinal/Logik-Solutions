@@ -1,0 +1,130 @@
+---
+// Contacte (català). Textos de Eliana; los marcados [Claude] los redactó Claude (pendientes de revisión).
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ContactPage from '../components/contact/contact-page.astro';
+import { contactSchema } from '../components/contact/schema';
+import type { ContactContent } from '../components/contact/types';
+import { pages } from '../config/pages';
+import { phone } from '../config/site';
+import logo from '../assets/images/logo-web.webp';
+import { safeJsonLd } from '../lib/json-ld';
+
+const title = 'Contacte | Consultoria energètica a Girona | Logik Solutions';
+const description =
+  "Contacta amb Logik Solutions, consultoria energètica a Girona. Truca'ns, escriu-nos per WhatsApp o envia la consulta en dos passos.";
+
+const content: ContactContent = {
+  eyebrow: 'Contacte',
+  title: 'Contacta amb la teva consultoria energètica a Girona',
+  lead: "Explica'ns el teu cas en dos passos. Et contactem pel canal que triïs: telèfon, WhatsApp o correu.",
+  quick: { call: 'Truca', whatsapp: 'WhatsApp' },
+  panel: {
+    title: 'Parla amb nosaltres',
+    phone: 'Telèfon',
+    whatsapp: 'WhatsApp',
+    whatsappValue: 'Escriu-nos per WhatsApp',
+    email: 'Correu electrònic',
+    address: 'Adreça', // [Claude]
+    directions: 'Com arribar',
+    hours: 'Horari', // [Claude]
+    visits: 'Visites presencials a Girona i localitats properes.',
+  },
+  form: {
+    step: 'Pas {n} de {total}',
+    steps: ['El teu cas', 'Les teves dades'],
+    profile: {
+      legend: 'Per a qui és?',
+      options: {
+        empresa: { label: 'Empresa o negoci' },
+        comunitat: { label: 'Comunitat de veïns' },
+        administrador: { label: 'Administrador de finques' },
+        llar: { label: 'Llar' },
+      },
+    },
+    need: {
+      legend: 'Què necessites?',
+      options: {
+        factura: { label: 'Revisar la meva factura' },
+        gestions: { label: 'Gestions (titularitat, potència, altes)' },
+        plaques: { label: 'Plaques solars' },
+        altra: { label: 'Una altra consulta' },
+      },
+    },
+    locality: { label: 'Localitat', placeholder: 'Girona, Blanes, Figueres…', optional: '(opcional)' },
+    next: 'Continua →',
+    back: '← Enrere',
+    name: 'Nom i cognoms',
+    email: 'Correu electrònic',
+    phone: 'Telèfon',
+    phoneOptional: '(opcional)',
+    phoneHint: "El necessitem si prefereixes que et truquem o t'escrivim per WhatsApp.", // [Claude]
+    channel: {
+      legend: 'Com prefereixes que et contactem?',
+      options: { trucada: 'Trucada', whatsapp: 'WhatsApp', correu: 'Correu' },
+    },
+    message: 'Vols afegir alguna cosa?',
+    messageOptional: '(opcional)',
+    attach: {
+      label: 'Adjunta una factura recent (PDF o imatge, màx. 10 MB)',
+      hint: 'Opcional', // [Claude]
+      privacy: 'Conté dades personals; només la fem servir per preparar el teu estudi.',
+    },
+    attachOff: 'Si vols, després ens pots enviar una factura recent per WhatsApp.', // [Claude]
+    consent: 'He llegit i accepto la política de privacitat.',
+    consentLink: 'política de privacitat',
+    submit: 'Envia la consulta →',
+    sending: 'Enviant…',
+    cost: 'Sense cost per a tu: ens remunera la comercialitzadora.',
+    noEndpoint: "Enviament desactivat: falta PUBLIC_FORM_ENDPOINT a .env (en enviar, es mostrarà el missatge d'error).",
+    // Mensajes de validación [Claude]
+    errors: {
+      perfil: 'Tria per a qui és la consulta.',
+      necessitat: 'Tria què necessites.',
+      nom: 'Escriu el teu nom i cognoms.',
+      emailEmpty: 'Escriu el teu correu electrònic.',
+      emailInvalid: 'Revisa el correu: sembla que no és correcte.',
+      phoneEmpty: 'Escriu el teu telèfon perquè et puguem trucar o escriure per WhatsApp.',
+      phoneInvalid: 'Escriu un telèfon de 9 xifres com a mínim.',
+      file: 'El fitxer ha de ser PDF o una imatge i ocupar 10 MB com a màxim.',
+      consent: "Has d'acceptar la política de privacitat per enviar la consulta.",
+    },
+    error: `No s'ha pogut enviar. Torna-ho a provar o truca'ns al ${phone.display}.`,
+    success: {
+      title: 'Rebut. Gràcies, {nom}.',
+      text: 'Revisarem el teu cas i et contactarem per {canal}.',
+      urgent: 'Si és urgent, parlem ara:', // [Claude]
+      call: 'Truca al',
+      whatsapp: 'Escriu-nos per WhatsApp',
+    },
+    channelsText: { trucada: 'telèfon', whatsapp: 'WhatsApp', correu: 'correu electrònic' },
+  },
+  next: {
+    title: 'Què passa després?',
+    steps: ['Revisem el teu cas', 'Et contactem pel canal que has triat', 'Preparem el teu estudi'],
+  },
+  map: {
+    title: 'On som',
+    load: 'Carregar el mapa',
+    note: 'El mapa és de Google Maps i pot instal·lar cookies. Només el carreguem si ho acceptes.', // [Claude]
+    frameTitle: 'Mapa: Logik Solutions a Girona',
+    directions: 'Com arribar',
+  },
+  breadcrumbHome: 'Inici',
+};
+
+const pageUrl = new URL(pages.contacte.ca, Astro.site).href;
+const schema = contactSchema({
+  lang: 'ca',
+  pageUrl,
+  homeUrl: new URL(pages.home.ca, Astro.site).href,
+  title,
+  description,
+  logoUrl: new URL(logo.src, Astro.site).href,
+  breadcrumb: [content.breadcrumbHome, pages.contacte.name.ca],
+});
+---
+
+<BaseLayout lang="ca" pageKey="contacte" title={title} description={description} mobileBar={false} footerMap={false} ctaHref="#formulari">
+  <Fragment slot="head" set:html={`<script type="application/ld+json">${safeJsonLd(schema)}</script>`} />
+  <ContactPage lang="ca" content={content} />
+</BaseLayout>

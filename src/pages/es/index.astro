@@ -1,0 +1,179 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HomePage from '../../components/home/HomePage.astro';
+import { homeSchema } from '../../components/home/schema';
+import type { HomeContent } from '../../components/home/types';
+import logo from '../../assets/images/logo-web.webp';
+import { preStudyTexts } from '../../components/home/pre-study-texts';
+import { safeJsonLd } from '../../lib/json-ld';
+
+// Textos de docs/home-textos.md (castellano), copiados tal cual.
+const title = 'Consultoría energética en Girona | Logik Solutions';
+const description =
+  "Revisamos tu factura de luz y gas, comparamos ofertas y hacemos el seguimiento todo el año. Para empresas, comunidades y hogares en Girona y toda España.";
+
+const content: HomeContent = {
+  hero: {
+    tag: 'Consultoría energética en Girona y en toda España',
+    title: 'Vamos a verte y revisamos tu factura.',
+    titleMark: 'verte',
+    lead: 'Comparamos ofertas de varias comercializadoras y hacemos el seguimiento todo el año. Para empresas, comunidades y hogares, en Girona y en toda España.',
+    cta: 'Revisa mi factura →',
+    ctaNote: 'Sin coste para ti: nos remunera la comercializadora.',
+    call: 'Llama al',
+  },
+  logos: { title: 'Empresas que ya confían en nosotros' },
+  needs: {
+    eyebrow: '¿Qué necesitas?',
+    title: 'Asesoría energética para empresas, comunidades y hogares en Girona',
+    intro: 'Elige tu caso y te decimos qué miramos.',
+    lookLabel: 'Qué miramos',
+    items: {
+      empreses: {
+        title: 'Tengo una empresa o un negocio',
+        text: 'Miramos la potencia, los horarios de consumo y el contrato, y te decimos qué tiene sentido cambiar.',
+        look: ['Potencia contratada y potencia que usas', 'Franjas horarias de consumo', 'Condiciones y vencimiento del contrato'],
+        link: 'Empresas y pymes',
+      },
+      comunitats: {
+        title: 'Administro una comunidad',
+        text: 'Un solo interlocutor para el administrador y los vecinos: ascensores, alumbrado y zonas comunes.',
+        look: ['Suministros de las zonas comunes', 'Coordinación con el administrador', 'Seguimiento mensual y anual'],
+        link: 'Comunidades de vecinos',
+      },
+      llars: {
+        title: 'Quiero entender mi factura',
+        text: 'Luz y gas explicados con palabras sencillas y sin letra pequeña.',
+        look: ['Qué pagas por potencia y qué por energía', 'Si la tarifa se adapta a tus horarios', 'Los trámites los hacemos nosotros'],
+        link: 'Hogares',
+      },
+      autoconsum: {
+        title: 'Quiero placas solares',
+        text: 'Primero estudiamos tu consumo. Si el autoconsumo tiene sentido, la instalación la hacen ingenieros y especialistas.',
+        look: ['Estudio de tu consumo', 'Ingenieros e instaladores especialistas', 'Qué pasa con los excedentes'],
+        link: 'Autoconsumo fotovoltaico',
+      },
+    },
+  },
+  // Pre-estudi: textos compartidos con otras páginas (src/components/home/pre-study-texts.ts).
+  preStudy: preStudyTexts.es,
+  stats: {
+    items: [
+      { value: '+2.000', label: 'clientes' },
+      { value: '+10', label: 'años en el sector' },
+      { value: '0 €', label: 'de coste para ti*' },
+      { value: 'Girona', label: 'visitas presenciales' },
+    ],
+    note: '*Nos remunera la comercializadora.',
+  },
+  year: {
+    eyebrow: 'Tu año con Logik',
+    title: 'Seguimiento de tu factura de luz y gas, mes a mes',
+    intro: 'No nos limitamos a cambiarte de tarifa: tu factura se revisa durante todo el año.',
+    month: 'Mes {n}',
+    middle: 'Meses 2 a 10',
+    first: [
+      { title: 'Revisión', text: 'Miramos tu factura y tu contrato para saber desde dónde partimos.' },
+      { title: 'Comparativa', text: 'Ponemos las ofertas de varias comercializadoras una al lado de otra.' },
+      { title: 'Gestión', text: 'Nos ocupamos de los trámites con la compañía: titularidad, potencia y altas.' },
+    ],
+    follow: { title: 'Seguimiento', text: 'Cada mes revisamos tu factura. Si hay una incidencia, la resolvemos nosotros.' },
+    renew: { title: 'Renovación', text: 'Te avisamos para renovar y que no se te pase la fecha.' },
+    flag: 'Te avisamos para renovar', // [Claude]
+    link: 'Ver cómo trabajamos',
+  },
+  compare: {
+    eyebrow: 'Por tu cuenta o con Logik',
+    title: 'Qué cambia cuando dejas tu factura en manos de una consultoría energética',
+    topic: 'Tema',
+    self: 'Por tu cuenta',
+    logik: 'Con Logik',
+    rows: [
+      {
+        topic: 'Ofertas',
+        self: 'Abrir las páginas de cada comercializadora y comparar tarifas una a una',
+        logik: 'Comparamos por ti las ofertas de varias comercializadoras',
+      },
+      {
+        topic: 'Trámites',
+        self: 'Llamadas, esperas y formularios con la compañía',
+        logik: 'Nos ocupamos nosotros, con trato directo con los administradores de cada compañía',
+      },
+      { topic: 'Después del cambio', self: 'Nadie comprueba si la factura es la que tocaba', logik: 'Revisión mensual y anual de tu factura' },
+      { topic: 'Renovación', self: 'El contrato vence y puede pasar que no te des cuenta', logik: 'Te avisamos en el mes 11' },
+      { topic: 'Incidencias', self: 'Cuando algo falla, te toca llamar', logik: 'Las resolvemos nosotros, incluidas en el servicio' },
+    ],
+    close: 'Y todo sin coste para ti: nos remunera la comercializadora.',
+  },
+  gestions: {
+    title: 'Tú decides qué cambia. Nosotros hacemos los trámites.',
+    text: 'Cambios de titularidad, subidas y bajadas de potencia y altas nuevas. Tenemos trato directo con los administradores de cada compañía, y eso agiliza los trámites.',
+    rows: ['Cambio de titularidad', 'Subida o bajada de potencia', 'Alta nueva'],
+    states: ['Solicitado', 'En trámite', 'Hecho'],
+    link: 'Ver las gestiones',
+  },
+  solar: {
+    title: 'Placas solares para empresas y hogares',
+    text: 'Estudiamos tu consumo y te decimos si el autoconsumo tiene sentido en tu caso. La instalación la hacen ingenieros y especialistas.',
+    diagram: { sun: 'Sol', panels: 'placas', home: 'casa o negocio', surplus: 'excedentes' },
+    link: 'Ver el autoconsumo',
+  },
+  blog: { title: 'Para entender tu factura', link: 'Ver todos los artículos' },
+  faq: {
+    eyebrow: '¿Dudas?',
+    title: 'Preguntas frecuentes sobre consultoría energética',
+    intro: 'Las respuestas a las preguntas que más nos hacen.', // [Claude]
+    cardTitle: '¿No encuentras tu pregunta?',
+    cardText: 'Escríbenos por WhatsApp o llámanos al {phone}.',
+    items: [
+      { q: '¿Cómo cobráis?', a: 'El servicio no tiene coste para ti. Nos remunera la comercializadora con la que contratas.' },
+      {
+        q: '¿Qué hay en la factura de la luz?',
+        a: 'Básicamente tres bloques: el término de potencia (lo que pagas por tenerla contratada, la uses o no), el término de energía (lo que consumes realmente) y los impuestos y otros conceptos, como el alquiler del equipo de medida. Con una factura reciente vemos si cada uno tiene sentido en tu caso.',
+      },
+      {
+        q: '¿Cómo sé si tengo la potencia adecuada?',
+        a: 'La potencia contratada es el máximo que puedes usar a la vez. Si es más alta de lo que necesitas, la pagas cada mes igualmente; si es demasiado baja, puede saltarte el general. Con una factura reciente y tu consumo, podemos valorarlo.',
+      },
+      { q: '¿Trabajáis con empresas, comunidades y hogares?', a: 'Sí. Trabajamos con empresas y pymes, comunidades de vecinos y hogares.' },
+      {
+        q: '¿Dónde trabajáis?',
+        a: 'Nuestra base está en Girona y hacemos visitas presenciales en localidades cercanas. También trabajamos en toda Cataluña y en toda España.',
+      },
+      { q: '¿Tengo que cambiar de compañía?', a: 'No necesariamente. Primero revisamos tu contrato y te decimos qué tiene sentido en tu caso.' },
+      {
+        q: '¿Qué gestiones hacéis?',
+        a: 'Cambios de titularidad, subidas y bajadas de potencia y altas nuevas, con trato directo con los administradores de cada compañía.',
+      },
+      {
+        q: '¿Qué incluye el seguimiento anual?',
+        a: 'Seguimiento mensual y anual, la renovación agendada en el mes 11 y la gestión de las incidencias que puedan surgir.',
+      },
+      {
+        q: '¿Hacéis instalaciones de placas solares?',
+        a: 'Sí, para pymes y hogares, con ingenieros y especialistas en instalación. La instalación tiene un coste; antes te explicamos si tiene sentido para tu consumo.',
+      },
+      {
+        q: '¿Qué necesito para empezar?',
+        a: 'Una factura reciente. Puedes enviarla por el formulario y la usaremos para preparar tu estudio, de acuerdo con nuestra política de privacidad.',
+      },
+    ],
+  },
+  closing: {
+    title: '¿Hablamos?',
+    text: 'Déjanos tus datos y te llamamos. Sin coste para ti.',
+    points: [
+      'Sin coste para ti: nos remunera la comercializadora',
+      'Nos ocupamos de los trámites con la compañía',
+      'Seguimiento mensual y anual',
+    ],
+  },
+};
+const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
+const schema = homeSchema(content, 'es', pageUrl, description, new URL(logo.src, Astro.site).href);
+---
+
+<BaseLayout lang="es" pageKey="home" title={title} description={description}>
+  <Fragment slot="head" set:html={`<script type="application/ld+json">${safeJsonLd(schema)}</script>`} />
+  <HomePage lang="es" content={content} />
+</BaseLayout>

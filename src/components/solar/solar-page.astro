@@ -1,0 +1,1188 @@
+---
+// Autoconsum fotovoltaic / Autoconsumo fotovoltaico. Un solo objetivo: que el visitante entienda
+// cómo funciona el autoconsumo, vea que primero se estudia su consumo y que la instalación la hacen
+// ingenieros y especialistas, y empiece el pre-estudi (o llame).
+// Orden: hero · cifras · per a qui (3 perfiles) · de l'estudi a la instal·lació (arco solar) ·
+// quan consumeixes, importa (gráfico del día) · enginyers i especialistes · per aprofundir (blog,
+// si hay) · FAQ · pre-estudi solar.
+// Reglas: nunca "sense cost" ni "gratis" (la instalación tiene coste); sin precios, ahorros,
+// producción, plazos ni ayudas; instalaciones solo en Girona y localidades cercanas.
+// El esquema animado de la home está escrito dentro de HomePage.astro y no se importa: el hero usa
+// su propio visual (autoconsum-hero-visual.astro), con el mismo lenguaje visual.
+// Reutiliza: stats-strip, faq-accordion, post-card y pre-study (casilla solar marcada, perfil
+// elegible, pagina_origen = "autoconsum", sin los textos de "sense cost").
+// Medición: cta_click (autoconsum_hero, autoconsum_consum, autoconsum_cierre), persona_select
+// { persona: llar | comunitat | pime }, consum_select { opcio }, click_call (location = autoconsum),
+// blog_card_click (location = autoconsum) y los del pre-estudi.
+import FaqAccordion from '../home/faq-accordion.astro';
+import PreStudy from '../home/pre-study.astro';
+import { preStudyTexts } from '../home/pre-study-texts';
+import StatsStrip from '../stats-strip.astro';
+import AutoconsumHeroVisual from './autoconsum-hero-visual.astro';
+import PostCard from '../blog/post-card.astro';
+import { PRE_STUDY_ID } from '../../config/home';
+import { pages, type Locale } from '../../config/pages';
+import { phone } from '../../config/site';
+import { getPublishedPosts } from '../../lib/blog';
+import type { ConsumShape, SolarContent, SolarPersona } from './types';
+import '../../styles/motion.css';
+
+interface Props {
+  lang: Locale;
+  content: SolarContent;
+}
+
+const { lang, content: c } = Astro.props;
+const words = c.hero.title.split(' ');
+const noArrow = (s: string) => s.replace(/\s*→$/, '');
+const studyHref = `#${PRE_STUDY_ID[lang]}`;
+
+// "Per aprofundir": hasta 3 artículos publicados del idioma; primero "Autoconsum", después
+// "Factura i potència".
+const published = await getPublishedPosts(lang);
+const related = [
+  ...published.filter((p) => p.data.category === 'autoconsum'),
+  ...published.filter((p) => p.data.category === 'factura'),
+].slice(0, 3);
+
+// Pre-estudi de esta página: sin "sense cost" en ningún texto (cabecera, puntos ni nota del envío).
+const studyContent = {
+  ...preStudyTexts[lang],
+  title: c.study.title,
+  lead: c.study.lead,
+  note: c.study.note,
+  points: c.study.points,
+  costNote: '',
+};
+
+const phoneIcon =
+  '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/>';
+const personaIcons: Record<SolarPersona, string> = {
+  llar: '<path d="m3 11 9-8 9 8M5 9.5V21h14V9.5"/><path class="ic-a" d="M10 21v-6h4v6"/>',
+  comunitat: '<path d="M3 21h18M4 21V7h7v14M13 21V3h7v18"/><path class="ic-a" d="M7 11h1M7 15h1M16 7h1M16 11h1M16 15h1"/>',
+  pime: '<path d="M3 21h18M5 21V5l8-3v19M13 8h6v13"/><path class="ic-a" d="M8 8h2M8 12h2M8 16h2M16 12h1M16 16h1"/>',
+};
+const trustIcons = [
+  '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/><path d="M8 12.5 10 10l2 2 2.5-3"/>',
+  '<path d="M2 18h20M4 18v-3a8 8 0 0 1 16 0v3"/><path d="M10 7V5h4v2M12 7v3"/>',
+];
+// Gráfico del día (viewBox 320 × 170): eje de 0 a 24 h entre x = 20 y x = 300; sin cifras.
+const shapes: Record<ConsumShape, string> = {
+  dia: 'M20 140V128H105C120 128 125 72 145 72H200C220 72 225 128 240 128H300V140Z',
+  vespre: 'M20 140V128H222C234 128 238 62 255 62H268C282 62 286 128 292 128H300V140Z',
+  mixt: 'M20 140V128H95C102 128 104 95 112 95C120 95 122 120 130 120H150C158 120 160 105 170 105C180 105 182 120 190 120H225C233 120 236 88 248 88C262 88 266 128 275 128H300V140Z',
+  nose: 'M20 108H300',
+};
+// Arco solar (viewBox 1000 × 220, centro del círculo en 500,900 y radio 860): ángulo de cada paso
+// para que el sol quede sobre el centro de su columna (12,5 %, 37,5 %, 62,5 % y 87,5 %).
+const sunAngles = [-25.85, -8.36, 8.36, 25.85];
+const arcPoint = (deg: number) => {
+  const r = (deg * Math.PI) / 180;
+  return [500 + 860 * Math.sin(r), 900 - 860 * Math.cos(r)].map((n) => Math.round(n * 10) / 10);
+};
+const [ax0, ay0] = arcPoint(-31);
+const [ax1, ay1] = arcPoint(31);
+---
+
+<!-- 1. Hero: texto y, al lado (≥ 1024 px) o debajo, el visual propio sol → placas → casa → excedentes
+     (autoconsum-hero-visual.astro; el destello solar va detrás de su sol). -->
+<section class="sl-hero tech-bg" aria-labelledby="sl-title" data-section="autoconsum">
+  <div class="sl-hero__mesh" aria-hidden="true" data-anim>
+    <span class="sl-hero__blob sl-hero__blob--a"></span>
+    <span class="sl-hero__blob sl-hero__blob--b"></span>
+  </div>
+  <div class="container sl-hero__grid">
+    <div class="sl-hero__text">
+      <p class="sl-hero__tag"><span class="sl-hero__pulse" aria-hidden="true"></span>{c.hero.tag}</p>
+      <h1 id="sl-title">
+        {
+          words.map((word, i) => (
+            <>
+              <span class="sl-hero__word" style={`--w:${i}`}>
+                {word}
+              </span>
+              {i < words.length - 1 && ' '}
+            </>
+          ))
+        }
+      </h1>
+      <p class="sl-hero__lead">{c.hero.lead}</p>
+      <a class="btn btn-primary btn-lg sl-hero__btn" href={studyHref} data-cta="autoconsum_hero">
+        {noArrow(c.hero.cta)} <span class="arrow" aria-hidden="true">→</span>
+      </a>
+      <p class="sl-hero__note">{c.hero.note}</p>
+      <a class="sl-call" href={phone.tel}>
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={phoneIcon} />
+        <span>{c.hero.call} {phone.display}</span>
+      </a>
+    </div>
+    <div class="sl-hero__visual">
+      <AutoconsumHeroVisual label={c.hero.visual.label} tags={c.hero.visual.tags} />
+    </div>
+  </div>
+</section>
+
+<StatsStrip items={c.stats} section="autoconsum" />
+
+<!-- 2. Per a qui: tres perfiles. Toda la tarjeta enlaza a su página; el botón pequeño lleva al
+     pre-estudi de esta página con el perfil marcado (persona_select). -->
+<section class="section surface-white surface-grid" aria-labelledby="sl-who-title" data-section="autoconsum">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.who.eyebrow}</p>
+      <h2 id="sl-who-title">{c.who.title}</h2>
+    </div>
+    <ul class="sl-who">
+      {
+        c.who.items.map((item, i) => (
+          <li class="sl-who__card card card-lift" data-reveal style={`--i:${i}`}>
+            <span class="sl-who__icon" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={personaIcons[item.persona]} />
+            </span>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+            <div class="sl-who__actions">
+              <a class="sl-who__link" href={pages[item.page][lang]}>
+                {noArrow(item.link)} <span aria-hidden="true">→</span>
+              </a>
+              <a class="btn btn-secondary sl-who__start" href={studyHref} data-persona={item.persona} data-profile={item.profile}>
+                {c.who.start}
+              </a>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<!-- 3. De l'estudi a la instal·lació: el sol recorre el arco al hacer scroll e ilumina cada paso.
+     Sin JS o con reduced-motion: sol fijo y los cuatro pasos visibles. -->
+<section class="section sl-path-section" aria-labelledby="sl-path-title" data-section="autoconsum">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.path.eyebrow}</p>
+      <h2 id="sl-path-title">{c.path.title}</h2>
+    </div>
+    <div class="sl-path" data-sl-path style="--sun:0deg;--progress:1">
+      <svg class="sl-path__arc" viewBox="0 0 1000 220" width="1000" height="220" aria-hidden="true" focusable="false">
+        <path class="sl-path__track" d={`M${ax0} ${ay0}A860 860 0 0 1 ${ax1} ${ay1}`}></path>
+        {
+          sunAngles.map((deg, i) => {
+            const [x, y] = arcPoint(deg);
+            return <circle class="sl-path__mark" data-sl-mark={i} cx={x} cy={y} r="9" />;
+          })
+        }
+        <g class="sl-path__sun">
+          <circle class="sl-path__halo" cx="500" cy="40" r="44"></circle>
+          <circle class="sl-path__core" cx="500" cy="40" r="22"></circle>
+        </g>
+      </svg>
+      <span class="sl-path__line" aria-hidden="true"><span class="sl-path__fill"></span></span>
+      <ol class="sl-path__list">
+        {
+          c.path.items.map((step, i) => (
+            <li class="sl-step" data-sl-step={i}>
+              <span class="sl-step__dot" aria-hidden="true">
+                <span class="sl-step__num">{i + 1}</span>
+                <svg class="sl-step__sun" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                  <circle cx="12" cy="12" r="4.5" fill="currentColor" />
+                  <path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" />
+                </svg>
+              </span>
+              <div>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- 4. Quan consumeixes, importa: gráfico del día (producción solar y silueta de consumo; sin cifras)
+     y un selector. Sin JS: todas las respuestas en lista, cada una con su frase. -->
+<section class="section band-alt" aria-labelledby="sl-consum-title" data-section="autoconsum">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">{c.consum.eyebrow}</p>
+      <h2 id="sl-consum-title">{c.consum.title}</h2>
+      <p class="section-head__intro">{c.consum.intro}</p>
+    </div>
+
+    <div class="sl-consum" data-consum data-shape={c.consum.items[0].shape} data-reveal>
+      <figure class="sl-chart">
+        <svg viewBox="0 0 320 170" width="320" height="170" role="img" aria-label={c.consum.chartLabel} focusable="false">
+          <path class="sl-chart__base" d="M20 140H300"></path>
+          <path class="sl-chart__tick" d="M90 140v6M160 140v6M230 140v6"></path>
+          <path class="sl-chart__sun" d="M100 140C135 140 145 40 171 40C197 40 207 140 242 140Z"></path>
+          {
+            c.consum.items.map((item) => (
+              <path class:list={['sl-chart__use', `sl-chart__use--${item.shape}`]} data-shape-path={item.shape} d={shapes[item.shape]} />
+            ))
+          }
+          <g class="sl-chart__icon sl-chart__icon--sun">
+            <circle cx="171" cy="20" r="6"></circle>
+            <path d="M171 8v3M171 29v3M159 20h3M180 20h3M162.5 11.5l2 2M177.5 26.5l2 2M162.5 28.5l2-2M177.5 13.5l2-2"></path>
+          </g>
+          <path class="sl-chart__icon sl-chart__icon--moon" d="M40 12a9 9 0 1 0 8 13 7 7 0 0 1-8-13Z"></path>
+          <path class="sl-chart__icon sl-chart__icon--moon" d="M286 12a9 9 0 1 0 8 13 7 7 0 0 1-8-13Z"></path>
+        </svg>
+      </figure>
+
+      <div class="sl-consum__side">
+        <div class="sl-consum__picker" role="radiogroup" aria-label={c.consum.label}>
+          {
+            c.consum.items.map((item, i) => (
+              <button
+                class="sl-chip"
+                type="button"
+                role="radio"
+                aria-checked={i === 0 ? 'true' : 'false'}
+                tabindex={i === 0 ? '0' : '-1'}
+                aria-controls={`sl-consum-a${i + 1}`}
+                data-consum-opt={i + 1}
+                data-shape={item.shape}
+              >
+                {item.q}
+              </button>
+            ))
+          }
+        </div>
+        <div class="sl-consum__answers" aria-live="polite" data-consum-answers>
+          {
+            c.consum.items.map((item, i) => (
+              <div class="sl-consum__answer" id={`sl-consum-a${i + 1}`} data-consum-answer={i + 1}>
+                <p class="sl-consum__q">{item.q}</p>
+                <p class="sl-consum__a">{item.a}</p>
+              </div>
+            ))
+          }
+        </div>
+        <a class="btn btn-primary sl-consum__btn" href={studyHref} data-cta="autoconsum_consum">
+          {noArrow(c.consum.cta)} <span class="arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Enginyers i especialistes: solo lo confirmado, sin logos ni certificaciones. -->
+<section class="section surface-white" aria-labelledby="sl-trust-title" data-section="autoconsum">
+  <div class="container">
+    <h2 id="sl-trust-title" class="sl-h2" data-reveal>{c.trust.title}</h2>
+    <ul class="sl-trust">
+      {
+        c.trust.items.map((item, i) => (
+          <li class="sl-trust__card card" data-reveal style={`--i:${i}`}>
+            <span class="sl-trust__icon" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={trustIcons[i % trustIcons.length]} />
+            </span>
+            <div>
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<!-- 6. Per aprofundir: solo si hay artículos publicados (si no, ni el título ni el hueco) -->
+{
+  related.length > 0 && (
+    <section class="section band-alt" aria-labelledby="sl-blog-title" data-section="autoconsum" data-sl-blog>
+      <div class="container">
+        <h2 id="sl-blog-title" class="sl-h2" data-reveal>
+          {c.blogTitle}
+        </h2>
+        <div class="sl-posts">
+          {related.map((post, i) => (
+            <PostCard post={post} lang={lang} position={i + 1} heading="h3" />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<!-- 7. Preguntes freqüents (7, acordeón exclusivo; el JSON-LD FAQPage sale de los mismos textos) -->
+<FaqAccordion lang={lang} content={c.faq} idPrefix="sl-faq" section="autoconsum" />
+
+<!-- 8. Pre-estudi solar: casilla de plaques solars ya marcada; perfil elegible. -->
+<PreStudy lang={lang} content={studyContent} origin="autoconsum" solarChecked />
+<div class="sl-after" data-section="autoconsum">
+  <div class="container sl-after__inner">
+    <p class="sl-after__call">
+      {c.study.callLead}{' '}
+      <a href={phone.tel} data-cta="autoconsum_cierre">{phone.display}</a>
+    </p>
+    <p class="sl-after__other">
+      <span>{c.study.other}</span>
+      <a class="sl-arrow-link" href={pages.llars[lang]}>{pages.llars.name[lang]} <span aria-hidden="true">→</span></a>
+      <a class="sl-arrow-link" href={pages.empreses[lang]}>{pages.empreses.name[lang]} <span aria-hidden="true">→</span></a>
+      <a class="sl-arrow-link" href={pages.comunitats[lang]}>{pages.comunitats.name[lang]} <span aria-hidden="true">→</span></a>
+    </p>
+  </div>
+</div>
+
+<script>
+  import { track } from '../../scripts/analytics';
+  import { initDecor, initReveal } from '../../scripts/motion';
+
+  initReveal();
+  initDecor();
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // --- Per a qui: persona_select y perfil marcado en el pre-estudi (paso 1). El enlace (#ancla)
+  // hace el scroll; sin JS también funciona. No cambia la lógica del pre-estudi: solo marca la
+  // opción como lo haría el visitante, que sigue con "Següent".
+  document.querySelectorAll<HTMLAnchorElement>('[data-persona]').forEach((button) => {
+    button.addEventListener('click', () => {
+      track('persona_select', { persona: button.dataset.persona, location: 'autoconsum' });
+      const radio = document.querySelector<HTMLInputElement>(`[data-pre-study] input[name="perfil"][data-code="${button.dataset.profile}"]`);
+      if (radio && !radio.checked) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+  });
+
+  // --- De l'estudi a la instal·lació: el sol avanza hasta el último paso alcanzado.
+  const ANGLES = [-25.85, -8.36, 8.36, 25.85];
+  const path = document.querySelector<HTMLElement>('[data-sl-path]');
+  if (path && !reduce && 'IntersectionObserver' in window) {
+    const steps = [...path.querySelectorAll<HTMLElement>('[data-sl-step]')];
+    const marks = [...path.querySelectorAll<SVGElement>('[data-sl-mark]')];
+    let reached = -1;
+    const paint = () => {
+      path.style.setProperty('--sun', `${reached < 0 ? -31 : ANGLES[reached]}deg`);
+      path.style.setProperty('--progress', String((reached + 1) / steps.length));
+      steps.forEach((s, i) => s.classList.toggle('is-lit', i <= reached));
+      steps.forEach((s, i) => s.classList.toggle('is-current', i === reached));
+      marks.forEach((m, i) => m.classList.toggle('is-lit', i <= reached));
+    };
+    path.classList.add('is-pending');
+    paint();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) if (e.isIntersecting) reached = Math.max(reached, Number((e.target as HTMLElement).dataset.slStep));
+        paint();
+      },
+      { rootMargin: '0px 0px -35% 0px' },
+    );
+    steps.forEach((s) => observer.observe(s));
+  }
+
+  // --- Quan consumeixes: radiogroup con tabindex móvil; cambia la silueta y la respuesta.
+  document.querySelectorAll<HTMLElement>('[data-consum]').forEach((root) => {
+    const options = [...root.querySelectorAll<HTMLButtonElement>('[data-consum-opt]')];
+    const answers = [...root.querySelectorAll<HTMLElement>('[data-consum-answer]')];
+    const select = (option: HTMLButtonElement, fromUser: boolean) => {
+      if (fromUser && option.getAttribute('aria-checked') === 'true') return;
+      const n = option.dataset.consumOpt!;
+      options.forEach((o) => {
+        const on = o === option;
+        o.setAttribute('aria-checked', String(on));
+        o.tabIndex = on ? 0 : -1;
+      });
+      answers.forEach((a) => (a.hidden = a.dataset.consumAnswer !== n));
+      root.dataset.shape = option.dataset.shape;
+      if (fromUser) track('consum_select', { opcio: Number(n), location: 'autoconsum' });
+    };
+    options.forEach((option, i) => {
+      option.addEventListener('click', () => select(option, true));
+      option.addEventListener('keydown', (event) => {
+        const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
+        if (!step) return;
+        event.preventDefault();
+        const next = options[(i + step + options.length) % options.length];
+        next.focus();
+        select(next, true);
+      });
+    });
+    select(options[0], false);
+  });
+
+  // --- Per aprofundir: blog_card_click con location = autoconsum.
+  document.querySelector('[data-sl-blog]')?.addEventListener('click', (event) => {
+    const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[data-card-link]');
+    if (!link) return;
+    const { slug, position, lang } = link.dataset;
+    track('blog_card_click', { slug, position: Number(position), lang, location: 'autoconsum' });
+  });
+</script>
+
+<style>
+  /* ---------------- 1. Hero ---------------- */
+  .sl-hero {
+    padding-block: 1.5rem 3rem;
+    color: var(--white);
+  }
+
+  .sl-hero__mesh {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .sl-hero__blob {
+    position: absolute;
+    width: 34rem;
+    height: 34rem;
+    border-radius: 50%;
+    opacity: 0.55;
+    animation: sl-drift 28s ease-in-out infinite alternate;
+  }
+
+  .sl-hero__blob--a {
+    top: -14rem;
+    right: -12rem;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-500) 45%, transparent), transparent);
+  }
+
+  .sl-hero__blob--b {
+    bottom: -18rem;
+    left: -14rem;
+    background: radial-gradient(closest-side, var(--teal-700), transparent);
+    animation-duration: 34s;
+    animation-direction: alternate-reverse;
+  }
+
+  @keyframes sl-drift {
+    to {
+      transform: translate3d(-6rem, 4rem, 0) scale(1.15);
+    }
+  }
+
+  /* < 1024 px: el visual va debajo del enlace de llamada, centrado y con la altura limitada
+     (máx. 20rem de ancho en móvil, 480 px en tableta). ≥ 1024 px: dos columnas. */
+  .sl-hero__grid {
+    display: grid;
+    gap: 1.75rem;
+  }
+
+  .sl-hero__text {
+    max-width: 46rem;
+  }
+
+  .sl-hero__visual {
+    justify-self: center;
+    width: min(100%, 20rem);
+  }
+
+  @media (min-width: 48rem) {
+    .sl-hero__visual {
+      width: min(100%, 480px);
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .sl-hero__grid {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+      gap: 3rem;
+      align-items: center;
+    }
+
+    .sl-hero__visual {
+      width: min(100%, 560px);
+    }
+  }
+
+  .sl-hero__tag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: fit-content;
+    margin-bottom: 0.875rem;
+    padding: 0.25rem 0.875rem 0.25rem 0.625rem;
+    border: 1px solid color-mix(in srgb, var(--white) 25%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--white) 8%, transparent);
+    font-weight: 700;
+  }
+
+  .sl-hero__pulse {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    background: var(--orange-500);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--orange-500) 30%, transparent);
+  }
+
+  .sl-hero h1 {
+    max-width: 22ch;
+    margin-bottom: 1rem;
+    color: var(--white);
+  }
+
+  .sl-hero__word {
+    display: inline-block;
+  }
+
+  /* Aparición palabra a palabra desde opacidad 0,15 (nunca 0: no retrasa el LCP). */
+  @media (prefers-reduced-motion: no-preference) {
+    .sl-hero__word {
+      animation: sl-word 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      animation-delay: calc(0.1s + var(--w) * 60ms);
+    }
+  }
+
+  @keyframes sl-word {
+    from {
+      opacity: 0.15;
+      transform: translateY(0.35em);
+    }
+  }
+
+  .sl-hero__lead {
+    max-width: 38rem;
+    margin-bottom: 1.25rem;
+    color: var(--teal-100);
+    font-size: 1.125rem;
+  }
+
+  .sl-hero__btn {
+    width: 100%;
+  }
+
+  .sl-hero__note {
+    margin: 0.5rem 0 0;
+    color: var(--teal-100);
+  }
+
+  .sl-call {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    margin-top: 0.25rem;
+    color: var(--white);
+    font-weight: 700;
+  }
+
+  .sl-call svg {
+    flex: none;
+    color: var(--orange-500);
+  }
+
+  @media (min-width: 30rem) {
+    .sl-hero__btn {
+      width: auto;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .sl-hero {
+      padding-block: 3.5rem 4.5rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .sl-hero__lead {
+      font-size: 1.25rem;
+    }
+  }
+
+  /* ---------------- Comunes ---------------- */
+  .sl-h2 {
+    max-width: 44rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .sl-arrow-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 44px;
+    color: var(--orange-700);
+    font-weight: 700;
+  }
+
+  /* ---------------- 2. Per a qui ---------------- */
+  .sl-who {
+    display: grid;
+    gap: 1rem;
+    align-items: start;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .sl-who__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+  }
+
+  .sl-who__card:focus-within {
+    border-color: var(--orange-700);
+  }
+
+  .sl-who__icon {
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    margin-bottom: 1rem;
+    border-radius: 0.875rem;
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .sl-who__icon :global(.ic-a) {
+    stroke: var(--orange-500);
+  }
+
+  .sl-who__card p {
+    color: var(--text-muted);
+  }
+
+  .sl-who__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sl-who__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 44px;
+    color: var(--orange-700);
+    font-weight: 700;
+  }
+
+  /* Toda la tarjeta es un único enlace (stretched link)... */
+  .sl-who__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  /* ...salvo el botón del pre-estudi, que queda por encima. */
+  .sl-who__start {
+    position: relative;
+    z-index: 1;
+    min-height: 44px;
+    padding-inline: 1rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .sl-who__icon svg {
+      transition: transform 0.35s cubic-bezier(0.3, 1.4, 0.5, 1);
+    }
+
+    .sl-who__card:is(:hover, :focus-within, :active) .sl-who__icon svg {
+      transform: translateY(-3px) scale(1.08);
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .sl-who {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+  }
+
+  /* ---------------- 3. De l'estudi a la instal·lació ---------------- */
+  .sl-path {
+    --dot: 3rem;
+    position: relative;
+  }
+
+  /* Móvil: línea vertical con el sol a la izquierda (el sol va en el último paso alcanzado). */
+  .sl-path__arc {
+    display: none;
+  }
+
+  .sl-path__line {
+    position: absolute;
+    top: 1rem;
+    bottom: 1rem;
+    left: calc(var(--dot) / 2 - 1.5px);
+    width: 3px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: var(--teal-100);
+  }
+
+  .sl-path__fill {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(var(--orange-500), var(--orange-700));
+    transform: scaleY(var(--progress, 1));
+    transform-origin: top;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sl-path__list {
+    display: grid;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .sl-step {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--dot) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .sl-step h3 {
+    margin-bottom: 0.25rem;
+    font-size: 1.1875rem;
+  }
+
+  .sl-step p {
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  .sl-step__dot {
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: var(--dot);
+    height: var(--dot);
+    border-radius: 50%;
+    background: var(--teal-900);
+    color: var(--white);
+    box-shadow: 0 0 0 5px var(--cream);
+    transition:
+      background-color 0.3s,
+      transform 0.3s;
+  }
+
+  .sl-step__num,
+  .sl-step__sun {
+    grid-area: 1 / 1;
+    transition:
+      opacity 0.3s,
+      transform 0.3s;
+  }
+
+  .sl-step__num {
+    font-family: var(--font-heading);
+    font-weight: 700;
+  }
+
+  .sl-step__sun {
+    color: var(--orange-500);
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
+  .sl-path.is-pending .sl-step:not(.is-lit) .sl-step__dot {
+    background: var(--teal-100);
+    color: var(--teal-900);
+    transform: scale(0.9);
+  }
+
+  .sl-path.is-pending .sl-step:not(.is-lit) {
+    opacity: 0.55;
+  }
+
+  .sl-step {
+    transition: opacity 0.4s ease;
+  }
+
+  /* El sol (móvil) se posa en el paso actual. */
+  .sl-step.is-current .sl-step__num {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
+  .sl-step.is-current .sl-step__sun {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Escritorio: arco solar encima de los cuatro pasos; el sol gira sobre el centro del círculo. */
+  @media (min-width: 48rem) {
+    .sl-path__arc {
+      display: block;
+      width: 100%;
+      height: auto;
+      margin-bottom: 0.5rem;
+      overflow: visible;
+    }
+
+    .sl-path__track {
+      fill: none;
+      stroke: var(--teal-100);
+      stroke-width: 4;
+      stroke-dasharray: 2 12;
+      stroke-linecap: round;
+    }
+
+    .sl-path__mark {
+      fill: var(--teal-100);
+      transition: fill 0.3s;
+    }
+
+    .sl-path__mark.is-lit {
+      fill: var(--orange-500);
+    }
+
+    .sl-path.is-pending .sl-path__mark:not(.is-lit) {
+      fill: var(--teal-100);
+    }
+
+    .sl-path:not(.is-pending) .sl-path__mark {
+      fill: var(--orange-500);
+    }
+
+    .sl-path__sun {
+      transform-box: view-box;
+      transform-origin: 500px 900px;
+      transform: rotate(var(--sun, 0deg));
+      transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .sl-path__halo {
+      fill: color-mix(in srgb, var(--orange-500) 22%, transparent);
+    }
+
+    .sl-path__core {
+      fill: var(--orange-500);
+    }
+
+    .sl-path__line {
+      display: none;
+    }
+
+    .sl-path__list {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+
+    .sl-step {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      gap: 0.75rem;
+      text-align: center;
+    }
+
+    /* En escritorio el sol es el del arco: el punto muestra siempre el número. */
+    .sl-step.is-current .sl-step__num {
+      opacity: 1;
+      transform: none;
+    }
+
+    .sl-step.is-current .sl-step__sun {
+      opacity: 0;
+    }
+
+    .sl-step.is-lit .sl-step__dot {
+      background: var(--orange-500);
+      color: var(--teal-900);
+    }
+
+    .sl-path:not(.is-pending) .sl-step__dot {
+      background: var(--orange-500);
+      color: var(--teal-900);
+    }
+  }
+
+  /* ---------------- 4. Quan consumeixes ---------------- */
+  .sl-consum {
+    display: grid;
+    gap: 1.5rem;
+    padding: 1.25rem 1rem;
+    border: 1px solid var(--teal-100);
+    border-radius: 1.5rem;
+    background: var(--white);
+  }
+
+  .sl-chart {
+    margin: 0;
+  }
+
+  .sl-chart svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .sl-chart__base {
+    stroke: var(--teal-900);
+    stroke-width: 2;
+  }
+
+  .sl-chart__tick {
+    stroke: var(--teal-700);
+    stroke-width: 2;
+  }
+
+  .sl-chart__sun {
+    fill: var(--orange-100);
+    stroke: var(--orange-500);
+    stroke-width: 2.5;
+  }
+
+  .sl-chart__use {
+    fill: color-mix(in srgb, var(--teal-700) 70%, transparent);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .sl-chart__use--nose {
+    fill: none;
+    stroke: var(--teal-700);
+    stroke-width: 4;
+    stroke-dasharray: 8 8;
+    stroke-linecap: round;
+  }
+
+  .sl-consum[data-shape='dia'] .sl-chart__use--dia,
+  .sl-consum[data-shape='vespre'] .sl-chart__use--vespre,
+  .sl-consum[data-shape='mixt'] .sl-chart__use--mixt,
+  .sl-consum[data-shape='nose'] .sl-chart__use--nose {
+    opacity: 1;
+  }
+
+  .sl-chart__icon {
+    fill: none;
+    stroke: var(--teal-900);
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  .sl-chart__icon--sun circle {
+    fill: var(--orange-500);
+    stroke: none;
+  }
+
+  .sl-chart__icon--sun path {
+    stroke: var(--orange-500);
+  }
+
+  .sl-chart__icon--moon {
+    fill: var(--teal-100);
+  }
+
+  /* Sin JS los chips no hacen nada: se ocultan y se ven todas las respuestas con su frase. */
+  :global(html:not(.js)) .sl-consum__picker {
+    display: none;
+  }
+
+  .sl-consum__picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .sl-chip {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    border: 1.5px solid var(--teal-100);
+    border-radius: 999px;
+    background: var(--cream);
+    color: var(--teal-900);
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      background-color 0.15s,
+      border-color 0.15s,
+      transform 0.2s;
+  }
+
+  .sl-chip[aria-checked='true'] {
+    border-color: var(--teal-900);
+    background: var(--teal-900);
+    color: var(--white);
+  }
+
+  .sl-chip:active {
+    transform: scale(0.98);
+  }
+
+  .sl-consum__answers {
+    display: grid;
+    gap: 0.75rem;
+    margin: 1rem 0 1.25rem;
+  }
+
+  .sl-consum__answer {
+    padding: 1rem 1.125rem;
+    border-left: 4px solid var(--orange-500);
+    border-radius: 0.75rem;
+    background: var(--orange-100);
+    color: var(--teal-900);
+  }
+
+  .sl-consum__q {
+    margin: 0 0 0.25rem;
+    font-weight: 700;
+  }
+
+  .sl-consum__a {
+    margin: 0;
+  }
+
+  /* Con JS: una respuesta visible; todas comparten la celda (altura de la más larga, sin CLS). */
+  :global(.js) .sl-consum__answers {
+    grid-template-areas: 'one';
+    gap: 0;
+  }
+
+  :global(.js) .sl-consum__answer {
+    grid-area: one;
+  }
+
+  :global(.js) .sl-consum__answer[hidden] {
+    display: block;
+    visibility: hidden;
+  }
+
+  :global(.js) .sl-consum__q {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .sl-consum__answer:not([hidden]) {
+      animation: sl-in 0.3s ease both;
+    }
+  }
+
+  @keyframes sl-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .sl-consum {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: 2.5rem;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    .sl-consum__answer {
+      font-size: 1.125rem;
+    }
+  }
+
+  /* ---------------- 5. Enginyers i especialistes ---------------- */
+  .sl-trust {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .sl-trust__card {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 1.5rem;
+  }
+
+  .sl-trust__card h3 {
+    margin-bottom: 0.25rem;
+  }
+
+  .sl-trust__card p {
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  .sl-trust__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 0.875rem;
+    background: var(--orange-100);
+    color: var(--teal-900);
+  }
+
+  @media (min-width: 48rem) {
+    .sl-trust {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+  }
+
+  /* ---------------- 6. Blog ---------------- */
+  .sl-posts {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  @media (min-width: 48rem) {
+    .sl-posts {
+      grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    }
+  }
+
+  /* ---------------- 8. Bajo el pre-estudi ---------------- */
+  .sl-after {
+    padding-block: 0 3rem;
+    background: var(--cream);
+  }
+
+  .sl-after__inner {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .sl-after__call,
+  .sl-after__other {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1rem;
+    align-items: center;
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .sl-after__call a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--orange-700);
+  }
+
+  .sl-after__other span:first-child {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sl-hero__blob,
+    .sl-path__fill,
+    .sl-path__sun,
+    .sl-path__mark,
+    .sl-step,
+    .sl-step__dot,
+    .sl-step__num,
+    .sl-step__sun,
+    .sl-chart__use,
+    .sl-chip,
+    .sl-who__icon svg {
+      animation: none;
+      transition: none;
+    }
+  }
+</style>
