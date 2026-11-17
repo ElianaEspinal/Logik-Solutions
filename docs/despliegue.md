@@ -48,9 +48,41 @@ No hay redirecciones desde las URLs de la web WordPress antigua: **pendiente** l
 
 Se configura en el panel de Hostinger, no en el código: hPanel → Avanzado → Directorios protegidos con contraseña → carpeta del subdominio de pruebas. Después de cada subida de `dist/`, comprueba que sigue pidiendo la contraseña (el `.htaccess` del build puede sobrescribir el que escribe hPanel). Cabeceras, CSP y bloqueos: docs/seguridad.md.
 
+## Formulario PHP (cdmon)
+
+El formulario envía a `/api/enviar.php`, un sistema propio en PHP (docs/formulario.md). El build copia `public/api/` y `public/.user.ini` a `dist/` y genera `dist/api/lib/opciones.php`. **`config.php` no está en `dist/`** (lleva credenciales): se crea a mano en el servidor, una sola vez.
+
+Pasos en el servidor (carpeta pública `web/`), la primera vez y cada vez que cambie de servidor:
+
+1. Sube el contenido de `dist/`, incluidos los archivos ocultos (`.htaccess`, `api/.htaccess` y `.user.ini`).
+2. **Crea `web/api/config.php`** copiando `web/api/config.example.php`. Rellena:
+   - `'modo' => 'smtp'`;
+   - la contraseña del buzón `web@logiksolutions.es`;
+   - una **clave secreta nueva**, generada con `php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"`. No reutilices la de local ni la de otro entorno.
+
+   En staging, añade su dominio a `dominios_permitidos`.
+3. **Verifica `.user.ini`:**
+   - Crea temporalmente un PHP con `<?php echo ini_get('upload_max_filesize'), ' ', ini_get('post_max_size'), ' ', ini_get('max_file_uploads'), ' ', ini_get('display_errors');` y ábrelo en el navegador. Debe dar `20M 24M 6` y `display_errors` vacío o `0`. **Bórralo después.**
+   - Si no da esos valores, configúralos en el panel de cdmon (PHP): puede que allí no se lea `.user.ini`.
+4. **Verifica PHP y GD** en el panel de cdmon o con un PHP temporal (bórralo después):
+   - PHP 8.1 a 8.4;
+   - extensiones `fileinfo`, `gd` (con JPEG, PNG y WEBP), `openssl`, `mbstring` y `zlib` (`exif` es opcional, para enderezar fotos).
+5. **Comprueba los 403 de `/api/`** con el navegador o con `curl -I`:
+   - `/api/config.php`, `/api/config.example.php`, `/api/lib/`, `/api/lib/correo.php` y `/api/lib/phpmailer/LICENSE` → **403**.
+   - `/.user.ini` → 404 (lo bloquea el `.htaccess` raíz).
+   - `/api/enviar.php` con GET → 405 (JSON).
+   - `/api/token.php` con GET → 405 (JSON).
+6. **Comprueba la IP real:**
+   - Si cdmon pone un proxy delante, `REMOTE_ADDR` sería la del proxy y el límite de 5 envíos por IP afectaría a todos los visitantes a la vez.
+   - Con el PHP temporal, compara `$_SERVER['REMOTE_ADDR']` con tu IP pública. Si no coinciden, para y avisa antes de publicar.
+7. Haz un envío real desde la web con una factura PDF y una foto, y comprueba que llega a `info@` (docs/prueba-real.md, punto 4).
+8. Revisa en el log de errores de PHP de cdmon que no haya líneas `[logik-form] config_` ni `almacen_error`.
+
+Al subir cambios más adelante, `config.php` no se toca: no está en `dist/`, así que la subida no lo pisa. **No borres la carpeta `web/api/` entera al subir.**
+
 ## Al pasar a producción
 
 1. `npm run build` sin errores (sin `[[PENDIENTE`), `npm run check:links` sin errores.
-2. Subir el contenido de `dist/` a la raíz del dominio, incluidos los `.htaccess` (son archivos ocultos).
+2. Subir el contenido de `dist/` a la raíz del dominio, incluidos los `.htaccess` y `.user.ini` (son archivos ocultos). La primera vez, seguir los pasos de "Formulario PHP (cdmon)".
 3. Comprobar en el navegador: `http://`, `www.` y una URL sin barra final redirigen con una sola 301; `/no-existe/` responde 404; ninguna página lleva `X-Robots-Tag`.
 4. Enviar `https://logiksolutions.es/sitemap.xml` en Search Console y revisar "Páginas" a los pocos días.

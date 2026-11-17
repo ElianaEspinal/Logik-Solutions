@@ -22,7 +22,7 @@ import { pages } from '../../config/pages';
 
   <h2 id="datos">Qué datos tratamos, para qué y con qué base</h2>
 
-  <h3>Formulario de contacto y pre-estudio</h3>
+  <h3>Formulario de contacto y preestudio</h3>
   <p>
     <strong>Datos:</strong> nombre y apellidos, correo electrónico, teléfono y lo que nos cuentes de tu caso: perfil
     (empresa, comunidad u hogar), tipo de suministro, importe aproximado de la factura, potencia, sector, localidad, qué
@@ -89,8 +89,9 @@ import { pages } from '../../config/pages';
         <p>
           Si adjuntas una factura, ten en cuenta que contiene datos personales: el nombre del titular, la dirección de
           suministro, el CUPS, el consumo y, a veces, la cuenta bancaria. Solo la usamos para preparar tu estudio, con la
-          misma base legal que el resto del formulario (medidas precontractuales a petición tuya), y la recibe el mismo
-          proveedor del formulario. Si prefieres no adjuntarla, basta con que nos indiques el importe aproximado.
+          misma base legal que el resto del formulario (medidas precontractuales a petición tuya), y nos llega por correo
+          electrónico junto con el resto de datos. Si prefieres no adjuntarla, basta con que nos indiques el importe
+          aproximado.
         </p>
       </>
     )
@@ -99,7 +100,7 @@ import { pages } from '../../config/pages';
   <h2 id="conservacion">Cuánto tiempo guardamos los datos</h2>
   <ul>
     <li>
-      Consultas y pre-estudios que no terminan en contrato: el tiempo necesario para atender tu solicitud y, como máximo,
+      Consultas y preestudios que no terminan en contrato: el tiempo necesario para atender tu solicitud y, como máximo,
       un año desde nuestro último contacto. Después los suprimimos o los mantenemos bloqueados solo durante los plazos de
       prescripción de posibles responsabilidades.
     </li>
@@ -123,13 +124,11 @@ import { pages } from '../../config/pages';
   </p>
   <ul>
     <li>
-      <strong>Formspree</strong> (encargado del tratamiento): recibe los formularios y nos los hace llegar. Sus
-      servidores están en Estados Unidos, en Amazon Web Services, y se acoge a cláusulas contractuales tipo.
-      <a href={tp.formspree} target="_blank" rel="noopener noreferrer">Política de privacidad de Formspree</a>.
-    </li>
-    <li>
-      <strong>Hostinger</strong> (encargado del tratamiento): alojamiento de la web.
-      <a href={tp.hostinger} target="_blank" rel="noopener noreferrer">Política de privacidad de Hostinger</a>.
+      <strong>cdmon</strong> (encargado del tratamiento): alojamiento de la web y del correo electrónico. Los datos y
+      las facturas que envías por el formulario nos llegan por correo electrónico al buzón de Logik Solutions: la web
+      no los guarda ni conserva los archivos. Conservamos esos correos durante los plazos del apartado
+      <a href="#conservacion">Cuánto tiempo guardamos los datos</a>.
+      <a href={tp.cdmonEs} target="_blank" rel="noopener noreferrer">Política de privacidad de cdmon</a>.
     </li>
     <li>
       <strong>Google</strong>: Google Analytics, solo si aceptas la analítica, y el mapa de Google Maps, solo si lo
@@ -149,9 +148,8 @@ import { pages } from '../../config/pages';
 
   <h2 id="transferencias">Transferencias internacionales</h2>
   <p>
-    Formspree trata los datos en Estados Unidos y se acoge a las cláusulas contractuales tipo aprobadas por la Comisión
-    Europea. Google y Meta también pueden tratar datos fuera del Espacio Económico Europeo, con las garantías que
-    explican en sus políticas de privacidad.
+    Google y Meta pueden tratar datos fuera del Espacio Económico Europeo, con las garantías que explican en sus
+    políticas de privacidad.
   </p>
 
   <h2 id="derechos">Tus derechos</h2>
@@ -182,7 +180,7 @@ import { pages } from '../../config/pages';
 
   <h2 id="decisiones">Decisiones automatizadas</h2>
   <p>
-    No tomamos decisiones automatizadas ni hacemos perfiles con efectos sobre ti. El pre-estudio solo calcula el gasto
+    No tomamos decisiones automatizadas ni hacemos perfiles con efectos sobre ti. El preestudio solo calcula el gasto
     anual aproximado a partir del importe que indicas; el estudio lo hace una persona de nuestro equipo.
   </p>
 

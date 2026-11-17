@@ -12,11 +12,16 @@
 //   - un enlace target="_blank" no lleva rel="noopener";
 //   - producción: X-Robots-Tag en el .htaccess, noindex fuera de la lista blanca
 //     (src/config/indexing.ts, mismo criterio que check:seo) o faltan las cabeceras de seguridad;
-//   - un formulario no usa POST, envía a una URL que no es https, no tiene honeypot (_gotcha) o no
-//     tiene la casilla de privacidad obligatoria y desmarcada;
+//   - un formulario no usa POST, no envía a /api/enviar.php, no tiene honeypot (website) o no tiene
+//     la casilla de privacidad obligatoria y desmarcada;
+//   - formulario PHP (docs/formulario.md): dist/ contiene api/config.php; aparece "formspree" en
+//     dist/; falta api/.htaccess, api/token.php, api/enviar.php, api/config.example.php, api/lib/
+//     o .user.ini; algún PHP propio de api/ no tiene la guarda, usa funciones prohibidas (mail(),
+//     eval, exec…), relaja la verificación TLS o incluye rutas variables; algún PHP tiene errores
+//     de sintaxis (php -l; PHP_BIN o php en el PATH o C:\php\php.exe);
 //   - aparece un patrón de secreto (claves de API, tokens, claves privadas) en dist/ o en src/;
 //   - falta /.well-known/security.txt o ha caducado.
-// Avisa (sin fallar) de los formularios sin destino (PUBLIC_FORM_ENDPOINT vacío).
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { NOINDEX_ALLOWLIST } from '../src/config/indexing.ts';
@@ -47,6 +52,8 @@ const walk = (dir, out = []) => {
 };
 const rel = (f) => relative(DIST, f).split(sep).join('/');
 const files = walk(DIST);
+/** Archivos que se suben pero nunca se sirven: los bloquea el .htaccess raíz o el de /api/. */
+const INTERNAL = (p) => p === '.user.ini' || p === 'api/config.example.php' || p.startsWith('api/lib/');
 
 // --- 1. Archivos que no deben estar en dist/ y reglas de bloqueo ---------------------------------
 const FORBIDDEN = /(^|\/)(\.git|\.env[^/]*|docs|node_modules)(\/|$)|\.(map|bak|old|orig|swp|tmp|log|sql|zip|tar|gz|tgz|7z|rar)$|~$|(^|\/)(package(-lock)?\.json)$/i;
@@ -54,9 +61,10 @@ for (const f of files) {
   const p = rel(f);
   if (FORBIDDEN.test(p)) err(p, 'archivo que no debe publicarse');
   const hidden = /(^|\/)\./.test(p);
-  if (hidden && !/(^|\/)\.htaccess$/.test(p) && !p.startsWith('.well-known/')) err(p, 'archivo oculto no permitido');
+  if (hidden && !/(^|\/)\.htaccess$/.test(p) && p !== '.user.ini' && !p.startsWith('.well-known/')) err(p, 'archivo oculto no permitido');
   // Todo lo que hay en dist/ se publica para servirse: ninguna regla del .htaccess puede bloquearlo.
-  if (!/(^|\/)\.htaccess$/.test(p) && isBlockedPath(p)) err(p, 'lo bloquearía una regla del .htaccess (src/config/server.mjs)');
+  // Excepciones: .user.ini (configuración de PHP) y lo interno de /api/, que deben quedar bloqueados.
+  if (!/(^|\/)\.htaccess$/.test(p) && !INTERNAL(p) && isBlockedPath(p)) err(p, 'lo bloquearía una regla del .htaccess (src/config/server.mjs)');
 }
 for (const must of ['robots.txt', 'sitemap.xml', 'llms.txt', '.well-known/security.txt']) {
   if (!existsSync(join(DIST, must))) err(must, 'no existe');
@@ -97,11 +105,11 @@ for (const f of files.filter((x) => x.endsWith('.html'))) {
     const where = `${path} ${open.match(/class="([^"]*)"/)?.[1] ?? 'form'}`;
     if (!/\smethod="post"/i.test(open)) err(where, 'el formulario no usa method="POST"');
     const action = open.match(/\saction="([^"]*)"/i)?.[1];
-    if (action === undefined) warn(where, 'sin destino (PUBLIC_FORM_ENDPOINT vacío): se ve pero no envía');
-    else if (!/^https:\/\//i.test(action)) err(where, `envía a una URL que no es https: ${action}`);
-    const honeypot = form.match(/<input\b[^>]*name="_gotcha"[^>]*>/i)?.[0];
-    if (!honeypot) err(where, 'sin honeypot (_gotcha)');
-    else if (!/tabindex="-1"/.test(honeypot) || !/autocomplete="off"/.test(honeypot)) err(where, 'honeypot sin tabindex="-1" o autocomplete="off"');
+    if (action !== '/api/enviar.php') err(where, `no envía a /api/enviar.php: ${action ?? '(sin action)'}`);
+    const honeypot = form.match(/<input\b[^>]*name="website"[^>]*>/i)?.[0];
+    if (!honeypot) err(where, 'sin honeypot (website)');
+    else if (!/tabindex="-1"/.test(honeypot) || !/autocomplete="off"/.test(honeypot) || !/aria-hidden="true"/.test(honeypot))
+      err(where, 'honeypot sin tabindex="-1", autocomplete="off" o aria-hidden="true"');
     const consent = form.match(/<input\b[^>]*name="consentiment"[^>]*>/i)?.[0];
     if (!consent) err(where, 'sin casilla de privacidad');
     else if (!/\srequired\b/.test(consent) || /\schecked\b/.test(consent)) err(where, 'la casilla de privacidad debe ser obligatoria y estar desmarcada');
@@ -122,6 +130,10 @@ else {
   for (const h of ['X-Content-Type-Options', 'Referrer-Policy', 'Permissions-Policy', 'X-Frame-Options', 'Strict-Transport-Security', 'Content-Security-Policy-Report-Only'])
     if (!new RegExp(`Header always set ${h} `).test(ht)) err('.htaccess', `falta la cabecera ${h}`);
   if (!/frame-ancestors 'self'/.test(ht)) err('.htaccess', "la CSP no incluye frame-ancestors 'self'");
+  if (!/form-action 'self'[;"]/.test(ht)) err('.htaccess', "la CSP debe tener form-action 'self' (sin otros destinos)");
+  if (!/connect-src 'self'/.test(ht)) err('.htaccess', "la CSP no incluye connect-src 'self'");
+  for (const p of ['api/token.php', 'api/enviar.php']) if (isBlockedPath(p)) err('.htaccess', `bloquearía /${p}`);
+  if (!isBlockedPath('.user.ini')) err('.htaccess', 'no bloquea .user.ini');
   if (/script-src[^;"]*'unsafe-inline'/.test(ht)) err('.htaccess', "la CSP permite 'unsafe-inline' en scripts");
   if (!/^Options -Indexes/m.test(ht)) err('.htaccess', 'falta Options -Indexes');
   if (!/^ErrorDocument 404 \/404\.html/m.test(ht)) err('.htaccess', 'falta ErrorDocument 404');
@@ -130,7 +142,7 @@ else {
 }
 
 // --- 5. Secretos ---------------------------------------------------------------------------------
-const TEXT = /\.(html|js|mjs|ts|astro|css|json|txt|xml|md|mdx|ya?ml|env|htaccess)$/i;
+const TEXT = /\.(html|js|mjs|ts|astro|css|json|txt|xml|md|mdx|ya?ml|env|htaccess|php|ini)$/i;
 for (const f of [...files, ...walk('src')].filter((x) => TEXT.test(x) || /(^|[\\/])\.[a-z]/i.test(x))) {
   const text = readFileSync(f, 'utf8');
   const m = text.match(SECRET);
@@ -144,6 +156,57 @@ if (sec) {
   const exp = sec.match(/^Expires: (\S+)/m)?.[1];
   if (!exp || !(Date.parse(exp) > Date.now())) err('.well-known/security.txt', `Expires ausente o caducado (${exp ?? '—'})`);
   else if (Date.parse(exp) - Date.now() < 30 * 864e5) warn('.well-known/security.txt', `caduca pronto (${exp}): renuévalo`);
+}
+
+// --- 7. Formulario PHP (/api/, docs/formulario.md) --------------------------------------------------
+if (existsSync(join(DIST, 'api/config.php'))) err('api/config.php', 'la configuración real (credenciales) no puede estar en dist/');
+for (const must of ['api/token.php', 'api/enviar.php', 'api/config.example.php', 'api/.htaccess', 'api/lib/opciones.php', 'api/lib/phpmailer/PHPMailer.php', '.user.ini']) {
+  if (!existsSync(join(DIST, must))) err(must, 'no existe en dist/');
+}
+for (const f of files.filter((x) => TEXT.test(x) || /(^|[\\/])\.[a-z]/i.test(x))) {
+  if (/formspree/i.test(readFileSync(f, 'utf8'))) err(rel(f), 'menciona formspree');
+}
+const apiHt = existsSync(join(DIST, 'api/.htaccess')) ? readFileSync(join(DIST, 'api/.htaccess'), 'utf8') : '';
+if (apiHt && (!/Require all denied/.test(apiHt) || !/FilesMatch "\^\(token\|enviar\)\\\.php\$"/.test(apiHt) || !/^Options -Indexes/m.test(apiHt)))
+  err('api/.htaccess', 'debe denegar todo salvo token.php y enviar.php y desactivar el listado');
+const userIni = existsSync(join(DIST, '.user.ini')) ? readFileSync(join(DIST, '.user.ini'), 'utf8') : '';
+for (const rule of [/upload_max_filesize\s*=\s*20M/, /post_max_size\s*=\s*24M/, /max_file_uploads\s*=\s*6/, /display_errors\s*=\s*Off/i])
+  if (userIni && !rule.test(userIni)) err('.user.ini', `falta ${rule.source}`);
+
+const php = files.filter((f) => f.endsWith('.php')).map((f) => [f, rel(f)]);
+const own = php.filter(([, p]) => !p.startsWith('api/lib/phpmailer/'));
+for (const [f, p] of own) {
+  const code = readFileSync(f, 'utf8');
+  const entry = p === 'api/token.php' || p === 'api/enviar.php';
+  if (!/^<\?php\s/.test(code) || !/declare\(strict_types=1\);/.test(code)) err(p, 'debe empezar por <?php y declare(strict_types=1)');
+  if (!entry && !/^<\?php\s+declare\(strict_types=1\);\s+defined\('LOGIK_FORM'\) \|\| exit;/.test(code)) err(p, "sin la guarda defined('LOGIK_FORM') || exit; al principio");
+  const body = code.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, '');
+  const banned = body.match(/(?<![\w$>:])(eval|exec|system|shell_exec|passthru|proc_open|popen|mail)\s*\(/);
+  if (banned) err(p, `función prohibida: ${banned[1]}()`);
+  if (/verify_peer|allow_self_signed|SMTPOptions/.test(body)) err(p, 'no se puede tocar la verificación TLS (verify_peer, allow_self_signed, SMTPOptions)');
+  if (/display_errors['"]\s*,\s*['"](1|on)/i.test(body)) err(p, 'display_errors activado');
+  for (const [, target] of body.matchAll(/\b(?:require|include)(?:_once)?\s*\(?\s*([^;]+);/g)) {
+    if (!/^__DIR__\s*\.\s*'[^'$]+'\s*\)?$/.test(target.trim())) err(p, `include/require con ruta variable: ${target.trim().slice(0, 60)}`);
+  }
+}
+
+const phpBin = [process.env.PHP_BIN, 'php', 'C:\\php\\php.exe'].filter(Boolean).find((bin) => {
+  try {
+    execFileSync(bin, ['-v'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+});
+if (!phpBin) err('php -l', 'no se encuentra PHP para comprobar la sintaxis (define PHP_BIN con la ruta de php)');
+else {
+  for (const [f, p] of php) {
+    try {
+      execFileSync(phpBin, ['-l', f], { stdio: 'pipe' });
+    } catch (e) {
+      err(p, `error de sintaxis (php -l): ${String(e.stdout ?? e.message).trim().split('\n')[0]}`);
+    }
+  }
 }
 
 // --- Resultado -----------------------------------------------------------------------------------

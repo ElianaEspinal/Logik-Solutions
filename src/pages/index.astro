@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import HomePage from '../components/home/HomePage.astro';
+import HomePage from '../components/home/home-page.astro';
 import { homeSchema } from '../components/home/schema';
 import type { HomeContent } from '../components/home/types';
 import logo from '../assets/images/logo-web.webp';
@@ -78,7 +78,7 @@ const content: HomeContent = {
       { title: 'Gestió', text: 'Ens ocupem dels tràmits amb la companyia: titularitat, potència i altes.' },
     ],
     follow: { title: 'Seguiment', text: 'Cada mes revisem la teva factura. Si hi ha una incidència, la resolem nosaltres.' },
-    renew: { title: 'Renovació', text: "T'avisem per renovar i no se't passi la data." },
+    renew: { title: 'Renovació', text: "T'avisem per renovar i que no se't passi la data." },
     flag: "T'avisem per renovar",
     link: 'Veure com treballem',
   },
@@ -147,11 +147,11 @@ const content: HomeContent = {
       },
       {
         q: 'Què inclou el seguiment anual?',
-        a: 'Seguiment mensual i anual, la renovació agendada al mes 11 i la gestió de les incidències que hi puguin haver.',
+        a: 'Seguiment mensual i anual, la renovació agendada al mes 11 i la gestió de les incidències que hi pugui haver.',
       },
       {
         q: 'Feu instal·lacions de plaques solars?',
-        a: "Sí, per a pimes i llars, amb enginyers i especialistes en instal·lació. La instal·lació té un cost; abans t'expliquem si té sentit pel teu consum.",
+        a: "Sí, per a pimes i llars, amb enginyers i especialistes en instal·lació. La instal·lació té un cost; abans t'expliquem si té sentit per al teu consum.",
       },
       {
         q: 'Què necessito per començar?',

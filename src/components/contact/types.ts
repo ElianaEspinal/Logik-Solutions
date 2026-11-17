@@ -36,16 +36,14 @@ export type ContactContent = {
     channel: { legend: string; options: Record<Channel, string> };
     message: string;
     messageOptional: string;
-    attach: { label: string; hint: string; privacy: string };
-    attachOff: string;
+    attach: { label: string; privacy: string };
     consent: string;
     consentLink: string;
     submit: string;
     sending: string;
     cost: string;
-    noEndpoint: string;
     errors: Record<
-      'perfil' | 'necessitat' | 'nom' | 'emailEmpty' | 'emailInvalid' | 'phoneEmpty' | 'phoneInvalid' | 'file' | 'consent',
+      'perfil' | 'necessitat' | 'nom' | 'emailEmpty' | 'emailInvalid' | 'phoneEmpty' | 'phoneInvalid' | 'consent',
       string
     >;
     error: string;

@@ -77,8 +77,8 @@ export const blogText = {
     breadcrumb: 'Ruta de navegació', // [Claude]
     home: 'Inici',
     by: 'Per', // [Claude]
-    published: 'Publicat el', // [Claude]
-    updated: 'Actualitzat el',
+    published: 'Publicat', // [Claude]
+    updated: 'Actualitzat',
     toc: 'En aquest article',
     faqTitle: 'Preguntes freqüents', // [Claude]
     postCtaTitle: 'Vols que ho revisem amb la teva factura?',
@@ -133,8 +133,8 @@ export const blogText = {
     breadcrumb: 'Ruta de navegación', // [Claude]
     home: 'Inicio',
     by: 'Por', // [Claude]
-    published: 'Publicado el', // [Claude]
-    updated: 'Actualizado el',
+    published: 'Publicado en', // [Claude]
+    updated: 'Actualizado en',
     toc: 'En este artículo',
     faqTitle: 'Preguntas frecuentes', // [Claude]
     postCtaTitle: '¿Quieres que lo revisemos con tu factura?',

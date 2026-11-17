@@ -20,6 +20,9 @@ interface Props {
 
 const { lang, title, section = 'logos', titleId = 'logos-title' } = Astro.props;
 const t = useTranslations(lang);
+// Alt de cada logo. En catalán, "de" se apostrofa ante vocal o h: "Logotip d'Hospital Veterinari…".
+const logoAlt = (name: string) =>
+  lang === 'ca' && /^[aeiouhàèéíòóú]/i.test(name) ? `Logotip d'${name}` : `${t('logos.alt')} ${name}`;
 // Logos en dos filas (la primera con un logo más si el total es impar).
 const half = Math.ceil(clients.length / 2);
 const logoRows = [clients.slice(0, half), clients.slice(half)];
@@ -52,7 +55,7 @@ const logoRows = [clients.slice(0, half), clients.slice(half)];
                         width={size.width}
                         height={size.height}
                         densities={[1, 2]}
-                        alt={copy === 1 ? '' : `${t('logos.alt')} ${client.name}`}
+                        alt={copy === 1 ? '' : logoAlt(client.name)}
                         loading="lazy"
                         decoding="async"
                         class:list={['logos__img', { 'logos__img--opaque': !client.transparent }]}

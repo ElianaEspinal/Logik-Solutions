@@ -67,17 +67,14 @@ const content: ContactContent = {
     message: '¿Quieres añadir algo?',
     messageOptional: '(opcional)',
     attach: {
-      label: 'Adjunta una factura reciente (PDF o imagen, máx. 10 MB)',
-      hint: 'Opcional', // [Claude]
+      label: 'Adjunta tus facturas recientes (opcional)',
       privacy: 'Contiene datos personales; solo la usamos para preparar tu estudio.',
     },
-    attachOff: 'Si quieres, después puedes enviarnos una factura reciente por WhatsApp.', // [Claude]
     consent: 'He leído y acepto la política de privacidad.',
     consentLink: 'política de privacidad',
     submit: 'Envía la consulta →',
     sending: 'Enviando…',
     cost: 'Sin coste para ti: nos remunera la comercializadora.',
-    noEndpoint: 'Envío desactivado: falta PUBLIC_FORM_ENDPOINT en .env (al enviar se mostrará el mensaje de error).',
     // Mensajes de validación [Claude]
     errors: {
       perfil: 'Elige para quién es la consulta.',
@@ -86,11 +83,10 @@ const content: ContactContent = {
       emailEmpty: 'Escribe tu correo electrónico.',
       emailInvalid: 'Revisa el correo: parece que no es correcto.',
       phoneEmpty: 'Escribe tu teléfono para que podamos llamarte o escribirte por WhatsApp.',
-      phoneInvalid: 'Escribe un teléfono de al menos 9 cifras.',
-      file: 'El archivo debe ser un PDF o una imagen y ocupar 10 MB como máximo.',
+      phoneInvalid: 'Escribe un teléfono de 9 a 15 cifras.',
       consent: 'Tienes que aceptar la política de privacidad para enviar la consulta.',
     },
-    error: `No se ha podido enviar. Inténtalo de nuevo o llámanos al ${phone.display}.`,
+    error: `No hemos podido enviar el formulario. Llámanos al ${phone.display} o escríbenos a info@logiksolutions.es.`,
     success: {
       title: 'Recibido. Gracias, {nom}.',
       text: 'Revisaremos tu caso y te contactaremos por {canal}.',

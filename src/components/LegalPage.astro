@@ -34,7 +34,7 @@ const l =
         updated: 'Última revisió:',
         name: 'Titular',
         trade: 'Nom comercial',
-        cif: 'CIF',
+        cif: 'NIF',
         address: 'Domicili social',
         email: 'Correu electrònic',
         phone: 'Telèfon',
@@ -45,7 +45,7 @@ const l =
         updated: 'Última revisión:',
         name: 'Titular',
         trade: 'Nombre comercial',
-        cif: 'CIF',
+        cif: 'NIF',
         address: 'Domicilio social',
         email: 'Correo electrónico',
         phone: 'Teléfono',
@@ -102,7 +102,7 @@ const schema = JSON.stringify({
             <div><dt>{l.name}</dt><dd>{legal.holder}</dd></div>
             <div><dt>{l.trade}</dt><dd>{legal.tradeName}</dd></div>
             <div><dt>{l.cif}</dt><dd>{legal.cif}</dd></div>
-            <div><dt>{l.address}</dt><dd>{legal.address}</dd></div>
+            <div><dt>{l.address}</dt><dd>{legal.address[lang]}</dd></div>
             <div><dt>{l.email}</dt><dd><a href={`mailto:${legal.email}`}>{legal.email}</a></dd></div>
             <div><dt>{l.phone}</dt><dd>{legal.phone}</dd></div>
             {registry && <div><dt>{l.registry}</dt><dd>{legal.registry[lang]}</dd></div>}

@@ -71,7 +71,6 @@ export interface PreStudyContent {
     emailInvalid: string;
     phone: string;
     consent: string;
-    file: string;
   };
 }
 

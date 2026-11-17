@@ -43,10 +43,9 @@ export function contactSchema(opts: {
   if (addressComplete) {
     business.address = {
       '@type': 'PostalAddress',
-      streetAddress: `${site.address.street[lang]}, ${site.address.floor[lang]}`,
       postalCode: site.address.postalCode,
       addressLocality: site.address.locality,
-      addressRegion: site.address.region,
+      addressRegion: site.address.region[lang],
       addressCountry: 'ES',
     };
   }

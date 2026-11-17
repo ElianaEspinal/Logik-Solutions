@@ -15,13 +15,12 @@ export const site = {
   nif: 'B02961043',
   email: 'info@logiksolutions.es',
   address: {
-    street: { ca: 'Carrer Creu, 43', es: 'Calle Creu, 43' },
-    floor: { ca: '3r 1a', es: '3.º 1.ª' },
+    // Sin calle ni número a propósito (decisión de Eliana, 6/11/2026): solo localidad, región y CP.
     // Corregido y confirmado por Eliana el 3/11/2026 (antes figuraba 17000 por error).
     postalCode: '17002',
     postalCodeVerified: true,
     locality: 'Girona',
-    region: 'Catalunya',
+    region: { ca: 'Catalunya', es: 'Cataluña' },
   },
 } as const;
 
@@ -49,26 +48,20 @@ export const founder = {
 } as const;
 
 /**
- * Dirección visible (NAP), tal como figura en docs/home-textos.md (sin código postal).
- * Si la calle se vaciara, solo se muestra la localidad: nunca se inventa una calle.
+ * Dirección visible (NAP) en cada idioma: "Girona, Catalunya 17002" / "Girona, Cataluña 17002".
+ * Sin calle ni número: nunca se inventa una calle.
  */
 export const addressLine = (lang: 'ca' | 'es') =>
-  site.address.street[lang]
-    ? `${site.address.street[lang]}, ${site.address.floor[lang]}, ${site.address.locality}`
-    : site.address.locality;
+  `${site.address.locality}, ${site.address.region[lang]} ${site.address.postalCode}`;
 
 /**
- * Dirección completa y confirmada (calle, número, código postal y localidad).
- * Solo entonces va la PostalAddress en el JSON-LD de la página de contacto.
- * Código postal 17002 confirmado por Eliana el 3/11/2026.
+ * Dirección confirmada (código postal y localidad). Solo entonces va la PostalAddress
+ * en el JSON-LD de la página de contacto. Código postal 17002 confirmado por Eliana el 3/11/2026.
  */
-export const addressComplete =
-  !!site.address.street.ca && !!site.address.postalCode && site.address.postalCodeVerified;
+export const addressComplete = !!site.address.postalCode && site.address.postalCodeVerified;
 
-/** Búsqueda para Google Maps (mapa y "Com arribar"): sin calle, centrado en Girona. */
-export const mapQuery = site.address.street.ca
-  ? `${site.address.street.ca}, ${site.address.locality}`
-  : `${site.address.locality}, ${site.address.region}`;
+/** Búsqueda para Google Maps (mapa y "Com arribar"): sin calle, centrado en Girona 17002. */
+export const mapQuery = addressLine('ca');
 
 export const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapQuery)}`;
 export const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`;

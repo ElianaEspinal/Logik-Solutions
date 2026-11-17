@@ -1,13 +1,13 @@
 ---
 // Formulario de contacto en dos pasos ("El teu cas" y "Les teves dades").
-// Sin JS: los dos pasos seguidos y envío nativo al mismo destino.
-// Con JS (src/scripts/contact-form.ts): pasos, validación en línea, fetch y estados.
-// Destino: PUBLIC_FORM_ENDPOINT (src/config/form.ts). Adjunto: PUBLIC_FORM_ATTACHMENTS.
+// Sin JS: los dos pasos seguidos, botón desactivado y aviso <noscript> con teléfono y correo
+// (sin el sello antispam el servidor no aceptaría el envío).
+// Con JS (src/scripts/contact-form.ts): pasos, validación en línea, sello, fetch y estados.
+// Destino: /api/enviar.php (docs/formulario.md). Adjuntos: hasta 5 facturas.
 // Nombres de campo estables y en minúsculas, iguales en catalán y castellano.
-import { SITE_ENV } from 'astro:env/server';
 import FileDrop from '../file-drop.astro';
 import { TRACKING_PARAMS } from '../../config/calculator';
-import { formAttachments, formEndpoint, formEnabled } from '../../config/form';
+import { SEND_URL } from '../../scripts/form-send';
 import { pages, type Locale } from '../../config/pages';
 import { phone } from '../../config/site';
 import { CHANNELS, DEFAULT_CHANNEL, NEEDS, PROFILES, type Need, type Profile } from '../../lib/contact';
@@ -20,7 +20,6 @@ interface Props {
 }
 
 const { lang, c } = Astro.props;
-const isStaging = SITE_ENV === 'staging';
 const id = (name: string) => `cf-${name}`;
 const t = useTranslations(lang);
 const stepLabel = (n: number) => c.step.replace('{n}', String(n)).replace('{total}', '2');
@@ -55,7 +54,6 @@ const [consentBefore, consentAfter] = c.consent.split(c.consentLink);
   id="formulari"
   data-contact
   data-i18n={JSON.stringify(i18n)}
-  data-endpoint={formEndpoint || undefined}
   data-section="contacte"
 >
   <div class="cf-progress cf-js" data-progress-wrap>
@@ -66,19 +64,10 @@ const [consentBefore, consentAfter] = c.consent.split(c.consentLink);
   </div>
   <p class="sr-only" aria-live="polite" data-live></p>
 
-  <form
-    class="cf-form"
-    action={formEndpoint || undefined}
-    method="POST"
-    enctype={formAttachments ? 'multipart/form-data' : undefined}
-    data-cf-form
-    data-contact-form
-    data-enabled={formEnabled ? 'true' : 'false'}
-  >
+  <form class="cf-form" action={SEND_URL} method="POST" enctype="multipart/form-data" data-cf-form data-contact-form>
     <input type="hidden" name="origen" value="contacte" />
     <input type="hidden" name="idioma" value={lang} />
-    <!-- Sin JS no se sabe el perfil al cargar: el script pone el asunto completo. -->
-    <input type="hidden" name="_subject" value="Nova consulta web — contacte" />
+    <input type="hidden" name="pagina" value={Astro.url.pathname} />
     {TRACKING_PARAMS.map((key) => <input type="hidden" name={key} value="" />)}
 
     <!-- Paso 1 -->
@@ -159,7 +148,7 @@ const [consentBefore, consentAfter] = c.consent.split(c.consentLink);
 
       <div class="cf-field">
         <label for={id('nom')}>{c.name}</label>
-        <input id={id('nom')} name="nom" type="text" autocomplete="name" autocapitalize="words" maxlength="100" required />
+        <input id={id('nom')} name="nom" type="text" autocomplete="name" autocapitalize="words" minlength="2" maxlength="80" required />
         <p class="field__error" id={id('nom-error')} data-error-for="nom" hidden></p>
       </div>
 
@@ -177,7 +166,7 @@ const [consentBefore, consentAfter] = c.consent.split(c.consentLink);
           id={id('telefon')}
           name="telefon"
           type="tel"
-          pattern="[0-9 +\(\)\.\-]{9,20}"
+          pattern="\+?[0-9 \.\(\)\-]{9,20}"
           inputmode="tel"
           autocomplete="tel"
           maxlength="20"
@@ -209,8 +198,7 @@ const [consentBefore, consentAfter] = c.consent.split(c.consentLink);
         <textarea id={id('missatge')} name="missatge" rows="3" maxlength="2000"></textarea>
       </div>
 
-      {formAttachments && <FileDrop lang={lang} idPrefix="cf" label={c.attach.label} hint={c.attach.hint} privacy={c.attach.privacy} />}
-      {!formAttachments && <p class="cf-note">{c.attachOff}</p>}
+      <FileDrop lang={lang} idPrefix="cf" label={c.attach.label} privacy={c.attach.privacy} />
 
       <div class="cf-field consent cf-consent">
         <input id={id('consentiment')} name="consentiment" type="checkbox" value="acceptat" required aria-describedby={id('consentiment-error')} />
@@ -227,7 +215,7 @@ const [consentBefore, consentAfter] = c.consent.split(c.consentLink);
       <!-- Honeypot antispam: fuera de la vista; las personas no lo ven ni lo enfocan. -->
       <div class="cf-trap" aria-hidden="true">
         <label for={id('website')}>Website</label>
-        <input id={id('website')} type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <input id={id('website')} type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
       </div>
 
       <div class="cf-send-error" role="alert" data-send-error hidden>
@@ -236,15 +224,12 @@ const [consentBefore, consentAfter] = c.consent.split(c.consentLink);
         </p>
       </div>
 
-      {
-        !formEnabled && isStaging && (
-          <p class="staging-marker" data-staging-only>
-            {c.noEndpoint}
-          </p>
-        )
-      }
+      <noscript>
+        <p class="cf-noscript">{t('form.noscript')}</p>
+      </noscript>
 
-      <button class="btn btn-primary btn-lg cf-submit" type="submit" data-submit data-label={c.submit.replace(/\s*→$/, '')}>
+      <!-- Desactivado sin JavaScript: lo activa src/scripts/contact-form.ts. -->
+      <button class="btn btn-primary btn-lg cf-submit" type="submit" disabled data-submit data-label={c.submit.replace(/\s*→$/, '')}>
         <span class="cf-spinner" aria-hidden="true"></span>
         <span data-submit-label>{c.submit.replace(/\s*→$/, '')}</span>
         <span class="cf-submit__arrow" aria-hidden="true">→</span>
@@ -265,6 +250,7 @@ const [consentBefore, consentAfter] = c.consent.split(c.consentLink);
     <p class="cf-success__text">
       {c.success.text.split('{canal}')[0]}<span data-success-channel></span>{c.success.text.split('{canal}')[1]}
     </p>
+    <p class="cf-success__note" role="status" data-success-note hidden></p>
     <p class="cf-success__urgent">{c.success.urgent}</p>
     <div class="cf-success__actions">
       <a class="btn btn-secondary" href={phone.tel}>{c.success.call} {phone.display}</a>
@@ -790,12 +776,18 @@ const [consentBefore, consentAfter] = c.consent.split(c.consentLink);
     grid-column: 1 / -1;
   }
 
-  .cf-note {
+  .cf-noscript,
+  .cf-success__note {
     margin: 0;
     padding: 0.75rem 1rem;
     border-radius: 0.75rem;
-    background: var(--teal-100);
+    background: var(--orange-100);
     color: var(--teal-900);
+    font-weight: 700;
+  }
+
+  .cf-success__note[hidden] {
+    display: none;
   }
 
   /* Honeypot: fuera de la vista (no display:none, que algunos bots detectan). */
@@ -820,12 +812,14 @@ const [consentBefore, consentAfter] = c.consent.split(c.consentLink);
     display: none;
   }
 
-  .cf-send-error p {
+  /* :global: el script reescribe el mensaje (párrafo y enlaces creados en el navegador). */
+  .cf-send-error :global(p) {
     margin: 0;
   }
 
   /* orange-700 no llega a 4,5 sobre orange-100: el enlace va en teal. */
-  .cf-send-error a {
+  .cf-send-error :global(a),
+  .cf-success__note :global(a) {
     color: var(--teal-900);
     text-decoration-color: currentColor;
     text-decoration-thickness: 1px;

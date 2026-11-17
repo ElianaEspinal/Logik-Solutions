@@ -37,7 +37,7 @@ faq:
 ---
 
 
-**Respuesta rápida:** el cambio de titular lo pide siempre el nuevo titular, a través de la comercializadora: por teléfono, web, oficina online o en persona. Necesitas tus datos, los del titular anterior, el CUPS o la dirección del suministro y una cuenta bancaria; a veces, copia de la escritura o del contrato de alquiler. Según la CNMC, es un trámite gratuito y el plazo oscila entre 1 y 20 días hábiles.
+**Respuesta rápida:** el cambio de titular lo pide siempre el nuevo titular, a través de la comercializadora: por teléfono, web, oficina en línea o en persona. Necesitas tus datos, los del titular anterior, el CUPS o la dirección del suministro y una cuenta bancaria; a veces, copia de la escritura o del contrato de alquiler. Según la CNMC, es un trámite gratuito y el plazo oscila entre 1 y 20 días hábiles.
 
 ## Qué es cambiar el titular de la luz
 
@@ -50,7 +50,7 @@ Es pasar el contrato de la luz a nombre de otra persona o empresa. Ocurre, por e
 
 ## Quién lo pide y dónde
 
-Siempre lo pide el nuevo titular, es decir, la persona que quiere poner el contrato a su nombre. Se hace con la comercializadora, por teléfono, en su web, en su oficina online o en persona.
+Siempre lo pide el nuevo titular, es decir, la persona que quiere poner el contrato a su nombre. Se hace con la comercializadora, por teléfono, en su web, en su oficina en línea o en persona.
 
 Además, el nuevo titular debe poder acreditar que tiene derecho a ocupar la vivienda o el local (lo que el Real Decreto 1955/2000 llama "justo título") y, según recoge [un informe de la CNE](https://www.cnmc.es/sites/default/files/1547767.pdf), estar al corriente de pago.
 
@@ -65,7 +65,7 @@ Además, el nuevo titular debe poder acreditar que tiene derecho a ocupar la viv
 ## Paso a paso
 
 1. Reúne los datos de la lista.
-2. Contacta con la comercializadora: por teléfono, por la web, en la oficina online o en persona.
+2. Contacta con la comercializadora: por teléfono, por la web, en la oficina en línea o en persona.
 3. Elige si quieres solo cambiar el titular (subrogación) o también la tarifa (traspaso).
 4. Firma el contrato del cambio.
 5. Espera: según la CNMC, el plazo oscila entre 1 y 20 días hábiles.

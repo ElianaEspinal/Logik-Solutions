@@ -14,7 +14,7 @@ translationKey: quina-potencia-contractar
 diagram: periodes-24h
 cta:
   title: "Vols que ens n'ocupem nosaltres?"
-  button: "Comença el pre-estudi"
+  button: "Comença el preestudi"
   section: blog_potencia_cierre
 faq:
   - q: "Quina potència he de contractar per a un pis?"

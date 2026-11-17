@@ -4,8 +4,12 @@
 // Enfoque confirmado: las gestiones van incluidas en el servicio anual; no se piden ni se
 // contratan por separado (nada de "Demana la teva gestió").
 
-/** También es el valor de tramit_select y del campo oculto tramit_interes del pre-estudi. */
-export type TramitKey = 'titularitat' | 'potencia' | 'alta' | 'incidencies';
+/**
+ * También es el valor de tramit_select y del campo oculto tramit_interes del pre-estudi
+ * (el servidor solo acepta estos valores: src/config/form-options.ts).
+ */
+export const TRAMIT_KEYS = ['titularitat', 'potencia', 'alta', 'incidencies'] as const;
+export type TramitKey = (typeof TRAMIT_KEYS)[number];
 
 export interface GestionsContent {
   hero: {

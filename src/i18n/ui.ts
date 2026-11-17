@@ -35,7 +35,7 @@ export const ui = {
     'cookies.necessaryText': 'Guarden la teva elecció sobre les cookies. Són necessàries.',
     'cookies.alwaysOn': 'Sempre actives',
     'cookies.analytics': 'Analítica',
-    'cookies.analyticsText': 'Google Analytics, a través de Google Tag Manager: visites i ús de la web, de manera agregada.',
+    'cookies.analyticsText': 'Google Analytics, a través de Google Tag Manager: visites i ús del web, de manera agregada.',
     'cookies.external': 'Contingut extern',
     'cookies.externalText': 'El mapa de Google Maps, que pot instal·lar les seves pròpies cookies.',
     'cookies.ads': 'Publicitat',
@@ -59,19 +59,19 @@ export const ui = {
     'form.submit': 'Demana el meu estudi',
     'form.sending': 'Enviant…', // [Claude]
     'form.success': "Gràcies! Hem rebut la teva sol·licitud i et contactarem.",
-    'form.error': `No s'ha pogut enviar. Torna-ho a provar o truca'ns al ${phone.display}.`,
-    'form.attach': 'Adjunta una factura (opcional)',
-    'form.attachDrop': "Arrossega-la aquí o toca per triar-la",
-    'form.attachHint': 'PDF, JPG o PNG · màx. 10 MB',
+    'form.error': `No hem pogut enviar el formulari. Truca'ns al ${phone.display} o escriu-nos a info@logiksolutions.es.`,
+    'form.noscript': `Per enviar el formulari cal JavaScript. Truca'ns al ${phone.display} o escriu-nos a info@logiksolutions.es.`, // [Claude]
+    'form.attach': 'Adjunta les teves factures (opcional)',
+    'form.attachDrop': 'Arrossega-les aquí o toca per triar-les',
+    'form.attachHint': 'PDF o foto (JPG, PNG). Màxim 5 arxius i 20 MB. Si pesa més, envia-la a info@logiksolutions.es',
     'form.attachRemove': 'Treure',
     'form.attachPrivacy': 'La factura conté dades personals: només la fem servir per preparar el teu estudi.',
-    'form.attachOff': 'Pots enviar-nos la factura per WhatsApp quan et truquem.',
     'form.errProfile': 'Tria què vols revisar.', // [Claude]
     'form.errName': 'Escriu el teu nom.', // [Claude]
-    'form.errPhone': 'Escriu un telèfon de 9 xifres com a mínim.', // [Claude]
+    'form.errPhone': 'Escriu un telèfon de 9 a 15 xifres.', // [Claude]
     'form.errEmail': 'Revisa el correu: sembla que no és correcte.', // [Claude]
     'form.errConsent': "Has d'acceptar la política de privacitat.", // [Claude]
-    'form.errFile': 'El fitxer ha de ser PDF, JPG o PNG i ocupar 10 MB com a màxim.', // [Claude]
+    'form.errFile': 'El fitxer ha de ser PDF, JPG o PNG i ocupar 20 MB com a màxim.', // [Claude]
   },
   es: {
     'lang.name': 'Castellano',
@@ -126,19 +126,19 @@ export const ui = {
     'form.submit': 'Pide mi estudio',
     'form.sending': 'Enviando…', // [Claude]
     'form.success': '¡Gracias! Hemos recibido tu solicitud y te contactaremos.',
-    'form.error': `No se ha podido enviar. Vuelve a intentarlo o llámanos al ${phone.display}.`,
-    'form.attach': 'Adjunta una factura (opcional)',
-    'form.attachDrop': 'Arrástrala aquí o toca para elegirla',
-    'form.attachHint': 'PDF, JPG o PNG · máx. 10 MB',
+    'form.error': `No hemos podido enviar el formulario. Llámanos al ${phone.display} o escríbenos a info@logiksolutions.es.`,
+    'form.noscript': `Para enviar el formulario necesitas JavaScript. Llámanos al ${phone.display} o escríbenos a info@logiksolutions.es.`, // [Claude]
+    'form.attach': 'Adjunta tus facturas (opcional)',
+    'form.attachDrop': 'Arrástralas aquí o toca para elegirlas',
+    'form.attachHint': 'PDF o foto (JPG, PNG). Máximo 5 archivos y 20 MB. Si pesa más, envíala a info@logiksolutions.es',
     'form.attachRemove': 'Quitar',
     'form.attachPrivacy': 'La factura contiene datos personales: solo la usamos para preparar tu estudio.',
-    'form.attachOff': 'Puedes enviarnos la factura por WhatsApp cuando te llamemos.',
     'form.errProfile': 'Elige qué quieres revisar.', // [Claude]
     'form.errName': 'Escribe tu nombre.', // [Claude]
-    'form.errPhone': 'Escribe un teléfono de al menos 9 cifras.', // [Claude]
+    'form.errPhone': 'Escribe un teléfono de 9 a 15 cifras.', // [Claude]
     'form.errEmail': 'Revisa el correo: parece que no es correcto.', // [Claude]
     'form.errConsent': 'Tienes que aceptar la política de privacidad.', // [Claude]
-    'form.errFile': 'El archivo debe ser PDF, JPG o PNG y ocupar 10 MB como máximo.', // [Claude]
+    'form.errFile': 'El archivo debe ser PDF, JPG o PNG y ocupar 20 MB como máximo.', // [Claude]
   },
 } as const satisfies Record<Locale, Record<string, string>>;
 

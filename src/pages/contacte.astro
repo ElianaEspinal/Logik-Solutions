@@ -65,17 +65,14 @@ const content: ContactContent = {
     message: 'Vols afegir alguna cosa?',
     messageOptional: '(opcional)',
     attach: {
-      label: 'Adjunta una factura recent (PDF o imatge, màx. 10 MB)',
-      hint: 'Opcional', // [Claude]
+      label: 'Adjunta les teves factures recents (opcional)',
       privacy: 'Conté dades personals; només la fem servir per preparar el teu estudi.',
     },
-    attachOff: 'Si vols, després ens pots enviar una factura recent per WhatsApp.', // [Claude]
     consent: 'He llegit i accepto la política de privacitat.',
     consentLink: 'política de privacitat',
     submit: 'Envia la consulta →',
     sending: 'Enviant…',
     cost: 'Sense cost per a tu: ens remunera la comercialitzadora.',
-    noEndpoint: "Enviament desactivat: falta PUBLIC_FORM_ENDPOINT a .env (en enviar, es mostrarà el missatge d'error).",
     // Mensajes de validación [Claude]
     errors: {
       perfil: 'Tria per a qui és la consulta.',
@@ -84,11 +81,10 @@ const content: ContactContent = {
       emailEmpty: 'Escriu el teu correu electrònic.',
       emailInvalid: 'Revisa el correu: sembla que no és correcte.',
       phoneEmpty: 'Escriu el teu telèfon perquè et puguem trucar o escriure per WhatsApp.',
-      phoneInvalid: 'Escriu un telèfon de 9 xifres com a mínim.',
-      file: 'El fitxer ha de ser PDF o una imatge i ocupar 10 MB com a màxim.',
+      phoneInvalid: 'Escriu un telèfon de 9 a 15 xifres.',
       consent: "Has d'acceptar la política de privacitat per enviar la consulta.",
     },
-    error: `No s'ha pogut enviar. Torna-ho a provar o truca'ns al ${phone.display}.`,
+    error: `No hem pogut enviar el formulari. Truca'ns al ${phone.display} o escriu-nos a info@logiksolutions.es.`,
     success: {
       title: 'Rebut. Gràcies, {nom}.',
       text: 'Revisarem el teu cas i et contactarem per {canal}.',

@@ -1,8 +1,8 @@
 ---
-// Zona para adjuntar la factura (arrastrar o tocar). La comparten el formulario de
-// cierre (ContactForm) y el pre-estudi de la home. PDF o imagen, máx. 10 MB.
-// El comportamiento (nombre y tamaño, quitar, arrastrar) lo pone el script de cada
-// formulario; src/scripts/file-drop.ts tiene la versión reutilizable.
+// Zona para adjuntar facturas (arrastrar o tocar), varias a la vez. La comparten el formulario de
+// contacto, el de cierre (ContactForm) y el pre-estudi. PDF o foto (JPG, PNG, WEBP): máximo 5
+// archivos, 20 MB cada uno y 20 MB en total (los mismos límites que el servidor, docs/formulario.md).
+// El comportamiento (lista, quitar, arrastrar, errores) está en src/scripts/file-drop.ts.
 import type { Locale } from '../config/pages';
 import { useTranslations } from '../i18n/ui';
 
@@ -12,23 +12,23 @@ interface Props {
   idPrefix: string;
   /** Textos propios (p. ej. la página de contacto); por defecto, los de src/i18n/ui.ts. */
   label?: string;
-  hint?: string;
   privacy?: string;
 }
 
-const { lang, idPrefix, label, hint, privacy } = Astro.props;
+const { lang, idPrefix, label, privacy } = Astro.props;
 const t = useTranslations(lang);
 const id = (name: string) => `${idPrefix}-${name}`;
 ---
 
-<div class="field drop" data-drop>
+<div class="field drop" data-drop data-remove-label={t('form.attachRemove')}>
   <input
     class="drop__input"
     id={id('file')}
-    name="factura"
+    name="factura[]"
     type="file"
-    accept="application/pdf,image/*"
-    aria-describedby={`${id('file-hint')} ${id('file-privacy')}`}
+    multiple
+    accept=".pdf,.jpg,.jpeg,.png,.webp"
+    aria-describedby={`${id('file-hint')} ${id('file-error')} ${id('file-privacy')}`}
   />
   <label class="drop__zone" for={id('file')}>
     <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -37,19 +37,10 @@ const id = (name: string) => `${idPrefix}-${name}`;
     </svg>
     <strong>{label ?? t('form.attach')}</strong>
     <span>{t('form.attachDrop')}</span>
-    <span class="drop__hint" id={id('file-hint')}>{hint ?? t('form.attachHint')}</span>
+    <span class="drop__hint" id={id('file-hint')}>{t('form.attachHint')}</span>
   </label>
-  <div class="drop__file" data-drop-file hidden>
-    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"></path>
-      <path d="M14 3v5h5"></path>
-    </svg>
-    <span class="drop__name" data-drop-name></span>
-    <button class="drop__remove" type="button" data-drop-remove>
-      {t('form.attachRemove')}
-    </button>
-  </div>
-  <p class="field__error" id={id('file-error')} data-error-for="factura" hidden>{t('form.errFile')}</p>
+  <ul class="drop__files" data-drop-files hidden></ul>
+  <p class="field__error" id={id('file-error')} data-error-for="factura" aria-live="polite" hidden></p>
   <p class="drop__privacy" id={id('file-privacy')}>{privacy ?? t('form.attachPrivacy')}</p>
 </div>
 
@@ -103,11 +94,28 @@ const id = (name: string) => `${idPrefix}-${name}`;
     outline-offset: 2px;
   }
 
+  /* Con archivos, la zona se queda más compacta para añadir otro; con 5, desaparece. */
   .drop:global(.has-file) .drop__zone {
+    padding: 0.75rem 1rem;
+  }
+
+  .drop:global(.is-full) .drop__zone {
     display: none;
   }
 
-  .drop__file {
+  .drop__files {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .drop__files[hidden] {
+    display: none;
+  }
+
+  .drop__files :global(.drop__file) {
     display: flex;
     align-items: center;
     gap: 0.625rem;
@@ -117,23 +125,14 @@ const id = (name: string) => `${idPrefix}-${name}`;
     background: var(--white);
   }
 
-  .drop__file[hidden] {
-    display: none;
-  }
-
-  .drop__file svg {
-    flex: none;
-    color: var(--orange-700);
-  }
-
-  .drop__name {
+  .drop__files :global(.drop__name) {
     flex: 1;
     min-width: 0;
     overflow-wrap: anywhere;
     font-weight: 700;
   }
 
-  .drop__remove {
+  .drop__files :global(.drop__remove) {
     flex: none;
     min-width: 44px;
     min-height: 44px;

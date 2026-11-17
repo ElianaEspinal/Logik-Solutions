@@ -23,7 +23,7 @@ Asistente por pasos que sustituye a la antigua mini calculadora. Es la principal
 
 ## Datos que se envían (para la política de privacidad)
 
-Se envían a `PUBLIC_FORM_ENDPOINT`, el mismo destino que el formulario de cierre. Si hay factura, el envío va en multipart; si no, como formulario normal.
+Se envían a `/api/enviar.php`, el sistema propio en PHP (docs/formulario.md), el mismo destino que el formulario de cierre y el de contacto. El envío va siempre en multipart, con el sello antispam (`ts`, `nonce`, `firma`). El servidor solo acepta los campos de esta tabla, y en los de opciones solo los textos que muestra la web.
 
 | Campo | Contenido |
 | --- | --- |
@@ -34,10 +34,13 @@ Se envían a `PUBLIC_FORM_ENDPOINT`, el mismo destino que el formulario de cierr
 | `interes_solar` | «Sí, m'interessa» / «Sí, me interesa» o «No» |
 | `nom`, `cognoms`, `email`, `telefon` | Datos de contacto |
 | `consentiment` | `acceptat` |
-| `factura` | Solo con `PUBLIC_FORM_ATTACHMENTS=true` y si el visitante la adjunta (PDF o imagen, máx. 10 MB) |
+| `pagina` | Ruta de la página desde la que se envía (por ejemplo `/empreses-i-pimes/`) |
+| `factura[]` | Si el visitante las adjunta: hasta 5 archivos (PDF o foto JPG, PNG o WEBP), 20 MB cada uno y 20 MB en total. Las fotos se comprimen en el navegador. |
+| `tramit_interes` | Solo desde Gestió i tràmits: `titularitat`, `potencia`, `alta` o `incidencies` |
 | `franja_import` | **Interno, no visible.** `<150`, `150-500`, `500-2000` o `>2000` (€/mes), para que Logik priorice |
 | `utm_source`, `utm_medium`, `utm_campaign`, `gclid` | **Internos, no visibles.** Se leen de la URL de la página en el momento del envío (vacíos si no hay). No se guardan en cookies ni en localStorage |
-| `_subject`, `_gotcha` | Asunto del correo y campo antispam (vacío) |
+| `website` | Campo antispam (honeypot), vacío |
+| `ts`, `nonce`, `firma` | Sello antispam (no se guardan) |
 
 **Pendiente para la política de privacidad:** mencionar que el pre-estudi recoge el importe aproximado de la factura, el perfil y el suministro, la franja de importe calculada y los parámetros de campaña de la URL (`utm_*` y `gclid`), y para qué se usan (preparar el estudio, priorizar las solicitudes y medir las campañas).
 
@@ -67,4 +70,4 @@ Se envían a `PUBLIC_FORM_ENDPOINT`, el mismo destino que el formulario de cierr
 | Correo no válido | Revisa el correu: sembla que no és correcte. | Revisa el correo: parece que no es correcto. |
 | Teléfono | Escriu un telèfon de 9 xifres com a mínim. | Escribe un teléfono de al menos 9 cifras. |
 | Consentimiento | Has d'acceptar la política de privacitat per continuar. | Tienes que aceptar la política de privacidad para continuar. |
-| Factura | El fitxer ha de ser PDF, JPG o PNG i ocupar 10 MB com a màxim. | El archivo debe ser PDF, JPG o PNG y ocupar 10 MB como máximo. |
+| Factura | El fitxer ha de ser PDF, JPG o PNG i ocupar 20 MB com a màxim. | El archivo debe ser PDF, JPG o PNG y ocupar 20 MB como máximo. |

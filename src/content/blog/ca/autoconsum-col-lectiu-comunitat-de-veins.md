@@ -43,7 +43,7 @@ faq:
 
 ## Què és l'autoconsum col·lectiu
 
-És quan diversos consumidors s'alimenten, de manera acordada, de la mateixa instal·lació de generació. Molta gent ho busca com autoconsum compartit o com a plaques solars per a una comunitat de veïns. [Segons l'IDAE](https://WWW.IDAE.ES/sites/default/files/documentos/idae/tecnologias/energias_renovables/OFICINA-de-AUTOCONSUMO/2024-04-29_Preguntas_FAQ_Autoconsumo_Colectivo_(v2).pdf), no cal constituir una comunitat energètica: n'hi ha prou amb un acord entre els consumidors associats, l'anomenat acord de repartiment.
+És quan diversos consumidors s'alimenten, de manera acordada, de la mateixa instal·lació de generació. Molta gent ho busca com a autoconsum compartit o com a plaques solars per a una comunitat de veïns. [Segons l'IDAE](https://WWW.IDAE.ES/sites/default/files/documentos/idae/tecnologias/energias_renovables/OFICINA-de-AUTOCONSUMO/2024-04-29_Preguntas_FAQ_Autoconsumo_Colectivo_(v2).pdf), no cal constituir una comunitat energètica: n'hi ha prou amb un acord entre els consumidors associats, l'anomenat acord de repartiment.
 
 El [Reial decret 244/2019](https://www.boe.es/buscar/pdf/2019/BOE-A-2019-5089-consolidado.pdf) fixa que tots els participants han de pertànyer a la mateixa modalitat d'autoconsum i comunicar a la distribuïdora un mateix acord signat per tots.
 
@@ -68,7 +68,7 @@ L'acord de repartiment diu quina part de l'energia correspon a cada participant.
 
 - Els coeficients han de sumar 1 en cada hora, de manera que es reparteix tota l'energia.
 - Poden ser iguals totes les hores o diferents per a cada hora.
-- Se n'envien dos documents a la distribuïdora: l'acord signat i un fitxer .txt amb els coeficients.
+- S'envien dos documents a la distribuïdora: l'acord signat i un fitxer .txt amb els coeficients.
 - Es pot nomenar un gestor d'autoconsum que ho tramiti en nom de tots. No és el titular de la instal·lació.
 
 Quan s'hi incorporen o en surten participants, o es vol canviar el repartiment, cal un nou acord. Segons l'IDAE, els coeficients es poden modificar amb una periodicitat no inferior a quatre mesos.
@@ -88,7 +88,7 @@ La comunitat de propietaris pot ser la titular de la instal·lació. Abans de la
 
 1. **Decidir en junta.** Modalitat, ús comú o privatiu i aprovació amb la majoria que correspongui.
 2. **Dissenyar i pressupostar.** Una empresa instal·ladora habilitada fa el disseny a partir de la ubicació i de les factures. La guia de l'IDAE recomana demanar almenys tres pressupostos.
-3. **Memòria o projecte.** Per sota de 10 kW n'hi ha prou amb una memòria tècnica. Cal també la llicència d'obres i el CAU (codi d'autoconsum).
+3. **Memòria o projecte.** Per sota de 10 kW n'hi ha prou amb una memòria tècnica. Calen també la llicència d'obres i el CAU (codi d'autoconsum).
 4. **Legalitzar.** L'instal·lador tramita el certificat d'instal·lació elèctrica (CIE).
 5. **Signar l'acord de repartiment.** Tots els participants el signen i s'envia a la distribuïdora.
 6. **Alta de l'autoconsum.** La distribuïdora comunica l'alta a les comercialitzadores i es modifiquen els contractes.

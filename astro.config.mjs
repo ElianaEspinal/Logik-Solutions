@@ -1,10 +1,11 @@
 // @ts-check
-import { readdir, readFile, rename, rmdir, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, rm, rmdir, writeFile } from 'node:fs/promises';
 import { loadEnv } from 'vite';
 import { defineConfig, envField } from 'astro/config';
 import rehypeBlog from './src/lib/markdown/rehype-blog.mjs';
 import { markdownOptions } from './src/config/blog.ts';
 import { buildCsp, htaccess, htaccessAssets, inlineScriptHashes, stripHtmlComments } from './src/config/server.mjs';
+import { opcionesPhp } from './src/config/form-options.ts';
 
 // --- Entorno -------------------------------------------------------------------
 // SITE_ENV: production | staging. La indexación depende del entorno, no de cada página.
@@ -41,21 +42,14 @@ const localized404 = () => ({
   },
 });
 
-/** Origen del servicio de formularios (PUBLIC_FORM_ENDPOINT) para la CSP; Formspree por defecto. */
-const formOrigin = (() => {
-  try {
-    return new URL(process.env.PUBLIC_FORM_ENDPOINT || fileEnv.PUBLIC_FORM_ENDPOINT || 'https://formspree.io').origin;
-  } catch {
-    return 'https://formspree.io';
-  }
-})();
-
 /**
  * Al terminar el build (src/config/server.mjs; docs/despliegue.md y docs/seguridad.md):
  * 1) quita los comentarios HTML de dist/ (notas internas de desarrollo);
  * 2) calcula los hashes SHA-256 de los scripts en línea para la CSP;
  * 3) escribe dist/.htaccess según el entorno (https y dominio únicos, cabeceras de seguridad,
- *    CSP en modo informe, bloqueo de archivos, X-Robots-Tag solo en staging, compresión y caché).
+ *    CSP en modo informe, bloqueo de archivos, X-Robots-Tag solo en staging, compresión y caché);
+ * 4) formulario (docs/formulario.md): escribe dist/api/lib/opciones.php con las opciones válidas de
+ *    cada campo y borra dist/api/config.php si se ha colado (las credenciales nunca se publican).
  * @returns {import('astro').AstroIntegration}
  */
 const serverConfig = () => ({
@@ -70,9 +64,12 @@ const serverConfig = () => ({
         await writeFile(url, html);
         for (const h of inlineScriptHashes(html)) scriptHashes.add(h);
       }
-      const csp = buildCsp({ scriptHashes, formOrigin });
+      const csp = buildCsp({ scriptHashes });
       await writeFile(new URL('.htaccess', dir), htaccess({ env: SITE_ENV, siteUrl: SITE_URL, csp }));
       await writeFile(new URL('_astro/.htaccess', dir), htaccessAssets());
+      await mkdir(new URL('api/lib/', dir), { recursive: true });
+      await writeFile(new URL('api/lib/opciones.php', dir), opcionesPhp());
+      await rm(new URL('api/config.php', dir), { force: true });
     },
   },
 });
@@ -83,6 +80,8 @@ export default defineConfig({
   // Scripts propios siempre como archivo en /_astro/ (no incrustados en el HTML): la CSP solo
   // necesita los hashes de los dos scripts is:inline del <head> (docs/seguridad.md).
   vite: { build: { assetsInlineLimit: 0 } },
+  // Sin la barra de herramientas de Astro en `npm run dev` (en el build nunca aparece).
+  devToolbar: { enabled: false },
   trailingSlash: 'always',
   build: { format: 'directory' },
   integrations: [localized404(), serverConfig()],
@@ -105,11 +104,6 @@ export default defineConfig({
       }),
       // Dominio del entorno. Astro lo usa como `site`; aquí solo se declara para validarlo.
       SITE_URL: envField.string({ context: 'server', access: 'public', optional: true }),
-      // Destino del formulario (URL completa del servicio elegido: Formspree, Basin, propio…).
-      // Vacío: el formulario se ve pero no envía (aviso solo en staging).
-      PUBLIC_FORM_ENDPOINT: envField.string({ context: 'server', access: 'public', default: '' }),
-      // Adjuntar factura (multipart). Solo true si el servicio elegido admite archivos.
-      PUBLIC_FORM_ATTACHMENTS: envField.boolean({ context: 'server', access: 'public', default: false }),
       // Contenedor de Google Tag Manager. GA4 se configura dentro de GTM (sin gtag directo).
       // Solo se carga en producción y tras aceptar las cookies de análisis.
       PUBLIC_GTM_ID: envField.string({ context: 'server', access: 'public', default: '' }),

@@ -21,8 +21,10 @@ import {
   type SupplyKey,
 } from '../lib/pre-study';
 import { track, trackThen } from './analytics';
-import { guardCheck, hideGuardMessage, markSent, showGuardMessage } from './form-guard';
-import { initFileDrop, isValidFile } from './file-drop';
+import { discardedMessage, guardCheck, hideGuardMessage, markSent, renderText, resultMessage, showGuardMessage } from './form-guard';
+import { fileErrorText, filesError, initFileDrop } from './file-drop';
+import { appendFiles, armSeal, submitForm } from './form-send';
+import { nameValid, phoneValid } from '../lib/contact';
 
 interface I18n {
   step: string;
@@ -44,8 +46,7 @@ interface I18n {
     | 'emailEmpty'
     | 'emailInvalid'
     | 'phone'
-    | 'consent'
-    | 'file',
+    | 'consent',
     string
   >;
 }
@@ -60,7 +61,6 @@ export function initPreStudy(root: HTMLElement) {
 
   const i18n = JSON.parse(root.dataset.i18n ?? '{}') as I18n;
   const total = Number(root.dataset.total) || 5;
-  const enabled = root.dataset.enabled === 'true';
   const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const $ = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
@@ -82,10 +82,12 @@ export function initPreStudy(root: HTMLElement) {
   const trust = $('[data-trust]');
   const sendError = $('[data-send-error]');
   const dropEl = root.querySelector<HTMLElement>('[data-drop]');
-  const drop = dropEl ? initFileDrop(dropEl, () => validate('factura')) : null;
+  const drop = dropEl ? initFileDrop(dropEl) : null;
+  const successNote = $('[data-success-note]');
 
   form.noValidate = true; // validamos nosotros, con mensajes en línea
-  next.disabled = false;
+  next.disabled = false; // sin JS queda desactivado (no hay sello)
+  armSeal(form); // sello antispam en la primera interacción (src/scripts/form-send.ts)
 
   let current = 1;
   const tried = new Set<number>(); // pasos en los que ya se intentó avanzar
@@ -132,11 +134,11 @@ export function initPreStudy(root: HTMLElement) {
       const e = amountError(amount.value);
       return e === 'empty' ? i18n.errors.amountEmpty : e === 'invalid' ? i18n.errors.amountInvalid : e === 'tooHigh' ? i18n.errors.amountTooHigh : null;
     },
-    nom: () => (text('nom') ? null : i18n.errors.firstName),
-    cognoms: () => (text('cognoms') ? null : i18n.errors.lastName),
-    email: () => (!text('email') ? i18n.errors.emailEmpty : EMAIL.test(text('email')) ? null : i18n.errors.emailInvalid),
-    telefon: () => (text('telefon').replace(/\D/g, '').length >= 9 ? null : i18n.errors.phone),
-    factura: () => (isValidFile(drop?.current()) ? null : i18n.errors.file),
+    nom: () => (nameValid(text('nom')) ? null : i18n.errors.firstName),
+    cognoms: () => (nameValid(text('cognoms')) ? null : i18n.errors.lastName),
+    email: () =>
+      !text('email') ? i18n.errors.emailEmpty : text('email').length <= 254 && EMAIL.test(text('email')) ? null : i18n.errors.emailInvalid,
+    telefon: () => (phoneValid(text('telefon')) ? null : i18n.errors.phone),
     consentiment: () => ((field('consentiment') as HTMLInputElement).checked ? null : i18n.errors.consent),
   };
   const fieldsOf: Record<number, string[]> = {
@@ -144,7 +146,7 @@ export function initPreStudy(root: HTMLElement) {
     2: ['subministrament'],
     3: ['import_mensual'],
     4: [],
-    5: ['nom', 'cognoms', 'email', 'telefon', 'factura', 'consentiment'],
+    5: ['nom', 'cognoms', 'email', 'telefon', 'consentiment'],
   };
 
   function validate(name: string) {
@@ -213,7 +215,6 @@ export function initPreStudy(root: HTMLElement) {
     back.disabled = n === 1;
     const last = n === total;
     nextLabel.textContent = last ? i18n.submit : i18n.next;
-    next.disabled = last && !enabled;
 
     if (n === 4) fillSummary();
     if (!focus) return;
@@ -373,11 +374,30 @@ export function initPreStudy(root: HTMLElement) {
   }
 
   // --- Envío ------------------------------------------------------------------
+  function stopSending() {
+    sending = false;
+    next.disabled = false;
+    next.removeAttribute('aria-busy');
+    nextLabel.textContent = i18n.submit;
+  }
+
+  function showSendError(message: string) {
+    stopSending();
+    trust.classList.add('is-hidden');
+    renderText(sendError, message);
+    sendError.hidden = false;
+    live.textContent = message;
+  }
+
   async function send() {
-    if (sending || !enabled) return;
-    // Capas 2 a 4 (tiempo mínimo, enlaces, enfriamiento): src/scripts/form-guard.ts.
+    if (sending) return;
+    // Enlaces, etiquetas, alfabeto y enfriamiento: avisa antes de que el servidor lo descarte.
     const blocked = guardCheck(form);
-    if (blocked) return showGuardMessage(form, blocked, next);
+    if (blocked) {
+      showGuardMessage(form, blocked[0], next);
+      if (blocked[1]) form.querySelector<HTMLElement>(`[name="${blocked[1]}"]`)?.focus();
+      return;
+    }
     hideGuardMessage(form);
     sending = true;
     sendError.hidden = true;
@@ -397,31 +417,47 @@ export function initPreStudy(root: HTMLElement) {
     const data = new FormData(form);
     data.set('import_mensual', String(Math.round(m * 100) / 100));
     if (solarInput) data.set('interes_solar', solar.checked ? i18n.yes : i18n.no);
-    const file = drop?.current();
-    if (file) data.set('factura', file, file.name);
-    else data.delete('factura');
+    const files = await appendFiles(data, drop?.files() ?? []);
+    const fileProblem = filesError(files);
+    if (fileProblem) {
+      stopSending();
+      drop?.showError(fileProblem);
+      live.textContent = fileErrorText(fileProblem);
+      drop?.input.focus();
+      return;
+    }
 
-    try {
-      // Multipart solo si hay archivo; si no, un envío de formulario normal.
-      const body = file ? data : new URLSearchParams(data as unknown as Record<string, string>);
-      const response = await fetch(root.dataset.endpoint ?? '', { method: 'POST', body, headers: { Accept: 'application/json' } });
-      markSent();
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = await submitForm(form, data);
+    if (result.kind === 'ok') {
       const profile = code<ProfileKey>('perfil') ?? '';
-      trackThen('generate_lead', { form: 'calculadora', form_location: 'calculadora', perfil: profile }, showSuccess);
-    } catch {
-      sending = false;
+      trackThen('generate_lead', { form: 'calculadora', form_location: 'calculadora', perfil: profile }, () =>
+        showSuccess(discardedMessage(result.discarded, result.notSent)),
+      );
+    } else if (result.kind === 'invalid') {
+      // 422: errores por campo del servidor. Lleva al paso del primer campo con error.
+      stopSending();
       trust.classList.add('is-hidden');
-      sendError.hidden = false;
-      next.disabled = false;
-      next.removeAttribute('aria-busy');
-      nextLabel.textContent = i18n.submit;
-      markSent(next); // enfriamiento de 30 s también tras un error
+      let first: string | null = null;
+      for (const [name, message] of Object.entries(result.errors)) {
+        if (!errorEl(name)) continue;
+        setError(name, message);
+        first ??= name;
+      }
+      if (!first) return showSendError(resultMessage(result));
+      const stepOf = Number(Object.entries(fieldsOf).find(([, names]) => names.includes(first!))?.[0] ?? total);
+      if (stepOf !== current) render(stepOf, -1, true);
+      form.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
+      live.textContent = errorEl(first)?.textContent ?? '';
+    } else {
+      showSendError(resultMessage(result));
+      if (result.kind !== 'tooLarge') markSent(next); // enfriamiento de 30 s tras un fallo
     }
   }
 
-  function showSuccess() {
+  function showSuccess(note: string) {
     $('[data-success-name]').textContent = text('nom');
+    if (note) renderText(successNote, note);
+    successNote.hidden = !note;
     // La pantalla de éxito llega tras la respuesta del servidor (no tras un clic): conserva al
     // menos la altura del formulario para que nada de debajo se mueva (sin CLS).
     success.style.minHeight = `${form.getBoundingClientRect().height}px`;

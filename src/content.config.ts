@@ -47,7 +47,7 @@ const blog = defineCollection({
         // CTA de cierre propio del artículo (sustituye al genérico). section: valor de cta_click.
         // - Con button: bloque con botón al pre-estudi de la home.
         // - Con study: true: el pre-estudi embebido en el artículo (mismo componente que las páginas
-        //   de servicio), con su título = title y pagina_origen = origin; cta_click va en el teléfono.
+        //   de servicio), con su título = title (origin ya no se envía: el servidor recibe la ruta en `pagina`); cta_click va en el teléfono.
         cta: z
           .object({
             title: z.string().min(1),

@@ -26,7 +26,7 @@ export const legal = {
   // Confirmados por Eliana el 5/11/2026.
   cif: 'B02961043',
   // Sin calle ni número a propósito: no completar.
-  address: 'Girona, 17002',
+  address: { ca: 'Girona, Catalunya 17002', es: 'Girona, Cataluña 17002' },
   // Teléfono oficial, el mismo de la web.
   phone: '665 05 25 16',
   // Solo el registro, sin tomo, folio, hoja ni inscripción (decisión de Eliana, 5/11/2026).
@@ -37,9 +37,9 @@ export const legal = {
 
 /**
  * Apartado de la política de privacitat sobre la factura adjunta en el formulario.
- * Activarlo a la vez que PUBLIC_FORM_ATTACHMENTS=true (subida de factura en el formulario).
+ * Activo: los formularios admiten facturas adjuntas (public/api/enviar.php, docs/formulario.md).
  */
-export const INVOICE_UPLOAD = false;
+export const INVOICE_UPLOAD = true;
 
 /**
  * Categoría "Publicitat / Publicidad" en el banner y en la política de cookies.
@@ -53,8 +53,8 @@ export const ADS_CONSENT = false;
  * hCaptcha, Turnstile) cargan scripts y, a veces, cookies de terceros. Antes de activarlo:
  * elegir proveedor, cargarlo solo tras el consentimiento (categoría de contenido externo),
  * añadirlo a la CSP (script-src y frame-src), a la tabla de la política de cookies y a la
- * política de privacidad, y activarlo también en el panel de Formspree. Hoy no hay código que lo
- * cargue: esta bandera solo deja constancia de la decisión. Ver docs/seguridad.md.
+ * política de privacidad, y verificarlo también en el servidor (public/api/). Hoy no hay código que
+ * lo cargue: esta bandera solo deja constancia de la decisión. Ver docs/seguridad.md.
  */
 export const CAPTCHA_ENABLED = false;
 
@@ -63,8 +63,9 @@ export const thirdPartyPolicies = {
   google: 'https://policies.google.com/privacy',
   googleCookies: 'https://policies.google.com/technologies/cookies',
   googleAnalyticsOptOut: 'https://tools.google.com/dlpage/gaoptout',
-  formspree: 'https://formspree.io/legal/privacy-policy/',
-  hostinger: 'https://www.hostinger.com/legal/privacy-policy',
   whatsapp: 'https://www.whatsapp.com/legal/privacy-policy-eea',
+  // cdmon: URL finales de los PDF (comprobadas el 16/11/2026: responden 200).
+  cdmonCa: 'https://www.cdmon.com/pdfs/legal/ca/politica-privadesa.pdf',
+  cdmonEs: 'https://www.cdmon.com/pdfs/legal/es/politica-de-privacidad.pdf',
   aepd: 'https://www.aepd.es/',
 } as const;

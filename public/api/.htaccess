@@ -1,0 +1,24 @@
+# /api/: solo se pueden pedir token.php y enviar.php. Todo lo demás (config.php, lib/,
+# config.example.php y cualquier otro archivo) responde 403. Sin listado de directorios.
+# Segunda defensa: cada PHP incluido termina sin imprimir nada si se abre directamente.
+# Explicación: docs/formulario.md. Comprobar en el servidor (docs/despliegue.md).
+
+Options -Indexes
+
+# Apache 2.4 y LiteSpeed
+<IfModule mod_authz_core.c>
+  Require all denied
+  <FilesMatch "^(token|enviar)\.php$">
+    Require all granted
+  </FilesMatch>
+</IfModule>
+
+# Apache 2.2 (por si acaso)
+<IfModule !mod_authz_core.c>
+  Order allow,deny
+  Deny from all
+  <FilesMatch "^(token|enviar)\.php$">
+    Order deny,allow
+    Allow from all
+  </FilesMatch>
+</IfModule>

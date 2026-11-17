@@ -14,7 +14,7 @@ translationKey: quina-potencia-contractar
 diagram: periodes-24h
 cta:
   title: "¿Quieres que nos ocupemos nosotros?"
-  button: "Empieza el pre-estudio"
+  button: "Empieza el preestudio"
   section: blog_potencia_cierre
 faq:
   - q: "¿Qué potencia tengo que contratar para un piso?"
@@ -36,7 +36,7 @@ faq:
 
 ## Qué es la potencia contratada
 
-La potencia contratada es lo máximo de electricidad, en kilovatios (kW), que puedes usar a la vez en casa o en el negocio. No es lo mismo que el consumo: la potencia son los kW que puedes usar en un momento concreto, y el consumo son los kWh que gastas a lo largo del tiempo.
+La potencia contratada es el máximo de electricidad, en kilovatios (kW), que puedes usar a la vez en casa o en el negocio. No es lo mismo que el consumo: la potencia son los kW que puedes usar en un momento concreto, y el consumo son los kWh que gastas a lo largo del tiempo.
 
 Por eso la factura tiene dos partes: un término de potencia, según los kW contratados, y un término de energía, según lo que consumes. [La Circular 3/2020 de la CNMC](https://www.boe.es/buscar/act.php?id=BOE-A-2020-1066) lo recoge así para los suministros de hasta 15 kW.
 
@@ -57,7 +57,7 @@ Puedes contratar una potencia distinta para cada periodo, y la de valle es [much
 
 ## Cómo saber qué potencia necesitas
 
-No hay un número mágico. Las tablas de "potencia según los metros de la vivienda" que circulan por internet son orientativas y no tienen en cuenta cómo vives. Házlo así:
+No hay un número mágico. Las tablas de "potencia según los metros de la vivienda" que circulan por internet son orientativas y no tienen en cuenta cómo vives. Hazlo así:
 
 1. Mira la potencia que tienes ahora en la factura.
 2. Piensa en la hora de más uso del día y en qué aparatos grandes coinciden: horno, placa de inducción, calentador de agua, aire acondicionado, lavadora.

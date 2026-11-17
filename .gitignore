@@ -7,3 +7,6 @@ dist/
 
 # Capturas e informes locales (no se publican)
 capturas/
+
+# Configuración real del formulario (credenciales): nunca al repositorio
+public/api/config.php

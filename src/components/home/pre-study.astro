@@ -6,15 +6,14 @@
 //   - No se calcula ni se muestra ningún ahorro. Solo el gasto anual aproximado
 //     (importe mensual × 12), rotulado como "càlcul simple".
 //   - Nada se envía antes del último paso; el progreso vive solo en memoria.
-//   - Destino: PUBLIC_FORM_ENDPOINT (el mismo que el formulario de cierre). Vacío -> el
-//     asistente funciona, pero el envío queda desactivado (aviso solo en staging).
-//   - Adjunto de factura solo con PUBLIC_FORM_ATTACHMENTS=true (componente compartido).
-//   - Sin JS: los pasos con campos se ven seguidos como un formulario normal (envío
-//     nativo) y un <noscript> ofrece el teléfono y WhatsApp.
+//   - Destino: /api/enviar.php, con sello antispam (docs/formulario.md). Hasta 5 facturas
+//     adjuntas (componente compartido).
+//   - Sin JS: los pasos con campos se ven seguidos, el botón queda desactivado (sin sello el
+//     servidor no acepta el envío) y un <noscript> ofrece el teléfono, WhatsApp y el correo.
 // Eventos (docs/cookies.md): calc_start, calc_step, generate_lead; click_call y
 // click_whatsapp los lanza el listener global de src/scripts/analytics.ts.
-import { SITE_ENV, PUBLIC_FORM_ATTACHMENTS, PUBLIC_FORM_ENDPOINT } from 'astro:env/server';
 import FileDrop from '../file-drop.astro';
+import { SEND_URL } from '../../scripts/form-send';
 import { AMOUNT, TRACKING_PARAMS } from '../../config/calculator';
 import { PRE_STUDY_ID } from '../../config/home';
 import { pages, type Locale } from '../../config/pages';
@@ -31,7 +30,10 @@ interface Props {
    * asistente arranca en el paso 2; el visitante puede volver atrás para cambiarlo.
    */
   presetProfile?: ProfileKey;
-  /** Página desde la que se envía (campo oculto pagina_origen). Sin valor, no se envía. */
+  /**
+   * Obsoleto: ya no se envía. La página de origen va en el campo oculto `pagina` (la ruta de la URL),
+   * que el servidor valida. Se mantiene para no tocar las páginas que lo pasan.
+   */
   origin?: string;
   /**
    * false -> sin la casilla de plaques solars, sin su fila del resumen y sin el punto de autoconsum
@@ -42,13 +44,9 @@ interface Props {
   solarChecked?: boolean;
 }
 
-const { lang, content: c, presetProfile, origin, solar = true, solarChecked = false } = Astro.props;
+const { lang, content: c, presetProfile, solar = true, solarChecked = false } = Astro.props;
 const startStep = presetProfile ? 2 : 1;
 const t = useTranslations(lang);
-const isStaging = SITE_ENV === 'staging';
-const endpoint = PUBLIC_FORM_ENDPOINT.trim();
-const enabled = /^https:\/\/\S+$/.test(endpoint);
-const withFile = PUBLIC_FORM_ATTACHMENTS;
 const TOTAL = 5;
 
 const profiles: ProfileKey[] = ['empresa', 'comunitat', 'llar'];
@@ -126,8 +124,6 @@ const id = (name: string) => `ps-${name}`;
       data-preset={presetProfile}
       data-lang={lang}
       data-total={TOTAL}
-      data-enabled={enabled ? 'true' : 'false'}
-      data-endpoint={enabled ? endpoint : undefined}
       data-i18n={JSON.stringify(i18n)}
     >
       <noscript>
@@ -135,24 +131,23 @@ const id = (name: string) => `ps-${name}`;
           {c.noscript}
           <a href={phone.tel}>{t('cta.callAt')} {phone.display}</a>
           <a href={phone.whatsapp} rel="noopener">{t('cta.whatsappLong')}</a>
+          <a href="mailto:info@logiksolutions.es">info@logiksolutions.es</a>
         </p>
       </noscript>
 
       <div class="ps-stage">
         <form
           class="ps-form"
-          action={enabled ? endpoint : undefined}
+          action={SEND_URL}
           method="POST"
           enctype="multipart/form-data"
           data-ps-form
           data-contact-form
-          data-enabled={enabled ? 'true' : 'false'}
           data-active
         >
           <input type="hidden" name="origen" value="calculadora" />
-          {origin && <input type="hidden" name="pagina_origen" value={origin} />}
+          <input type="hidden" name="pagina" value={Astro.url.pathname} />
           <input type="hidden" name="idioma" value={lang} />
-          <input type="hidden" name="_subject" value={`Web Logik Solutions: pre-estudi (${lang})`} />
           <input type="hidden" name="franja_import" value="" data-band />
           {TRACKING_PARAMS.map((key) => <input type="hidden" name={key} value="" data-track={key} />)}
 
@@ -329,17 +324,17 @@ const id = (name: string) => `ps-${name}`;
               <h3 class="ps-step__title" id={id('s5-title')} tabindex="-1">{c.contact.title}</h3>
               <div class="ps-field">
                 <label for={id('nom')}>{c.contact.firstName}</label>
-                <input id={id('nom')} name="nom" type="text" autocomplete="given-name" enterkeyhint="next" required maxlength="80" />
+                <input id={id('nom')} name="nom" type="text" autocomplete="given-name" enterkeyhint="next" required minlength="2" maxlength="80" />
                 <p class="field__error" id={id('nom-error')} data-error-for="nom" hidden>{c.errors.firstName}</p>
               </div>
               <div class="ps-field">
                 <label for={id('cognoms')}>{c.contact.lastName}</label>
-                <input id={id('cognoms')} name="cognoms" type="text" autocomplete="family-name" enterkeyhint="next" required maxlength="120" />
+                <input id={id('cognoms')} name="cognoms" type="text" autocomplete="family-name" enterkeyhint="next" required minlength="2" maxlength="80" />
                 <p class="field__error" id={id('cognoms-error')} data-error-for="cognoms" hidden>{c.errors.lastName}</p>
               </div>
               <div class="ps-field">
                 <label for={id('email')}>{c.contact.email}</label>
-                <input id={id('email')} name="email" type="email" inputmode="email" autocomplete="email" enterkeyhint="next" required maxlength="120" />
+                <input id={id('email')} name="email" type="email" inputmode="email" autocomplete="email" enterkeyhint="next" required maxlength="254" />
                 <p class="field__error" id={id('email-error')} data-error-for="email" hidden></p>
               </div>
               <div class="ps-field">
@@ -348,7 +343,7 @@ const id = (name: string) => `ps-${name}`;
                   id={id('telefon')}
                   name="telefon"
                   type="tel"
-                  pattern="[0-9 +\(\)\.\-]{9,20}"
+                  pattern="\+?[0-9 \.\(\)\-]{9,20}"
                   inputmode="tel"
                   autocomplete="tel"
                   enterkeyhint="send"
@@ -360,7 +355,7 @@ const id = (name: string) => `ps-${name}`;
                 <p class="field__error" id={id('telefon-error')} data-error-for="telefon" hidden>{c.errors.phone}</p>
               </div>
 
-              {withFile ? <FileDrop lang={lang} idPrefix="ps" /> : <p class="ps-attach-off">{t('form.attachOff')}</p>}
+              <FileDrop lang={lang} idPrefix="ps" />
 
               <div class="ps-check ps-consent">
                 <input id={id('consent')} name="consentiment" type="checkbox" value="acceptat" required />
@@ -390,16 +385,8 @@ const id = (name: string) => `ps-${name}`;
               <!-- Honeypot antispam: fuera de la vista; las personas no lo ven ni lo enfocan. -->
               <div class="ps-trap" aria-hidden="true">
                 <label for={id('website')}>Website</label>
-                <input id={id('website')} type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" />
+                <input id={id('website')} type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
               </div>
-
-              {
-                !enabled && isStaging && (
-                  <p class="staging-marker" data-staging-only>
-                    {lang === 'ca' ? "Enviament desactivat: falta PUBLIC_FORM_ENDPOINT a .env" : 'Envío desactivado: falta PUBLIC_FORM_ENDPOINT en .env'}
-                  </p>
-                )
-              }
 
               <!-- Confianza junto al botón; el error de envío ocupa el mismo hueco (sin saltos). -->
               <div class="ps-status">
@@ -419,7 +406,8 @@ const id = (name: string) => `ps-${name}`;
               <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"></path></svg>
               <span class="ps-back__label">{c.controls.back}</span>
             </button>
-            <button class="btn btn-primary btn-lg ps-next" type="submit" disabled={!enabled ? true : undefined} data-next>
+            <!-- Desactivado sin JavaScript: lo activa src/scripts/pre-study.ts. -->
+            <button class="btn btn-primary btn-lg ps-next" type="submit" disabled data-next>
               <span class="ps-spinner" aria-hidden="true"></span>
               <span class="ps-label-js" data-next-label>{c.controls.next}</span>
               <span class="ps-label-nojs">{c.controls.submit}</span>
@@ -438,6 +426,7 @@ const id = (name: string) => `ps-${name}`;
             {thanksBefore}<span data-success-name></span>{thanksAfter}
           </h3>
           <p class="ps-success__text" role="status">{c.success.text}</p>
+          <div class="ps-success__note" data-success-note hidden></div>
           <h4 class="ps-review__title">{c.success.nextTitle}</h4>
           <ol class="ps-next-steps">
             {c.success.next.map((item, i) => <li><span class="ps-next-steps__n" aria-hidden="true">{i + 1}</span>{item}</li>)}
@@ -1314,8 +1303,27 @@ const id = (name: string) => `ps-${name}`;
     display: none;
   }
 
-  .ps-error p {
+  /* Estilos globales (is:global): también valen para el texto que crea el script. */
+  .ps-error p,
+  .ps-success__note p {
     margin: 0;
+  }
+
+  .ps-error a,
+  .ps-success__note a {
+    color: var(--teal-900);
+  }
+
+  .ps-success__note {
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: var(--orange-100);
+    color: var(--teal-900);
+    font-weight: 700;
+  }
+
+  .ps-success__note[hidden] {
+    display: none;
   }
 
   /* ---- Honeypot (fuera de la vista; no display:none) ---- */

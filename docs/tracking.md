@@ -6,6 +6,8 @@ Todos los eventos se envían con `window.dataLayer.push({ event, ...parámetros 
 
 Código: `src/scripts/analytics.ts` (clics) y `src/scripts/contact-form.ts` (formulario de contacto).
 
+**Formularios (16/11/2026):** envían a `/api/enviar.php`, el sistema propio en PHP (docs/formulario.md). `generate_lead` se lanza **solo cuando el servidor responde `ok`**, nunca antes del envío ni tras un error (422, 429, 413 o 502). El servidor responde también `ok` al spam, sin enviar nada, así que GA4 puede contar algún `generate_lead` de un bot que haya pasado todas las capas del navegador: la cifra fiable de leads son los correos recibidos. Los eventos no llevan datos personales ni los nombres de los archivos adjuntos. La página de origen viaja al servidor en el campo `pagina` (la ruta de la URL); ya no existe `pagina_origen`.
+
 ## Consentimiento y Google Consent Mode v2 (5 de noviembre de 2026)
 
 - En el `<head>` de todas las páginas, antes de cualquier otro script, va `gtag('consent', 'default', …)` con `analytics_storage`, `ad_storage`, `ad_user_data` y `ad_personalization` en `denied` (script con `data-consent-default` en `src/layouts/BaseLayout.astro`). No carga nada: solo prepara el `dataLayer`.
@@ -18,7 +20,7 @@ Código: `src/scripts/analytics.ts` (clics) y `src/scripts/contact-form.ts` (for
 
 | Evento | Cuándo | Parámetros |
 | --- | --- | --- |
-| `generate_lead` | Envío correcto de un formulario | `form` (`contacte`, `calculadora`), `form_location`; en contacto también `perfil` y `necessitat` |
+| `generate_lead` | El servidor confirma el envío (`ok`) | `form` (`contacte`, `calculadora`), `form_location`; en contacto también `perfil` y `necessitat` |
 | `click_call` | Clic en un enlace `tel:` | `link_location` (sección), `location` (el mismo valor) |
 | `click_whatsapp` | Clic en un enlace de WhatsApp | `link_location`, `location` |
 | `cta_click` | Clic en un botón o enlace de CTA | `section`, `cta_text` |
@@ -64,8 +66,8 @@ Un artículo puede llevar su propio bloque de cierre (frontmatter `cta`, ver `do
 | Artículo | Botón | Parámetros |
 | --- | --- | --- |
 | "Quina potència de llum contractar" / "Qué potencia de luz contratar" (borrador) | "Comença el pre-estudi →" / "Empieza el pre-estudio →" (lleva al pre-estudi de la home) | `cta_click` con `section` = `blog_potencia_cierre`; el enlace de teléfono del mismo bloque lanza `click_call` con `location` = `blog` |
-| "Autoconsum col·lectiu en una comunitat de veïns" / "Autoconsumo colectivo en una comunidad de vecinos" (borrador) | Pre-estudi embebido "Vols valorar-ho amb la teva comunitat?" / "¿Quieres valorarlo con tu comunidad?" y, debajo, el teléfono 665 05 25 16 | El enlace de teléfono lanza `cta_click` con `section` = `blog_colectivo_cierre` y `click_call` con `location` = `blog`; el pre-estudi lanza `calc_start`, `calc_step` y `generate_lead` (`form` = `calculadora`) y el envío lleva `pagina_origen` = `blog_colectivo` |
-| "Com canviar el titular de la llum" / "Cómo cambiar el titular de la luz" (borrador) | Pre-estudi embebido "Vols que ens n'ocupem nosaltres?" / "¿Quieres que nos ocupemos nosotros?" y, debajo, "Prefereixes trucar? 665 05 25 16" / "¿Prefieres llamar? 665 05 25 16" | El enlace de teléfono lanza `cta_click` con `section` = `blog_titular_cierre` y `click_call` con `location` = `blog`; el pre-estudi lanza `calc_start`, `calc_step` y `generate_lead` (`form` = `calculadora`) y el envío lleva `pagina_origen` = `blog_titular` |
+| "Autoconsum col·lectiu en una comunitat de veïns" / "Autoconsumo colectivo en una comunidad de vecinos" (borrador) | Pre-estudi embebido "Vols valorar-ho amb la teva comunitat?" / "¿Quieres valorarlo con tu comunidad?" y, debajo, el teléfono 665 05 25 16 | El enlace de teléfono lanza `cta_click` con `section` = `blog_colectivo_cierre` y `click_call` con `location` = `blog`; el pre-estudi lanza `calc_start`, `calc_step` y `generate_lead` (`form` = `calculadora`) y el envío lleva `pagina` = la ruta de la página |
+| "Com canviar el titular de la llum" / "Cómo cambiar el titular de la luz" (borrador) | Pre-estudi embebido "Vols que ens n'ocupem nosaltres?" / "¿Quieres que nos ocupemos nosotros?" y, debajo, "Prefereixes trucar? 665 05 25 16" / "¿Prefieres llamar? 665 05 25 16" | El enlace de teléfono lanza `cta_click` con `section` = `blog_titular_cierre` y `click_call` con `location` = `blog`; el pre-estudi lanza `calc_start`, `calc_step` y `generate_lead` (`form` = `calculadora`) y el envío lleva `pagina` = la ruta de la página |
 
 No hace falta configurar nada nuevo en GTM: `cta_click` ya existe. En GA4 se distingue por el valor de `section`.
 
@@ -97,7 +99,7 @@ No hace falta configurar nada nuevo en GTM: `cta_click` ya existe. En GA4 se dis
 | `cta_click` + `click_call` | Enlace "Prefereixes trucar? 665 05 25 16" bajo el pre-estudi | `section` = `empreses_cierre`; `location` = `empreses` |
 | `click_call` | Cualquier otro enlace de teléfono de la página | `location` = `empreses` (y `link_location`) |
 | `blog_card_click` | Tarjeta de "Per aprofundir" (solo si hay artículos publicados) | `slug`, `position`, `lang`, `location` = `empreses` |
-| `calc_start`, `calc_step`, `generate_lead` | Pre-estudi de la página (perfil "empresa" ya resuelto: arranca en el paso 2, así que el primer `calc_step` es el 2) | Los de siempre (`form` = `calculadora`); el envío lleva además `pagina_origen` = `empreses` |
+| `calc_start`, `calc_step`, `generate_lead` | Pre-estudi de la página (perfil "empresa" ya resuelto: arranca en el paso 2, así que el primer `calc_step` es el 2) | Los de siempre (`form` = `calculadora`); el envío lleva además `pagina` = la ruta de la página |
 
 **En GTM:** crear el activador de evento personalizado `sector_select` y su etiqueta GA4 con el parámetro `sector` (y `location`); registrar `sector` como dimensión personalizada de evento en GA4.
 
@@ -112,7 +114,7 @@ No hace falta configurar nada nuevo en GTM: `cta_click` ya existe. En GA4 se dis
 | `cta_click` + `click_call` | Enlace "Prefereixes trucar? 665 05 25 16" bajo el pre-estudi | `section` = `comunitats_cierre`; `location` = `comunitats` |
 | `click_call` | Cualquier otro enlace de teléfono de la página (hero y bloque de administradores) | `location` = `comunitats` (y `link_location`) |
 | `blog_card_click` | Tarjeta de "Per aprofundir" (solo si hay artículos publicados de las categorías Comunitats o Factura i potència) | `slug`, `position`, `lang`, `location` = `comunitats` |
-| `calc_start`, `calc_step`, `generate_lead` | Pre-estudi de la página (perfil "comunitat" ya resuelto: arranca en el paso 2) | Los de siempre (`form` = `calculadora`, `perfil` = `comunitat`); el envío lleva además `pagina_origen` = `comunitats` |
+| `calc_start`, `calc_step`, `generate_lead` | Pre-estudi de la página (perfil "comunitat" ya resuelto: arranca en el paso 2) | Los de siempre (`form` = `calculadora`, `perfil` = `comunitat`); el envío lleva además `pagina` = la ruta de la página |
 
 Si el administrador envía después el formulario de contacto, `generate_lead` llega con `form` = `contacte` y `perfil` = `administrador`.
 
@@ -130,7 +132,7 @@ Si el administrador envía después el formulario de contacto, `generate_lead` l
 | `cta_click` + `click_call` | Enlace "Prefereixes trucar? 665 05 25 16" bajo el pre-estudi | `section` = `llars_cierre`; `location` = `llars` |
 | `click_call` | Enlace "Truca al 665 05 25 16" del hero | `location` = `llars` (y `link_location`) |
 | `blog_card_click` | Tarjeta de "Per aprofundir" (solo si hay artículos publicados de Factura i potència, Gestions o Autoconsum) | `slug`, `position`, `lang`, `location` = `llars` |
-| `calc_start`, `calc_step`, `generate_lead` | Pre-estudi de la página (perfil "llar" ya resuelto: arranca en el paso 2) | Los de siempre (`form` = `calculadora`, `perfil` = `llar`); el envío lleva además `pagina_origen` = `llars` |
+| `calc_start`, `calc_step`, `generate_lead` | Pre-estudi de la página (perfil "llar" ya resuelto: arranca en el paso 2) | Los de siempre (`form` = `calculadora`, `perfil` = `llar`); el envío lleva además `pagina` = la ruta de la página |
 
 **En GTM:** crear los activadores de evento personalizado `factura_hotspot_click` y `preocupacio_select` y sus etiquetas GA4 con los parámetros `bloc` y `opcio` (y `location`); registrar `bloc` y `opcio` como dimensiones personalizadas de evento en GA4.
 
@@ -145,7 +147,7 @@ Si el administrador envía después el formulario de contacto, `generate_lead` l
 | `cta_click` + `click_call` | Enlace "Prefereixes trucar? 665 05 25 16" bajo el pre-estudi | `section` = `autoconsum_cierre`; `location` = `autoconsum` |
 | `click_call` | Enlace "Truca al 665 05 25 16" del hero | `location` = `autoconsum` (y `link_location`) |
 | `blog_card_click` | Tarjeta de "Per aprofundir" (solo si hay artículos publicados de Autoconsum o Factura i potència) | `slug`, `position`, `lang`, `location` = `autoconsum` |
-| `calc_start`, `calc_step`, `generate_lead` | Pre-estudi solar de la página (casilla de plaques solars ya marcada; el perfil se elige en el paso 1) | Los de siempre (`form` = `calculadora`); el envío lleva además `pagina_origen` = `autoconsum` e `interes_solar` |
+| `calc_start`, `calc_step`, `generate_lead` | Pre-estudi solar de la página (casilla de plaques solars ya marcada; el perfil se elige en el paso 1) | Los de siempre (`form` = `calculadora`); el envío lleva además `pagina` = la ruta de la página e `interes_solar` |
 
 **En GTM:** crear el activador de evento personalizado `consum_select` y su etiqueta GA4 con los parámetros `opcio` y `location`. `persona_select` ya existe: solo hay que tener en cuenta los valores nuevos en los informes.
 
@@ -159,7 +161,7 @@ Si el administrador envía después el formulario de contacto, `generate_lead` l
 | `cta_click` + `click_call` | Enlace "Prefereixes trucar? 665 05 25 16" bajo el pre-estudi | `section` = `gestions_cierre`; `location` = `gestions` |
 | `click_call` | Enlace "Truca al 665 05 25 16" del hero | `location` = `gestions` (y `link_location`) |
 | `blog_card_click` | Tarjeta de "Per aprofundir" (solo si hay artículos publicados de Gestions o Factura i potència) | `slug`, `position`, `lang`, `location` = `gestions` |
-| `calc_start`, `calc_step`, `generate_lead` | Pre-estudi de la página (perfil elegible: arranca en el paso 1) | Los de siempre (`form` = `calculadora`); el envío lleva además `pagina_origen` = `gestions` y, si el visitante eligió una pestaña o pulsó su botón, el campo `tramit_interes` (mismos valores que `tramit`). `tramit_interes` llega solo al destino del formulario, no a GA4 |
+| `calc_start`, `calc_step`, `generate_lead` | Pre-estudi de la página (perfil elegible: arranca en el paso 1) | Los de siempre (`form` = `calculadora`); el envío lleva además `pagina` = la ruta de la página y, si el visitante eligió una pestaña o pulsó su botón, el campo `tramit_interes` (mismos valores que `tramit`). `tramit_interes` llega solo al destino del formulario, no a GA4 |
 
 **En GTM:** crear el activador de evento personalizado `tramit_select` y su etiqueta GA4 con los parámetros `tramit` y `location`; registrar `tramit` como dimensión personalizada de evento en GA4.
 

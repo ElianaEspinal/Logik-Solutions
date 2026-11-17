@@ -56,7 +56,7 @@ Notas:
 
 - **slug:** propio de cada idioma, en minúsculas, sin acentos y con guiones. Si no se pone, se usa el nombre del archivo. No puede ser `pagina` ni `rss`.
 - **Autor:** si no se indica, firma "Equip de Logik Solutions" / "Equipo de Logik Solutions" (la organización; en el JSON-LD el autor es la empresa). Las personas se añaden en `AUTHORS` (`src/config/blog.ts`) solo cuando Logik confirme nombre, cargo y una frase; no se inventan.
-- **Tiempo de lectura y fechas:** se calculan solos (palabras ÷ 200). Si `updatedDate` es el mismo día que `pubDate`, solo se muestra "Actualitzat el…".
+- **Tiempo de lectura y fechas:** se calculan solos (palabras ÷ 200). Las fechas visibles muestran solo mes y año ("Actualitzat el novembre de 2026", "Actualizado en noviembre de 2026"); el JSON-LD y el sitemap llevan la fecha completa. Si `updatedDate` es del mismo mes que `pubDate`, solo se muestra "Actualitzat el…".
 - **H1 distinto del title (opcional):** `h1: '…'`. El `title` sigue siendo el de la pestaña y el de Google; el H1, las migas y el `headline` del JSON-LD usan `h1`.
 - **Índice de contenidos:** sale de los H2. Usa títulos de H2 cortos y descriptivos.
 - **Tablas:** Markdown normal. Las de 2 o 3 columnas caben en móvil; las de 4 o más hacen scroll dentro de su caja (la página nunca).
@@ -69,10 +69,10 @@ Notas:
   ```md
   cta:
     title: "Vols que ens n'ocupem nosaltres?"
-    button: 'Comença el pre-estudi'
+    button: 'Comença el preestudi'
     section: blog_potencia_cierre
   ```
-  O, en lugar del botón, el pre-estudi embebido (el mismo de las páginas de servicio), con el título del bloque, la `pagina_origen` del envío y, debajo, el teléfono ("Prefereixes trucar?"), que es el que lanza `cta_click` con `section`:
+  O, en lugar del botón, el pre-estudi embebido (el mismo de las páginas de servicio), con el título del bloque (la página de origen viaja sola en el campo `pagina`) y, debajo, el teléfono ("Prefereixes trucar?"), que es el que lanza `cta_click` con `section`:
 
   ```md
   cta:

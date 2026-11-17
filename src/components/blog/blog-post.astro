@@ -18,7 +18,8 @@ import { phone, site } from '../../config/site';
 import {
   formatDate,
   getPostAlternates,
-  isoDate,
+  isoMonth,
+  monthArticle,
   postAuthor,
   postLang,
   postPath,
@@ -42,8 +43,9 @@ const { Content, headings } = await render(post);
 const { title, description, cover, coverAlt, coverPosition, pubDate, updatedDate, category, draft, faq, cta } = post.data;
 // H1 visible (y headline del JSON-LD): el `h1` del frontmatter o, si no hay, el title.
 const heading = post.data.h1 ?? title;
-// Si la actualización es del mismo día que la publicación, solo se muestra "Actualitzat el…".
-const sameDay = !!updatedDate && isoDate(updatedDate) === isoDate(pubDate);
+// Las fechas se muestran sin día: si la actualización es del mismo mes que la publicación,
+// solo se muestra "Actualitzat el…".
+const sameDay = !!updatedDate && isoMonth(updatedDate) === isoMonth(pubDate);
 const toc = headings.filter((h) => h.depth === 2);
 const author = postAuthor(post);
 const related = relatedPosts(post, all);
@@ -83,13 +85,15 @@ const schema = blogPostSchema({
 
 <BaseLayout
   lang={lang}
-  title={`${title} | Logik Solutions`}
+  title={title}
   description={description}
   alternates={getPostAlternates(post, all)}
   switcherFallback="blog"
   noindex={draft}
   og={{
     type: 'article',
+    // <title> sin sufijo (límite de 60 caracteres); en redes, igual que antes.
+    title: `${title} | Logik Solutions`,
     image: imageUrl,
     imageAlt: coverAlt,
     imageWidth: shareImage ? 1200 : undefined,
@@ -124,7 +128,7 @@ const schema = blogPostSchema({
               <>
                 <span aria-hidden="true">·</span>
                 <span>
-                  {t.published} <time datetime={isoDate(pubDate)}>{formatDate(pubDate, lang)}</time>
+                  {t.published} {monthArticle(pubDate, lang)}<time datetime={isoMonth(pubDate)}>{formatDate(pubDate, lang)}</time>
                 </span>
               </>
             )
@@ -134,7 +138,7 @@ const schema = blogPostSchema({
               <>
                 <span aria-hidden="true">·</span>
                 <span>
-                  {t.updated} <time datetime={isoDate(updatedDate)}>{formatDate(updatedDate, lang)}</time>
+                  {t.updated} {monthArticle(updatedDate, lang)}<time datetime={isoMonth(updatedDate)}>{formatDate(updatedDate, lang)}</time>
                 </span>
               </>
             )

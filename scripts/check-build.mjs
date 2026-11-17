@@ -182,8 +182,8 @@ for (const file of walk(dist).filter((f) => f.endsWith('.html'))) {
   }
 
   for (const form of tags(html, 'form')) {
-    if (has(form, 'data-contact-form') && attr(form, 'data-enabled') !== 'true')
-      warn(path, 'formulario sin PUBLIC_FORM_ENDPOINT: se ve pero no envía');
+    if (has(form, 'data-contact-form') && attr(form, 'action') !== '/api/enviar.php')
+      error(path, `formulario que no envía a /api/enviar.php: ${attr(form, 'action') ?? '(sin action)'}`);
   }
   // Consent Mode v2: valores por defecto "denied" en el <head>, antes de cualquier otro script.
   const consentDefault = html.match(/<script[^>]*\sdata-consent-default[^>]*>([\s\S]*?)<\/script>/i);

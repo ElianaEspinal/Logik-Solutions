@@ -107,10 +107,21 @@ export function relatedPosts(post: Post, all: Post[], max = 2): Post[] {
   return [...same, ...rest].slice(0, max);
 }
 
-/** "3 de novembre de 2026" / "3 de noviembre de 2026". (El ICU catalán pone "del" ante el año: se normaliza a "de".) */
+/**
+ * Fecha visible de los artículos: solo mes y año, sin día (decisión de Eliana, 6/11/2026).
+ * "novembre de 2026" / "noviembre de 2026". (El ICU catalán pone "del" ante el año: se normaliza a "de".)
+ * El JSON-LD y el sitemap siguen con la fecha completa.
+ */
 export const formatDate = (date: Date, lang: Locale) =>
-  new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+  new Intl.DateTimeFormat(lang, { month: 'long', year: 'numeric', timeZone: 'UTC' })
     .format(date)
     .replace(/ del (\d{4})$/, ' de $1');
+
+/** Artículo catalán ante el mes tras "Publicat"/"Actualitzat": "el novembre", "l'octubre". En castellano, vacío. */
+export const monthArticle = (date: Date, lang: Locale) =>
+  lang === 'ca' ? (/^[aeiou]/.test(formatDate(date, 'ca')) ? "l'" : 'el ') : '';
+
+/** Valor de <time datetime> para una fecha de solo mes: "2026-11". */
+export const isoMonth = (date: Date) => date.toISOString().slice(0, 7);
 
 export const isoDate = (date: Date) => date.toISOString().slice(0, 10);

@@ -22,7 +22,7 @@ import { pages } from '../config/pages';
 
   <h2 id="dades">Quines dades tractem, per a què i amb quina base</h2>
 
-  <h3>Formulari de contacte i pre-estudi</h3>
+  <h3>Formulari de contacte i preestudi</h3>
   <p>
     <strong>Dades:</strong> nom i cognoms, correu electrònic, telèfon i el que ens expliquis del teu cas: perfil
     (empresa, comunitat o llar), tipus de subministrament, import aproximat de la factura, potència, sector, localitat,
@@ -87,8 +87,9 @@ import { pages } from '../config/pages';
         <p>
           Si adjuntes una factura, tingues en compte que conté dades personals: el nom del titular, l'adreça de
           subministrament, el CUPS, el consum i, de vegades, el compte bancari. La fem servir només per preparar el teu
-          estudi, amb la mateixa base legal que la resta del formulari (mesures precontractuals a petició teva), i la
-          rep el mateix proveïdor del formulari. Si no vols adjuntar-la, ens pots indicar només l'import aproximat.
+          estudi, amb la mateixa base legal que la resta del formulari (mesures precontractuals a petició teva), i ens
+          arriba per correu electrònic juntament amb la resta de dades. Si no vols adjuntar-la, ens pots indicar només
+          l'import aproximat.
         </p>
       </>
     )
@@ -97,7 +98,7 @@ import { pages } from '../config/pages';
   <h2 id="conservacio">Quant temps guardem les dades</h2>
   <ul>
     <li>
-      Consultes i pre-estudis que no acaben en contracte: el temps necessari per atendre la teva sol·licitud i, com a
+      Consultes i preestudis que no acaben en contracte: el temps necessari per atendre la teva sol·licitud i, com a
       màxim, un any des del nostre últim contacte. Després les suprimim o les mantenim bloquejades només durant els
       terminis de prescripció de possibles responsabilitats.
     </li>
@@ -121,13 +122,11 @@ import { pages } from '../config/pages';
   </p>
   <ul>
     <li>
-      <strong>Formspree</strong> (encarregat del tractament): rep i ens fa arribar els formularis. Els seus servidors
-      són als Estats Units, a Amazon Web Services, i s'acull a clàusules contractuals tipus.
-      <a href={tp.formspree} target="_blank" rel="noopener noreferrer">Política de privacitat de Formspree</a>.
-    </li>
-    <li>
-      <strong>Hostinger</strong> (encarregat del tractament): allotjament del web.
-      <a href={tp.hostinger} target="_blank" rel="noopener noreferrer">Política de privacitat de Hostinger</a>.
+      <strong>cdmon</strong> (encarregat del tractament): allotjament del web i del correu electrònic. Les dades i les
+      factures que envies pel formulari ens arriben per correu electrònic a la bústia de Logik Solutions: el web no
+      les guarda ni conserva els arxius. Conservem aquests correus durant els terminis de l'apartat
+      <a href="#conservacio">Quant temps guardem les dades</a>.
+      <a href={tp.cdmonCa} target="_blank" rel="noopener noreferrer">Política de privacitat de cdmon</a>.
     </li>
     <li>
       <strong>Google</strong>: Google Analytics, només si acceptes l'analítica, i el mapa de Google Maps, només si el
@@ -147,9 +146,8 @@ import { pages } from '../config/pages';
 
   <h2 id="transferencies">Transferències internacionals</h2>
   <p>
-    Formspree tracta les dades als Estats Units i s'acull a les clàusules contractuals tipus aprovades per la Comissió
-    Europea. Google i Meta també poden tractar dades fora de l'Espai Econòmic Europeu, amb les garanties que expliquen a
-    les seves polítiques de privacitat.
+    Google i Meta poden tractar dades fora de l'Espai Econòmic Europeu, amb les garanties que expliquen a les seves
+    polítiques de privacitat.
   </p>
 
   <h2 id="drets">Els teus drets</h2>
@@ -180,7 +178,7 @@ import { pages } from '../config/pages';
 
   <h2 id="decisions">Decisions automatitzades</h2>
   <p>
-    No prenem decisions automatitzades ni fem perfils que tinguin efectes sobre tu. El pre-estudi només calcula la
+    No prenem decisions automatitzades ni fem perfils que tinguin efectes sobre tu. El preestudi només calcula la
     despesa anual aproximada a partir de l'import que hi indiques; l'estudi el fa una persona del nostre equip.
   </p>
 

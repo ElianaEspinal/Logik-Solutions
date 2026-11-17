@@ -15,7 +15,7 @@ export const DEFAULT_CHANNEL: Channel = 'trucada';
 /** Campos de cada paso, en el orden en que se muestran (el primero con error recibe el foco). */
 export const STEP_FIELDS = {
   1: ['perfil', 'necessitat'],
-  2: ['nom', 'email', 'telefon', 'factura', 'consentiment'],
+  2: ['nom', 'email', 'telefon', 'consentiment'],
 } as const;
 
 export type Field = (typeof STEP_FIELDS)[1][number] | (typeof STEP_FIELDS)[2][number];
@@ -28,7 +28,6 @@ export type ErrorCode =
   | 'emailInvalid'
   | 'phoneEmpty'
   | 'phoneInvalid'
-  | 'file'
   | 'consent';
 
 export type Values = {
@@ -39,8 +38,6 @@ export type Values = {
   telefon: string;
   preferencia_contacte: string;
   consentiment: boolean;
-  /** false si hay un adjunto que no es PDF/imagen o pasa de 10 MB. */
-  fileOk: boolean;
 };
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -48,8 +45,17 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 /** El teléfono es obligatorio si prefiere trucada o WhatsApp; con correo, opcional. */
 export const phoneRequired = (channel: string) => channel !== 'correu';
 
-/** 9 cifras como mínimo y solo caracteres de teléfono (+, espacios, guiones, paréntesis, puntos). */
-export const phoneValid = (raw: string) => /^[+\d\s().-]+$/.test(raw.trim()) && raw.replace(/\D/g, '').length >= 9;
+/** Misma regla que el servidor: 9 a 15 cifras tras quitar espacios, puntos, guiones, paréntesis y un "+" inicial. */
+export const phoneValid = (raw: string) => {
+  const s = raw.trim().replace(/[\s.\-()]/g, '');
+  return /^\d{9,15}$/.test(s.startsWith('+') ? s.slice(1) : s);
+};
+
+/** Nombre: entre 2 y 80 caracteres (misma regla que el servidor). */
+export const nameValid = (raw: string) => {
+  const n = [...raw.trim()].length;
+  return n >= 2 && n <= 80;
+};
 
 /**
  * "Sense cost per a tu": solo si se ha elegido una necesidad y no es plaques solars
@@ -64,7 +70,7 @@ export function fieldError(field: Field, v: Values): ErrorCode | null {
     case 'necessitat':
       return (NEEDS as readonly string[]).includes(v.necessitat) ? null : 'necessitat';
     case 'nom':
-      return v.nom.trim().length >= 2 ? null : 'nom';
+      return nameValid(v.nom) ? null : 'nom';
     case 'email':
       if (!v.email.trim()) return 'emailEmpty';
       return EMAIL.test(v.email.trim()) ? null : 'emailInvalid';
@@ -73,8 +79,6 @@ export function fieldError(field: Field, v: Values): ErrorCode | null {
       if (!tel) return phoneRequired(v.preferencia_contacte) ? 'phoneEmpty' : null;
       return phoneValid(tel) ? null : 'phoneInvalid';
     }
-    case 'factura':
-      return v.fileOk ? null : 'file';
     case 'consentiment':
       return v.consentiment ? null : 'consent';
   }
@@ -92,6 +96,9 @@ export const SUBJECT_LABELS = {
   perfil: { empresa: 'Empresa o negoci', comunitat: 'Comunitat de veïns', administrador: 'Administrador de finques', llar: 'Llar' },
   necessitat: { factura: 'Revisar factura', gestions: 'Gestions', plaques: 'Plaques solars', altra: 'Una altra consulta' },
 } as const;
+
+/** Canal preferido, tal como lo verá Logik en el correo (igual en las dos versiones). */
+export const CHANNEL_LABELS: Record<Channel, string> = { trucada: 'Trucada', whatsapp: 'WhatsApp', correu: 'Correu electrònic' };
 
 /** "Nova consulta web — Comunitat de veïns — Revisar factura". */
 export function subjectOf(perfil: string, necessitat: string) {

@@ -4,7 +4,7 @@
 // Escritorio (>= 64rem): datos a la izquierda (≈ 40 %), formulario a la derecha (≈ 60 %); mapa a todo el ancho.
 // Todos los datos del negocio salen de src/config/site.ts (coherencia NAP).
 import ContactForm from './contact-form.astro';
-import { directionsUrl, hasHours, hoursLabel, mapEmbedUrl, phone, site } from '../../config/site';
+import { addressLine, directionsUrl, hasHours, hoursLabel, mapEmbedUrl, phone, site } from '../../config/site';
 import type { Locale } from '../../config/pages';
 import type { ContactContent } from './types';
 import '../../styles/motion.css';
@@ -46,8 +46,8 @@ const rows: Row[] = [
     key: 'address',
     icon: icon.pin,
     label: c.panel.address,
-    // Solo código postal y localidad en el panel (decisión de Eliana, 3/11/2026).
-    value: [site.address.postalCode, site.address.locality].filter(Boolean).join(' '),
+    // Localidad, región y código postal, sin calle (decisión de Eliana, 6/11/2026).
+    value: addressLine(lang),
     href: directionsUrl,
     attrs: { target: '_blank', rel: 'noopener', 'data-directions': '' },
     extra: c.panel.directions,

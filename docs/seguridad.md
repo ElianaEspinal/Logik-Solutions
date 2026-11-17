@@ -17,7 +17,7 @@ Todo lo que se puede hacer desde el código está hecho y se comprueba en cada b
   - `Strict-Transport-Security: max-age=300`
 - **CSP en modo solo informe** (`Content-Security-Policy-Report-Only`), sin endpoint de informes.
 - **Bloqueo con respuesta 404 de lo que no debe servirse:**
-  - archivos y carpetas ocultos (salvo `/.well-known/`);
+  - archivos y carpetas ocultos (salvo `/.well-known/`), incluido `.user.ini`;
   - `docs/`, `node_modules/`, `src/` y `scripts/`;
   - `*.map`, `*.md`, `*.log`, `*.sql`, copias (`.bak`, `.old`, `.orig`, `.swp`, `.tmp`) y comprimidos;
   - `package.json` y `package-lock.json`.
@@ -25,7 +25,8 @@ Todo lo que se puede hacer desde el código está hecho y se comprueba en cada b
 - **404:** `ErrorDocument 404` con la página propia (estado 404). En castellano, `public/es/.htaccess`.
 - **Staging:** `X-Robots-Tag: noindex, nofollow`. **Producción:** sin `X-Robots-Tag`.
 - **Rastreadores:** no se bloquea ni limita a Googlebot ni a ningún rastreador.
-- **Excepciones que ninguna regla toca:** `/.well-known/`, `robots.txt`, `sitemap.xml`, `llms.txt`, favicons y todos los archivos de `dist/`. `check:security` lo comprueba archivo por archivo con las mismas reglas.
+- **Excepciones que ninguna regla toca:** `/.well-known/`, `robots.txt`, `sitemap.xml`, `llms.txt`, favicons, `/api/token.php`, `/api/enviar.php` y todos los archivos de `dist/` que se sirven. `check:security` lo comprueba archivo por archivo con las mismas reglas. Lo interno de `/api/` (`lib/`, `config.example.php`) lo bloquea con 403 su propio `api/.htaccess`.
+- **CSP del formulario:** `form-action 'self'` y `connect-src 'self'` (más GTM y GA4). El formulario solo envía a la propia web.
 
 **Build**
 
@@ -46,21 +47,23 @@ Todo lo que se puede hacer desde el código está hecho y se comprueba en cada b
 
 **Formularios (contacto, cierre de la home y pre-estudi, en catalán y castellano)**
 
+Envío propio en PHP (`public/api/`): todas las capas del servidor, los códigos de bloqueo y descarte y su mantenimiento están en **docs/formulario.md**. Resumen:
+
 | Capa | Qué hay |
 | --- | --- |
-| 1. Honeypot | `_gotcha` (el campo que filtra Formspree), fuera de pantalla con CSS, `tabindex="-1"`, `autocomplete="off"` y `aria-hidden="true"`. |
-| 2. Tiempo mínimo | Un envío a menos de 3 s de cargar la página se rechaza con un mensaje neutro (`src/scripts/form-guard.ts`). |
-| 3. Validación | `required`, `type="email"`/`"tel"`, `pattern` del teléfono, `maxlength` en todos los campos de texto. Con JS, mensajes propios junto a cada campo. Más de 2 enlaces en el mensaje se rechaza. Sin listas de palabras prohibidas. |
-| 4. Control de envío | Botón desactivado mientras envía y 30 s después de cada envío (también si falla). Sin guardar nada en el navegador: dura lo que la página. |
-| 5. Envío | POST a la URL https de `PUBLIC_FORM_ENDPOINT`. Sin JS, el formulario envía igual (POST nativo). Con JS, `fetch` con `Accept: application/json` y mensajes de éxito y error en el idioma de la página, sin detalles técnicos. |
-| 6. Privacidad | Casilla obligatoria y desmarcada, con la primera capa de información. |
+| 1. Servidor | Origen permitido, sello firmado de un solo uso (mínimo 3 s y máximo 2 h), honeypot `website`, límites de 5 envíos por IP y 40 por hora, reglas de contenido (URLs, etiquetas, alfabeto, UTF-8) y validación con lista cerrada de campos. El spam recibe un 200 falso. |
+| 2. Adjuntos | Tipo real con finfo, extensión que corresponde, imágenes regeneradas con GD, PDF inspeccionados (también los flujos comprimidos) y límites de 5 archivos, 20 MB por archivo y 20 MB en total. Lo que no pasa se descarta y el formulario se envía igual. |
+| 3. Correo | PHPMailer por SMTP autenticado con TLS y certificado verificado. Nunca `mail()`. El correo del cliente solo en `Reply-To`. |
+| 4. Acceso directo | `api/.htaccess` (403 salvo `token.php` y `enviar.php`) y guarda `LOGIK_FORM` en cada PHP incluido. `config.php` nunca va al repositorio ni a `dist/`. |
+| 5. Navegador | Validación con las mismas reglas que el servidor y avisos de lo que el servidor descartaría como spam (enlaces, símbolos, alfabeto), para no perder a una persona en silencio. Botón desactivado mientras envía y 30 s después de un fallo. Sin JS, botón desactivado y `<noscript>` con el teléfono y el correo. |
+| 6. Privacidad | Casilla obligatoria y desmarcada, con la primera capa de información, comprobada también en el servidor. |
 | 7. Captcha | Desactivado (`CAPTCHA_ENABLED = false` en `src/config/legal.ts`). No hay código que lo cargue. |
 | 8. Filtro de Optienergy | No aplicado: el encargo no traía su descripción ni su código. |
 
 **Otros**
 
 - `/.well-known/security.txt`: contacto, caducidad y idiomas. No está en el sitemap. **Renovar `Expires` antes del 5/11/2027.**
-- `npm run check:security`: se lanza en `npm run build` y se puede lanzar suelto tras cualquier build.
+- `npm run check:security`: se lanza en `npm run build` y se puede lanzar suelto tras cualquier build. Además de lo anterior, falla si `dist/` contiene `api/config.php`; si aparece "formspree" en `dist/`; si falta `api/.htaccess`, `api/token.php`, `api/enviar.php`, `api/config.example.php`, `api/lib/` o `.user.ini`; si un PHP propio de `api/` no tiene la guarda, usa funciones prohibidas, toca la verificación TLS o incluye rutas variables; o si algún PHP tiene errores de sintaxis (`php -l`; usa `PHP_BIN`, `php` del PATH o `C:\php\php.exe`).
 
 ## Pasar la CSP de informe a obligatoria
 
@@ -78,16 +81,16 @@ Hoy: `max-age=300` (5 minutos), sin `includeSubDomains` ni `preload`. Con https 
 
 - [ ] Verificación en dos pasos en Hostinger.
 - [ ] Verificación en dos pasos en la cuenta de Google (GTM, GA4, Search Console, Business Profile).
-- [ ] Verificación en dos pasos en Formspree.
+- [ ] Verificación en dos pasos en el panel de cdmon.
 - [ ] Verificación en dos pasos en GitHub (si se sube el repositorio).
 - [ ] Verificación en dos pasos en el registrador del dominio (Hostinger o cdmon).
 - [ ] Bloqueo de transferencia del dominio (registrar lock) en el registrador.
 - [ ] SPF del dominio de correo (registro TXT con los servidores que envían correo de @logiksolutions.es).
 - [ ] DKIM activado en el proveedor de correo y publicado en DNS.
 - [ ] DMARC: empezar con `p=none` y un correo de informes; subir a `quarantine` cuando SPF y DKIM pasen.
-- [ ] Formspree: restringir el formulario al dominio (`logiksolutions.es` y el de staging).
-- [ ] Formspree: confirmar que el honeypot `_gotcha` y el filtro de spam están activos.
-- [ ] Formspree: revisar el acuerdo de tratamiento de datos.
+- [ ] Formulario: crear `web/api/config.php` en el servidor con la contraseña de `web@` y una clave secreta nueva, y comprobar los 403 de `/api/` (docs/despliegue.md).
+- [ ] Formulario: si se usa un dominio de pruebas, añadirlo a `dominios_permitidos` en el `config.php` de ese entorno.
+- [ ] cdmon: revisar el acuerdo de encargo del tratamiento (alojamiento de la web y del correo).
 - [ ] Contraseña HTTP del entorno de pruebas: hPanel → Avanzado → Directorios protegidos con contraseña → carpeta del subdominio de staging → usuario y contraseña.
 - [ ] Comprobar que la contraseña sigue activa después de cada subida de `dist/` (el `.htaccess` del build puede sobrescribir el que escribe hPanel).
 - [ ] Copias de seguridad automáticas en Hostinger activadas y una restauración de prueba hecha.

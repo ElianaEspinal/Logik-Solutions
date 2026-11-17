@@ -37,7 +37,7 @@ interface Props {
   /** "noindex, follow" en lugar de "noindex, nofollow" (índice del blog sin artículos: se siguen sus enlaces). */
   noindexFollow?: boolean;
   /** Open Graph de artículo: og:type article, imagen y fechas (URL absoluta e ISO 8601). */
-  og?: { type?: 'website' | 'article'; image?: string; imageAlt?: string; imageWidth?: number; imageHeight?: number; publishedTime?: string; modifiedTime?: string };
+  og?: { type?: 'website' | 'article'; /** og:title y twitter:title si difieren del <title> (artículos del blog). */ title?: string; image?: string; imageAlt?: string; imageWidth?: number; imageHeight?: number; publishedTime?: string; modifiedTime?: string };
 }
 
 const { lang, title, description, pageKey, mobileBar = true, footerMap = true, ctaHref, noindexFollow = false, og = {} } = Astro.props;
@@ -76,11 +76,11 @@ const switcherLinks = Object.fromEntries(
     {og.modifiedTime && <meta property="article:modified_time" content={og.modifiedTime} />}
     <meta property="og:site_name" content="Logik Solutions" />
     <meta property="og:locale" content={lang === 'ca' ? 'ca_ES' : 'es_ES'} />
-    <meta property="og:title" content={title} />
+    <meta property="og:title" content={og.title ?? title} />
     <meta property="og:description" content={description} />
     {canonicalPath && <meta property="og:url" content={absoluteUrl(canonicalPath, Astro.site)} />}
     <meta name="twitter:card" content={og.image ? 'summary_large_image' : 'summary'} />
-    <meta name="twitter:title" content={title} />
+    <meta name="twitter:title" content={og.title ?? title} />
     <meta name="twitter:description" content={description} />
     {og.image && <meta name="twitter:image" content={og.image} />}
     {og.image && og.imageAlt && <meta name="twitter:image:alt" content={og.imageAlt} />}

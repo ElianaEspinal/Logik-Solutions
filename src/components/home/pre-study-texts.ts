@@ -7,15 +7,15 @@ import type { PreStudyContent } from './types';
 export const preStudyTexts: Record<Locale, PreStudyContent> = {
   // Pre-estudi: textos de Eliana. Los marcados [Claude] los redactó Claude (pendientes de revisión).
   ca: {
-    tag: 'Pre-estudi',
-    title: 'Fes el teu pre-estudi en pocs passos',
+    tag: 'Preestudi',
+    title: 'Fes el teu preestudi en pocs passos',
     lead: "Explica'ns el teu subministrament i deixa'ns les teves dades. Preparem el teu estudi i et contactem.",
     note: 'No és una oferta ni un compromís. Sense cost per a tu: ens remunera la comercialitzadora.',
     points: ['Sense cost per a tu', 'Ens ocupem dels tràmits amb la companyia', 'Seguiment mensual i anual'],
     proof: '+2.000 clients · +10 anys al sector · Visites presencials a Girona',
     proofShort: '+2.000 clients · +10 anys al sector',
     costNote: 'Sense cost per a tu: ens remunera la comercialitzadora.',
-    noscript: 'Per fer el pre-estudi cal JavaScript. Si ho prefereixes, parlem directament:', // [Claude]
+    noscript: 'Per fer el preestudi cal JavaScript. Si ho prefereixes, parlem directament:', // [Claude]
     controls: {
       step: 'Pas {n} de {total}',
       next: 'Continua',
@@ -80,7 +80,7 @@ export const preStudyTexts: Record<Locale, PreStudyContent> = {
         ofertes: 'Ofertes de diverses comercialitzadores',
         potencia: 'La potència contractada i els trams horaris',
         'zones-comunes': 'Els subministraments de les zones comunes (enllumenat, ascensors)',
-        solar: "Si l'autoconsum fotovoltaic té sentit pel teu consum",
+        solar: "Si l'autoconsum fotovoltaic té sentit per al teu consum",
       },
       outro: "Deixa'ns les teves dades i ho revisem.",
     },
@@ -106,7 +106,7 @@ export const preStudyTexts: Record<Locale, PreStudyContent> = {
     },
     // Mensajes de validación [Claude]
     errors: {
-      profile: 'Tria per a qui és el pre-estudi.',
+      profile: 'Tria per a qui és el preestudi.',
       supply: 'Tria què vols revisar.',
       amountEmpty: 'Escriu un import aproximat.',
       amountInvalid: 'Escriu un import més gran que 0, només amb xifres.',
@@ -115,9 +115,8 @@ export const preStudyTexts: Record<Locale, PreStudyContent> = {
       lastName: 'Escriu els teus cognoms.',
       emailEmpty: 'Escriu el teu correu electrònic.',
       emailInvalid: 'Revisa el correu: sembla que no és correcte.',
-      phone: 'Escriu un telèfon de 9 xifres com a mínim.',
+      phone: 'Escriu un telèfon de 9 a 15 xifres.',
       consent: "Has d'acceptar la política de privacitat per continuar.",
-      file: 'El fitxer ha de ser PDF, JPG o PNG i ocupar 10 MB com a màxim.',
     },
   },
   // Preestudio: textos de Eliana. Los marcados [Claude] los redactó Claude (pendientes de revisión).
@@ -230,9 +229,8 @@ export const preStudyTexts: Record<Locale, PreStudyContent> = {
       lastName: 'Escribe tus apellidos.',
       emailEmpty: 'Escribe tu correo electrónico.',
       emailInvalid: 'Revisa el correo: parece que no es correcto.',
-      phone: 'Escribe un teléfono de al menos 9 cifras.',
+      phone: 'Escribe un teléfono de 9 a 15 cifras.',
       consent: 'Tienes que aceptar la política de privacidad para continuar.',
-      file: 'El archivo debe ser PDF, JPG o PNG y ocupar 10 MB como máximo.',
     },
   },
 };

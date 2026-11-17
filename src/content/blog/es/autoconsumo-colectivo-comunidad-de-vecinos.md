@@ -88,7 +88,7 @@ La comunidad de propietarios puede ser la titular de la instalación. Antes de l
 
 1. **Decidir en junta.** Modalidad, uso común o privativo y aprobación con la mayoría que corresponda.
 2. **Diseñar y presupuestar.** Una empresa instaladora habilitada hace el diseño a partir de la ubicación y de las facturas. La guía del IDAE recomienda pedir al menos tres presupuestos.
-3. **Memoria o proyecto.** Por debajo de 10 kW basta con una memoria técnica. Hace falta también la licencia de obras y el CAU (código de autoconsumo).
+3. **Memoria o proyecto.** Por debajo de 10 kW basta con una memoria técnica. Hacen falta también la licencia de obras y el CAU (código de autoconsumo).
 4. **Legalizar.** El instalador tramita el certificado de instalación eléctrica (CIE).
 5. **Firmar el acuerdo de reparto.** Lo firman todos los participantes y se envía a la distribuidora.
 6. **Alta del autoconsumo.** La distribuidora comunica el alta a las comercializadoras y se modifican los contratos.

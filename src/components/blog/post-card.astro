@@ -5,7 +5,7 @@ import { Image } from 'astro:assets';
 import BrandCover from './brand-cover.astro';
 import { CATEGORIES, blogText } from '../../config/blog';
 import type { Locale } from '../../config/pages';
-import { formatDate, isoDate, postPath, postSlug, readingMinutes, type Post } from '../../lib/blog';
+import { formatDate, isoMonth, postPath, postSlug, readingMinutes, type Post } from '../../lib/blog';
 
 interface Props {
   post: Post;
@@ -54,7 +54,7 @@ const { title, description, cover, coverAlt, coverPosition, pubDate, category } 
     </Heading>
     <p class="post-card__excerpt">{description}</p>
     <p class="post-card__meta">
-      <time datetime={isoDate(pubDate)}>{formatDate(pubDate, lang)}</time>
+      <time datetime={isoMonth(pubDate)}>{formatDate(pubDate, lang)}</time>
       <span aria-hidden="true">·</span>
       <span>{t.readingTime.replace('{n}', String(readingMinutes(post)))}</span>
     </p>

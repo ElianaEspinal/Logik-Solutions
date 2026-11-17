@@ -7,10 +7,10 @@
 // si hay) · FAQ · pre-estudi solar.
 // Reglas: nunca "sense cost" ni "gratis" (la instalación tiene coste); sin precios, ahorros,
 // producción, plazos ni ayudas; instalaciones solo en Girona y localidades cercanas.
-// El esquema animado de la home está escrito dentro de HomePage.astro y no se importa: el hero usa
+// El esquema animado de la home está escrito dentro de home-page.astro y no se importa: el hero usa
 // su propio visual (autoconsum-hero-visual.astro), con el mismo lenguaje visual.
 // Reutiliza: stats-strip, faq-accordion, post-card y pre-study (casilla solar marcada, perfil
-// elegible, pagina_origen = "autoconsum", sin los textos de "sense cost").
+// elegible, origin = "autoconsum", que ya no se envía: el servidor recibe la ruta en `pagina`, sin los textos de "sense cost").
 // Medición: cta_click (autoconsum_hero, autoconsum_consum, autoconsum_cierre), persona_select
 // { persona: llar | comunitat | pime }, consum_select { opcio }, click_call (location = autoconsum),
 // blog_card_click (location = autoconsum) y los del pre-estudi.

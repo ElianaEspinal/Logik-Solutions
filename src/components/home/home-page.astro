@@ -7,7 +7,7 @@
 // Movimiento y superficies: src/styles/motion.css y src/scripts/motion.ts.
 // La tarjeta derecha de autoconsumo (esquema animado) se conserva sin cambios.
 import { SITE_ENV } from 'astro:env/server';
-import ContactForm from '../ContactForm.astro';
+import ContactForm from '../lead-form.astro';
 import LogosBand from '../logos-band.astro';
 import StatsStrip from '../stats-strip.astro';
 import CompareTable from './compare-table.astro';
@@ -21,7 +21,7 @@ import { CLOSING_FORM_ID, PRE_STUDY_ENABLED } from '../../config/home';
 import { pages, type Locale } from '../../config/pages';
 import { phone, site } from '../../config/site';
 import { useTranslations } from '../../i18n/ui';
-import { getPosts, postPath } from '../../lib/blog';
+import { formatDate, getPosts, isoMonth, postPath } from '../../lib/blog';
 import type { HomeContent } from './types';
 import '../../styles/motion.css';
 
@@ -34,7 +34,6 @@ const { lang, content: c } = Astro.props;
 const t = useTranslations(lang);
 const isStaging = SITE_ENV === 'staging';
 const posts = (await getPosts(lang)).slice(0, 3);
-const dateFormat = new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'long', year: 'numeric' });
 
 ---
 
@@ -133,7 +132,7 @@ const dateFormat = new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'long'
         <ul class="posts">
           {posts.map((post, i) => (
             <li class="card posts__item" data-reveal style={`--i:${i}`}>
-              <time datetime={post.data.pubDate.toISOString().slice(0, 10)}>{dateFormat.format(post.data.pubDate)}</time>
+              <time datetime={isoMonth(post.data.pubDate)}>{formatDate(post.data.pubDate, lang)}</time>
               <h3>
                 <a href={postPath(post)}>{post.data.title}</a>
               </h3>

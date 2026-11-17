@@ -27,10 +27,9 @@ export function homeSchema(content: HomeContent, lang: Locale, pageUrl: string, 
         founder: { '@type': 'Person', '@id': FOUNDER_ID, name: founder.name },
         address: {
           '@type': 'PostalAddress',
-          streetAddress: `${site.address.street[lang]}, ${site.address.floor[lang]}`,
           postalCode: site.address.postalCode,
           addressLocality: site.address.locality,
-          addressRegion: site.address.region,
+          addressRegion: site.address.region[lang],
           addressCountry: 'ES',
         },
         areaServed: [

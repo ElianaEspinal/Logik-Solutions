@@ -68,23 +68,23 @@ const GA = ['https://*.google-analytics.com', 'https://*.analytics.google.com'];
  * - scripts propios (/_astro/) y los en línea por hash; GTM solo tras el consentimiento;
  * - estilos propios y en línea (atributos style y <style> de Astro): 'unsafe-inline' solo en style-src;
  * - GA4 envía a *.google-analytics.com / *.analytics.google.com (connect-src e img-src);
- * - formulario: POST y fetch al servicio de PUBLIC_FORM_ENDPOINT (Formspree por defecto);
+ * - formulario: sello y envío por fetch a la propia web (/api/token.php y /api/enviar.php):
+ *   connect-src y form-action 'self' (docs/formulario.md);
  * - mapa de Google Maps embebido (pie y contacto), solo tras el consentimiento: frame-src.
  */
-export function buildCsp({ scriptHashes, formOrigin }) {
-  const form = formOrigin ? ` ${formOrigin}` : '';
+export function buildCsp({ scriptHashes }) {
   return [
     "default-src 'self'",
     `script-src 'self' ${[...scriptHashes].sort().join(' ')} ${GTM}`.replace(/\s+/g, ' ').trim(),
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: ${GTM} ${GA.join(' ')}`,
     "font-src 'self'",
-    `connect-src 'self'${form} ${GTM} ${GA.join(' ')}`,
+    `connect-src 'self' ${GTM} ${GA.join(' ')}`,
     'frame-src https://www.google.com',
     "manifest-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
-    `form-action 'self'${form}`,
+    "form-action 'self'",
     "frame-ancestors 'self'",
   ].join('; ');
 }

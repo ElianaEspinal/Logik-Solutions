@@ -175,7 +175,7 @@ La respuesta sobre la factura debe coincidir con lo que diga la política de pri
 
 ## Cierre con formulario y pie de página
 
-Formulario corto, de una columna, que envía Formspree. Solo se piden los datos necesarios para llamar.
+Formulario corto, de una columna, que envía al sistema propio de la web (docs/formulario.md). Solo se piden los datos necesarios para llamar.
 
 | Elemento | Català | Castellano |
 | --- | --- | --- |
